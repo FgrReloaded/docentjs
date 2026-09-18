@@ -6,6 +6,7 @@
  */
 
 export { defineTour } from './define'
+export * from './engine'
 export type { StepContext, StepHooks, TourHooks } from './hooks'
 export {
   type Advance,
