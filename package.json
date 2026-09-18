@@ -3,6 +3,11 @@
   "private": true,
   "version": "0.0.0",
   "description": "Docent monorepo — guided product tours for the web (and beyond).",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FgrReloaded/docentjs.git"
+  },
+  "license": "MIT",
   "packageManager": "pnpm@10.18.2",
   "engines": {
     "node": ">=22.18.0",
