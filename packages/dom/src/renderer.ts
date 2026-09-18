@@ -9,9 +9,16 @@
  */
 
 import type { Labels, RenderContext, Renderer, Step, Target, Theme } from '@docentjs/core'
+import { uncover } from './occlusion'
 import { Overlay } from './overlay'
 import { buildHeadlessShell, buildPopover } from './popover'
-import { centerPosition, clipToViewport, computePosition, type Rect } from './position'
+import {
+  centerPosition,
+  clipToViewport,
+  computePosition,
+  type Rect,
+  type Viewport,
+} from './position'
 import { STYLES } from './styles'
 import { resolveTarget, waitForTarget } from './target'
 import {
@@ -43,6 +50,13 @@ export interface DomRendererOptions {
   headless?: HeadlessPopover
   /** Extra CSS injected into the shadow root. */
   css?: string
+  /**
+   * Below this viewport width the popover docks to the bottom edge as a sheet
+   * instead of floating beside the target. Default 480; 0 disables.
+   */
+  sheetBreakpoint?: number
+  /** Scroll past sticky/fixed headers and footers that cover the target. Default true. */
+  avoidOcclusion?: boolean
 }
 
 type Cleanup = () => void
@@ -65,6 +79,8 @@ export class DomRenderer implements Renderer {
   private cleanups: Cleanup[] = []
   private frame: number | undefined
   private previousFocus: Element | null = null
+  /** Set once per step after the sheet has scrolled the target clear. */
+  private sheetAdjusted = false
 
   constructor(options: DomRendererOptions = {}) {
     this.options = options
@@ -104,7 +120,15 @@ export class DomRenderer implements Renderer {
       : this.buildDefault(ctx, host, template)
     this.popover?.setAttribute('data-entering', '')
 
-    if (this.target) this.scrollIntoView(this.target, ctx.step)
+    if (this.target) {
+      const smooth = this.scrollIntoView(this.target, ctx.step)
+      if (this.options.avoidOcclusion !== false) {
+        const target = this.target
+        this.afterScroll(smooth, () => {
+          if (this.target === target && uncover(target, host, this.viewport())) this.update()
+        })
+      }
+    }
     this.update()
     this.listen()
     this.wireAdvance(ctx.step)
@@ -142,7 +166,8 @@ export class DomRenderer implements Renderer {
     const win = this.doc.defaultView
     if (!ctx || !overlay || !popover || !win) return
 
-    const viewport = { width: win.innerWidth, height: win.innerHeight }
+    const viewport = this.viewport()
+    const overlaySize = { width: overlay.el.offsetWidth, height: overlay.el.offsetHeight }
     const spotlight = {
       ...this.options.spotlight,
       ...ctx.tour.options?.spotlight,
@@ -150,11 +175,30 @@ export class DomRenderer implements Renderer {
     }
     const padding = spotlight.padding ?? 6
     const radius = spotlight.radius ?? 6
-    const floating = { width: popover.offsetWidth, height: popover.offsetHeight }
     const external = this.headlessContainer
+    const sheet = this.isSheet(viewport)
+    popover.classList.toggle('sheet', sheet)
+    popover.style.width = sheet ? `${viewport.width}px` : ''
+    const floating = { width: popover.offsetWidth, height: popover.offsetHeight }
+
+    if (sheet) {
+      const rect = this.target?.isConnected ? toRect(this.target.getBoundingClientRect()) : null
+      overlay.update(
+        overlaySize,
+        { target: rect, padding, radius },
+        this.blocksInteraction(ctx.step),
+      )
+      const vx = viewport.x ?? 0
+      const top = (viewport.y ?? 0) + viewport.height - floating.height
+      popover.style.transform = `translate(${vx}px, ${top}px)`
+      popover.setAttribute('data-side', 'sheet')
+      external?.setAttribute('data-side', 'sheet')
+      this.keepClearOfSheet(rect, top)
+      return
+    }
 
     if (!this.target?.isConnected) {
-      overlay.update(viewport, { target: null, padding, radius }, false)
+      overlay.update(overlaySize, { target: null, padding, radius }, false)
       const { x, y } = centerPosition(floating, viewport)
       popover.style.transform = `translate(${x}px, ${y}px)`
       popover.setAttribute('data-side', 'center')
@@ -163,7 +207,7 @@ export class DomRenderer implements Renderer {
     }
 
     const rect = toRect(this.target.getBoundingClientRect())
-    overlay.update(viewport, { target: rect, padding, radius }, this.blocksInteraction(ctx.step))
+    overlay.update(overlaySize, { target: rect, padding, radius }, this.blocksInteraction(ctx.step))
     const hole = overlay.hole ?? rect
     const pos = computePosition({
       anchor: clipToViewport(hole, viewport),
@@ -183,6 +227,58 @@ export class DomRenderer implements Renderer {
       external.setAttribute('data-side', pos.side)
       external.style.setProperty('--docent-arrow', `${pos.arrow}px`)
     }
+  }
+
+  /**
+   * The visible area in layout-viewport coordinates. Uses the visual viewport
+   * so pinch zoom, the on-screen keyboard and pages that overflow on mobile
+   * (where `innerWidth` grows past the screen) all position correctly.
+   */
+  private viewport(): Viewport {
+    const win = this.doc.defaultView
+    const vv = win?.visualViewport
+    if (vv) return { x: vv.offsetLeft, y: vv.offsetTop, width: vv.width, height: vv.height }
+    const el = this.doc.documentElement
+    return { x: 0, y: 0, width: el.clientWidth, height: el.clientHeight }
+  }
+
+  private isSheet(viewport: Viewport): boolean {
+    const breakpoint = this.options.sheetBreakpoint ?? 480
+    return breakpoint > 0 && viewport.width < breakpoint
+  }
+
+  /** In sheet mode, scroll once so the target is not hidden behind the sheet. */
+  private keepClearOfSheet(target: Rect | null, sheetTop: number): void {
+    const win = this.doc.defaultView
+    if (!target || !win || this.sheetAdjusted) return
+    const overlap = target.y + target.height - sheetTop
+    if (overlap <= 0) return
+    this.sheetAdjusted = true
+    win.scrollBy({ top: overlap + 16, behavior: 'auto' })
+  }
+
+  /** Run after a smooth scroll settles (scrollend, or a short fallback), or right away. */
+  private afterScroll(smooth: boolean, fn: () => void): void {
+    const win = this.doc.defaultView
+    if (!smooth || !win) {
+      fn()
+      return
+    }
+    let done = false
+    const finish = () => {
+      if (done) return
+      done = true
+      win.removeEventListener('scrollend', finish)
+      clearTimeout(timer)
+      fn()
+    }
+    const timer = setTimeout(finish, 600)
+    win.addEventListener('scrollend', finish, { once: true })
+    this.cleanups.push(() => {
+      done = true
+      win.removeEventListener('scrollend', finish)
+      clearTimeout(timer)
+    })
   }
 
   // -------------------------------------------------------------------------
@@ -288,6 +384,7 @@ export class DomRenderer implements Renderer {
     this.arrow = undefined
     this.ctx = undefined
     this.target = null
+    this.sheetAdjusted = false
   }
 
   private blocksInteraction(step: Step): boolean {
@@ -296,23 +393,26 @@ export class DomRenderer implements Renderer {
     return !(typeof advance === 'object' && (advance.on === 'click' || advance.on === 'input'))
   }
 
-  private scrollIntoView(el: Element, step: Step): void {
+  /** Returns true when a smooth scroll was started (callers must wait for it to settle). */
+  private scrollIntoView(el: Element, step: Step): boolean {
     const scroll = { ...this.ctx?.tour.options?.scroll, ...step.scroll }
-    if (scroll.enabled === false) return
-    const win = this.doc.defaultView
-    if (!win) return
+    if (scroll.enabled === false) return false
     const r = el.getBoundingClientRect()
+    const v = this.viewport()
+    const vx = v.x ?? 0
+    const vy = v.y ?? 0
     const behavior = scroll.behavior ?? 'auto'
-    if (r.height > win.innerHeight || r.width > win.innerWidth) {
+    if (r.height > v.height || r.width > v.width) {
       // Oversized target: it can never be fully shown, so only make sure its top is on screen.
-      const topVisible = r.top >= 0 && r.top < win.innerHeight && r.left < win.innerWidth
+      const topVisible = r.top >= vy && r.top < vy + v.height && r.left < vx + v.width
       if (!topVisible) el.scrollIntoView({ block: 'start', inline: 'start', behavior })
-      return
+      return !topVisible && behavior === 'smooth'
     }
     const visible =
-      r.top >= 0 && r.left >= 0 && r.bottom <= win.innerHeight && r.right <= win.innerWidth
-    if (visible) return
+      r.top >= vy && r.left >= vx && r.bottom <= vy + v.height && r.right <= vx + v.width
+    if (visible) return false
     el.scrollIntoView({ block: scroll.block ?? 'center', inline: 'nearest', behavior })
+    return behavior === 'smooth'
   }
 
   private scheduleUpdate = (): void => {
@@ -338,6 +438,15 @@ export class DomRenderer implements Renderer {
 
     on('scroll', this.scheduleUpdate, { capture: true, passive: true })
     on('resize', this.scheduleUpdate, { passive: true })
+    const vv = win.visualViewport
+    if (vv) {
+      vv.addEventListener('resize', this.scheduleUpdate)
+      vv.addEventListener('scroll', this.scheduleUpdate)
+      this.cleanups.push(() => {
+        vv.removeEventListener('resize', this.scheduleUpdate)
+        vv.removeEventListener('scroll', this.scheduleUpdate)
+      })
+    }
     if (typeof ResizeObserver !== 'undefined') {
       const ro = new ResizeObserver(this.scheduleUpdate)
       if (this.target) ro.observe(this.target)

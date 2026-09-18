@@ -98,6 +98,23 @@ describe('computePosition', () => {
   })
 })
 
+describe('offset viewport', () => {
+  const offset = { x: 100, y: 50, width: 400, height: 300 }
+
+  it('measures space from the visible area, not the layout origin', () => {
+    const a = { x: 120, y: 60, width: 20, height: 20 }
+    expect(availableSpace(a, offset)).toEqual({ top: 10, bottom: 270, left: 20, right: 360 })
+  })
+
+  it('clamps and centres inside the visible area', () => {
+    const a = { x: 110, y: 200, width: 20, height: 20 }
+    const r = computePosition({ anchor: a, floating, viewport: offset, placement: 'bottom' })
+    expect(r.x).toBe(108)
+    expect(centerPosition(floating, offset)).toEqual({ x: 150, y: 150 })
+    expect(clipToViewport({ x: 0, y: 0, width: 1000, height: 1000 }, offset)).toEqual(offset)
+  })
+})
+
 describe('helpers', () => {
   it('availableSpace measures each side', () => {
     expect(availableSpace(anchor, viewport)).toEqual({

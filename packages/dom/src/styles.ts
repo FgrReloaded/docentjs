@@ -58,7 +58,7 @@ export const STYLES = `
   outline: none;
   transition: transform var(--docent-duration) ease, opacity var(--docent-duration) ease;
 }
-.popover[data-entering] { opacity: 0; }
+.popover[data-entering] { opacity: 0; transition: none; }
 .popover.headless {
   width: auto;
   max-width: none;
@@ -78,7 +78,12 @@ export const STYLES = `
 .popover[data-side="bottom"] .arrow { top: -6px; }
 .popover[data-side="left"] .arrow { right: -6px; }
 .popover[data-side="right"] .arrow { left: -6px; }
-.popover[data-side="center"] .arrow { display: none; }
+.popover[data-side="center"] .arrow, .popover[data-side="sheet"] .arrow { display: none; }
+.popover.sheet {
+  max-width: none;
+  border-radius: var(--docent-radius) var(--docent-radius) 0 0;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
 .header { display: flex; align-items: flex-start; gap: 8px; }
 .title { flex: 1; margin: 0; font-size: 16px; font-weight: 600; }
 .close {

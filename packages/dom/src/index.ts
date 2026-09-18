@@ -8,6 +8,7 @@
 export { defineTour } from '@docentjs/core'
 export { isSafeUrl, renderBody, renderMedia } from './content'
 export { type CreateTourOptions, createTour, DomTourController } from './create'
+export { findOccluder, type Occluder, uncover } from './occlusion'
 export { holePath, Overlay } from './overlay'
 export {
   buildHeadlessShell,

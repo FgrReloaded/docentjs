@@ -17,11 +17,21 @@ export interface Size {
   height: number
 }
 
+/**
+ * The visible area, in the same coordinate space as the anchor. `x`/`y` are
+ * the visual viewport's offset within the layout viewport (non-zero when the
+ * page is pinch-zoomed or overflows horizontally on mobile).
+ */
+export interface Viewport extends Size {
+  x?: number
+  y?: number
+}
+
 export interface PositionInput {
   /** The spotlighted area, in viewport coordinates. */
   anchor: Rect
   floating: Size
-  viewport: Size
+  viewport: Viewport
   placement: Placement
   /** Distance between anchor and popover. */
   gap?: number
@@ -57,12 +67,14 @@ function isVertical(side: Side): boolean {
 }
 
 /** Free space between the anchor and the viewport edge on each side. */
-export function availableSpace(anchor: Rect, viewport: Size): Record<Side, number> {
+export function availableSpace(anchor: Rect, viewport: Viewport): Record<Side, number> {
+  const vx = viewport.x ?? 0
+  const vy = viewport.y ?? 0
   return {
-    top: anchor.y,
-    bottom: viewport.height - (anchor.y + anchor.height),
-    left: anchor.x,
-    right: viewport.width - (anchor.x + anchor.width),
+    top: anchor.y - vy,
+    bottom: vy + viewport.height - (anchor.y + anchor.height),
+    left: anchor.x - vx,
+    right: vx + viewport.width - (anchor.x + anchor.width),
   }
 }
 
@@ -80,6 +92,8 @@ export function computePosition(input: PositionInput): PositionResult {
   const edge = input.edgePadding ?? 8
   const arrowSize = input.arrowSize ?? 8
   const { side: preferred, align } = parsePlacement(input.placement)
+  const vx = viewport.x ?? 0
+  const vy = viewport.y ?? 0
 
   const space = availableSpace(anchor, viewport)
   const order = candidates(preferred, space)
@@ -99,12 +113,12 @@ export function computePosition(input: PositionInput): PositionResult {
     if (align === 'start') x = anchor.x
     else if (align === 'end') x = anchor.x + anchor.width - floating.width
     else x = anchor.x + anchor.width / 2 - floating.width / 2
-    x = clamp(x, edge, Math.max(edge, viewport.width - edge - floating.width))
+    x = clamp(x, vx + edge, Math.max(vx + edge, vx + viewport.width - edge - floating.width))
   } else {
     if (align === 'start') y = anchor.y
     else if (align === 'end') y = anchor.y + anchor.height - floating.height
     else y = anchor.y + anchor.height / 2 - floating.height / 2
-    y = clamp(y, edge, Math.max(edge, viewport.height - edge - floating.height))
+    y = clamp(y, vy + edge, Math.max(vy + edge, vy + viewport.height - edge - floating.height))
   }
 
   // Arrow points at the anchor centre, kept away from the popover corners.
@@ -117,10 +131,10 @@ export function computePosition(input: PositionInput): PositionResult {
 }
 
 /** Centre a popover in the viewport, for steps without a target. */
-export function centerPosition(floating: Size, viewport: Size): { x: number; y: number } {
+export function centerPosition(floating: Size, viewport: Viewport): { x: number; y: number } {
   return {
-    x: Math.round(Math.max(0, (viewport.width - floating.width) / 2)),
-    y: Math.round(Math.max(0, (viewport.height - floating.height) / 2)),
+    x: Math.round((viewport.x ?? 0) + Math.max(0, (viewport.width - floating.width) / 2)),
+    y: Math.round((viewport.y ?? 0) + Math.max(0, (viewport.height - floating.height) / 2)),
   }
 }
 
@@ -138,11 +152,13 @@ export function inflate(rect: Rect, by: number): Rect {
  * The part of a rect that is on screen. Positioning against this keeps the
  * popover and arrow near the visible portion of oversized targets.
  */
-export function clipToViewport(rect: Rect, viewport: Size): Rect {
-  const x1 = Math.max(0, rect.x)
-  const y1 = Math.max(0, rect.y)
-  const x2 = Math.min(viewport.width, rect.x + rect.width)
-  const y2 = Math.min(viewport.height, rect.y + rect.height)
+export function clipToViewport(rect: Rect, viewport: Viewport): Rect {
+  const vx = viewport.x ?? 0
+  const vy = viewport.y ?? 0
+  const x1 = Math.max(vx, rect.x)
+  const y1 = Math.max(vy, rect.y)
+  const x2 = Math.min(vx + viewport.width, rect.x + rect.width)
+  const y2 = Math.min(vy + viewport.height, rect.y + rect.height)
   if (x2 <= x1 || y2 <= y1) return rect
   return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 }
 }
