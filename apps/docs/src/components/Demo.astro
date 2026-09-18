@@ -1,0 +1,43 @@
+---
+/**
+ * A live tour running on the docs page itself. Each demo gets its own tour
+ * definition (passed as JSON) and a Start button; the targets are elements
+ * inside the demo box marked with data-docent names.
+ */
+import type { Tour } from '@docentjs/core'
+
+interface Props {
+  tour: Tour
+  /** Extra renderer options as JSON, e.g. a theme or template. */
+  renderer?: Record<string, unknown>
+  label?: string
+}
+const { tour, renderer = {}, label = 'Start tour' } = Astro.props
+const id = `demo-${tour.id}`
+---
+
+<div class="demo" id={id} data-tour={JSON.stringify(tour)} data-renderer={JSON.stringify(renderer)}>
+  <div class="demo-toolbar">
+    <button type="button" class="primary" data-start>{label}</button>
+    <slot name="toolbar" />
+  </div>
+  <slot />
+</div>
+
+<script>
+  import { createTour } from '@docentjs/dom'
+  import * as themes from '@docentjs/dom/themes'
+
+  for (const box of document.querySelectorAll<HTMLElement>('.demo[data-tour]')) {
+    const tour = JSON.parse(box.dataset.tour ?? '{}')
+    const options = JSON.parse(box.dataset.renderer ?? '{}')
+    // Allow `theme: "dark"` style references to the built-in presets.
+    if (typeof options.theme === 'string') options.theme = (themes as Record<string, unknown>)[options.theme]
+    const controller = createTour(tour, {
+      renderer: options,
+      storage: { get: () => null, set: () => {}, remove: () => {} },
+      sink: { emit: (e) => console.debug('[docent]', e.type, e.stepId ?? '') },
+    })
+    box.querySelector('[data-start]')?.addEventListener('click', () => controller.start())
+  }
+</script>

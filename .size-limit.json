@@ -6,10 +6,7 @@
   },
   {
     "name": "@docentjs/core + @docentjs/dom",
-    "path": [
-      "packages/core/dist/index.js",
-      "packages/dom/dist/index.js"
-    ],
+    "path": ["packages/core/dist/index.js", "packages/dom/dist/index.js"],
     "limit": "12 kB"
   }
 ]

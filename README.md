@@ -27,4 +27,9 @@ pnpm lint
 pnpm size
 ```
 
+## Docs and examples
+
+- `pnpm --filter @docentjs/docs dev` runs the documentation site (Astro + Starlight) with live demos.
+- `examples/` holds vanilla, React, Vue and Svelte apps. `pnpm test:e2e` runs the Playwright suite.
+
 See [docs/VISION.md](docs/VISION.md) for the roadmap and architecture decisions.

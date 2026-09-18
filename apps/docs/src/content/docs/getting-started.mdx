@@ -1,0 +1,98 @@
+---
+title: Getting started
+description: Install Docent and run your first tour in a few lines.
+---
+
+import { Tabs, TabItem } from '@astrojs/starlight/components'
+import Demo from '../../components/Demo.astro'
+
+## Install
+
+<Tabs>
+  <TabItem label="Vanilla">
+    ```sh
+    pnpm add @docentjs/dom
+    ```
+  </TabItem>
+  <TabItem label="React">
+    ```sh
+    pnpm add @docentjs/react
+    ```
+  </TabItem>
+  <TabItem label="Vue">
+    ```sh
+    pnpm add @docentjs/vue
+    ```
+  </TabItem>
+  <TabItem label="Svelte">
+    ```sh
+    pnpm add @docentjs/svelte
+    ```
+  </TabItem>
+</Tabs>
+
+`@docentjs/dom` is the web renderer and depends on `@docentjs/core`, the platform-agnostic engine. The framework packages depend on both.
+
+## Define a tour
+
+A tour is a plain JSON-compatible object. `defineTour` gives you type inference and stamps the schema version.
+
+```ts
+import { createTour, defineTour } from '@docentjs/dom'
+
+const tour = defineTour({
+  id: 'welcome',
+  version: 1,
+  options: { showProgress: true },
+  steps: [
+    { id: 'intro', title: 'Welcome', body: 'This takes about a minute.' },
+    { id: 'sidebar', target: { name: 'sidebar' }, title: 'Navigation', placement: 'right' },
+    { id: 'new', target: '#new-project', title: 'Create a project', advance: { on: 'click' } },
+    { id: 'done', title: 'All set' },
+  ],
+})
+```
+
+## Mark targets
+
+Prefer a logical name over a CSS selector. It survives refactors and works on native platforms later.
+
+```html
+<aside data-docent="sidebar">…</aside>
+```
+
+A bare string target such as `'#new-project'` is treated as a CSS selector.
+
+## Start it
+
+```ts
+const controller = createTour(tour)
+controller.start()
+```
+
+`createTour` wires the web renderer, `localStorage` persistence, and route tracking. Call `resume()` instead of `start()` to continue where the user left off.
+
+<Demo
+  tour={{
+    schemaVersion: 1,
+    id: 'getting-started',
+    options: { showProgress: true },
+    steps: [
+      { id: 'intro', title: 'Welcome', body: 'This takes about a minute.' },
+      { id: 'sidebar', target: { name: 'gs-sidebar' }, title: 'Navigation', placement: 'right' },
+      { id: 'new', target: { name: 'gs-new' }, title: 'Create a project', body: 'Click it to continue.', advance: { on: 'click' } },
+      { id: 'done', title: 'All set' },
+    ],
+  }}
+>
+  <div class="row">
+    <div data-docent="gs-sidebar" style="padding: 0.5rem 1rem; border: 1px dashed var(--sl-color-hairline); border-radius: 8px;">Sidebar</div>
+    <button type="button" data-docent="gs-new">New project</button>
+  </div>
+</Demo>
+
+## Next
+
+- [Concepts](/concepts/) explains the pieces: schema, engine, renderer, seams.
+- [Targets](/guides/targets/) covers self-healing selectors and lazy elements.
+- [Theming](/customize/theming/) makes it look like your product.

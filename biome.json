@@ -9,7 +9,11 @@
       "!**/coverage",
       "!**/test-results",
       "!**/playwright-report",
-      "!**/*.html"
+      "!**/*.html",
+      "!**/*.vue",
+      "!**/*.svelte",
+      "!**/.astro",
+      "!**/*.astro"
     ]
   },
   "formatter": {

@@ -1,0 +1,73 @@
+---
+title: Slots and templates
+description: Replace regions of the popover, and bundle themes, slots, and CSS under a name.
+---
+
+import Demo from '../../../components/Demo.astro'
+
+## Slots
+
+Any region of the built-in popover can be replaced: `header`, `title`, `close`, `body`, `media`, `footer`, `progress`, `buttons`. A slot renderer receives the render context and returns a `Node`, a string, `null` to remove the region, or `undefined` to keep the default.
+
+```ts
+createTour(tour, {
+  renderer: {
+    slots: {
+      progress: (ctx) => {
+        const dots = document.createElement('div')
+        dots.className = 'dots'
+        for (let i = 1; i <= ctx.progress.total; i++) {
+          const dot = document.createElement('i')
+          if (i === ctx.progress.current) dot.className = 'on'
+          dots.appendChild(dot)
+        }
+        return dots
+      },
+      close: () => null,
+    },
+  },
+})
+```
+
+Custom content is projected through native Shadow DOM slots, so it stays in your page's DOM: your CSS applies and your framework's event handling keeps working.
+
+## Templates
+
+A template bundles a theme, slots, and CSS under a name. Tours pick one with `options.template`, which keeps the JSON side builder-friendly while the code side stays in your app.
+
+```ts
+createTour(tour, {
+  renderer: {
+    templates: {
+      card: {
+        theme: { radius: '16px', shadow: '0 24px 48px rgba(0,0,0,.25)' },
+        slots: { progress: dots },
+        css: '.popover { border: 1px solid rgba(124,58,237,.35) }',
+      },
+    },
+  },
+})
+// tour: { options: { template: 'card' } }
+```
+
+Set the renderer's `template` to apply one when a tour names none.
+
+<Demo label="Template with slot and CSS"
+  renderer={{ templates: { outlined: { theme: { accent: '#7c3aed' }, css: '.popover { border: 2px solid var(--docent-accent) } .progress { font-weight: 700 }' } } }}
+  tour={{
+    schemaVersion: 1,
+    id: 'template-demo',
+    options: { template: 'outlined', showProgress: true },
+    steps: [
+      { id: 'a', target: { name: 'tpl-a' }, title: 'Outlined', body: 'Border and bold progress come from the template CSS.' },
+      { id: 'b', target: { name: 'tpl-b' }, title: 'Same template', body: 'Every step of the tour uses it.' },
+    ],
+  }}
+>
+  <div class="row">
+    <button type="button" data-docent="tpl-a">One</button>
+    <button type="button" data-docent="tpl-b">Two</button>
+  </div>
+</Demo>
+
+Slots are functions, so this demo only shows the theme and CSS parts of a template. See the React, Vue, and Svelte pages for slot-like customization through components.

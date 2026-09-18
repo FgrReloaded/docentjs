@@ -1,0 +1,66 @@
+---
+title: Targets
+description: Point steps at elements that survive refactors and lazy rendering.
+---
+
+import Demo from '../../../components/Demo.astro'
+
+## Logical names
+
+Mark elements with `data-docent` and reference them by name. This is the most robust anchor and the one the visual builder prefers.
+
+```html
+<button data-docent="save">Save</button>
+```
+
+```ts
+{ id: 'save', target: { name: 'save' } }
+```
+
+## Selectors and fallbacks
+
+A string target is a CSS selector. For self-healing tours, list several candidates; the first one that matches wins.
+
+```ts
+{ target: { name: 'save', selectors: ['[data-testid="save"]', 'form button[type=submit]'] } }
+```
+
+Invalid selectors are skipped rather than thrown. Open shadow roots are searched as a fallback when nothing matches in the light DOM.
+
+## Scoping and multiple matches
+
+```ts
+{ target: { selectors: ['.row'], within: '#invoices', nth: 2 } }
+```
+
+## Lazy targets
+
+By default a missing target is skipped. Ask the step to wait:
+
+```ts
+{ id: 'menu-item', target: '#menu-item', onMissing: 'wait', waitFor: 5000 }
+```
+
+The renderer watches the DOM and shows the step the moment the element appears. Use `onMissing: 'abort'` when a missing target means the tour makes no sense.
+
+<Demo
+  tour={{
+    schemaVersion: 1,
+    id: 'lazy',
+    steps: [
+      { id: 'reveal', target: { name: 'lazy-reveal' }, title: 'Reveal it', body: 'Click the button, the next step waits for the element.', advance: { on: 'click' } },
+      { id: 'lazy', target: { name: 'lazy-item' }, title: 'Here it is', body: 'This element did not exist a moment ago.', onMissing: 'wait', waitFor: 5000 },
+    ],
+  }}
+>
+  <div class="row">
+    <button type="button" data-docent="lazy-reveal" onclick="const s=this.nextElementSibling; setTimeout(()=>{s.hidden=false},600)">Reveal after 600ms</button>
+    <span data-docent="lazy-item" hidden style="padding: 0.4rem 0.8rem; border-radius: 8px; background: var(--sl-color-accent-low);">Lazy element</span>
+  </div>
+</Demo>
+
+Note: an element with `hidden` still matches the selector; the demo above works because a hidden element has no box, so the wait resolves as soon as it is shown.
+
+## Steps without a target
+
+Omit `target` for a centred modal step, useful for welcome and finish screens.

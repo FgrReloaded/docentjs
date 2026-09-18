@@ -1,0 +1,61 @@
+---
+title: Theming
+description: Make the popover look like your product with tokens and presets.
+---
+
+import Demo from '../../../components/Demo.astro'
+
+## Tokens
+
+Theme tokens are part of the tour JSON, so a builder can set them and they travel with the tour.
+
+```ts
+options: {
+  theme: { accent: '#7c3aed', radius: '14px', width: '340px', overlayOpacity: '0.7' },
+}
+```
+
+Each token becomes a `--docent-*` custom property on the shadow host: `background`, `foreground`, `muted`, `accent`, `accentForeground`, `radius`, `shadow`, `font`, `width`, `overlay`, `overlayOpacity`, `duration`, `zIndex`.
+
+Layers apply lowest to highest: renderer `theme`, then the template's theme, then the tour's `options.theme`.
+
+## Presets
+
+```ts
+import { dark, minimal, contrast } from '@docentjs/dom/themes'
+createTour(tour, { renderer: { theme: minimal } })
+```
+
+The presets ship from a separate entry so they cost nothing unless imported. The default theme follows `prefers-color-scheme`.
+
+<Demo label="Tour theme tokens"
+  tour={{
+    schemaVersion: 1,
+    id: 'theme-tokens',
+    options: { theme: { accent: '#0d9488', radius: '4px', width: '280px', background: '#f0fdfa', foreground: '#134e4a' } },
+    steps: [{ id: 'a', target: { name: 'theme-target' }, title: 'Teal and square', body: 'Tokens came from the tour JSON.' }],
+  }}
+>
+  <button type="button" data-docent="theme-target">Target</button>
+</Demo>
+
+<Demo label="Contrast preset" renderer={{ theme: 'contrast' }}
+  tour={{
+    schemaVersion: 1,
+    id: 'theme-contrast',
+    steps: [{ id: 'a', target: { name: 'theme-target-2' }, title: 'High contrast', body: 'The renderer theme is the `contrast` preset.', format: 'markdown' }],
+  }}
+>
+  <button type="button" data-docent="theme-target-2">Target</button>
+</Demo>
+
+## CSS parts
+
+For anything tokens do not cover, style parts from your own stylesheet. Parts: `overlay`, `popover`, `arrow`, `header`, `title`, `close`, `body`, `media`, `footer`, `progress`, `buttons`, `button`, `button-next`, `button-back`, `button-skip`.
+
+```css
+[data-docent-host]::part(title) { text-transform: uppercase; letter-spacing: 0.04em; }
+[data-docent-host]::part(button-next) { border-radius: 999px; }
+```
+
+Or inject CSS into the shadow root with the renderer's `css` option or a template's `css`.

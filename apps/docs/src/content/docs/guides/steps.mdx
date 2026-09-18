@@ -1,0 +1,65 @@
+---
+title: Steps and advancing
+description: Placement, content, and the different ways a step can complete.
+---
+
+import Demo from '../../../components/Demo.astro'
+
+## Placement
+
+`placement` is a preference. The renderer flips to the opposite side when there is no room, then tries the perpendicular sides, and shifts along the edge to stay on screen.
+
+```ts
+placement: 'auto' | 'top' | 'right' | 'bottom' | 'left' | 'top-start' | 'top-end' | …
+```
+
+On screens narrower than 480px the popover docks to the bottom edge as a sheet instead. Change or disable that with the renderer's `sheetBreakpoint`.
+
+## Content
+
+`body` is plain text by default. With `format: 'markdown'` a safe subset is rendered: **bold**, *italic*, `code`, links, paragraphs, and line breaks. Raw HTML is never injected, so tours that come from a server are safe to render.
+
+```ts
+{ title: 'Invoices', body: 'Click **Invoices** to continue.', format: 'markdown', media: { type: 'image', src: '/help/invoices.png', alt: 'Invoices tab' } }
+```
+
+## Advancing
+
+By default the user presses Next. The other modes let the tour follow what the user does.
+
+```ts
+advance: { on: 'click' }                    // the user clicks the target
+advance: { on: 'input', match: '^\\S+@' }   // typed value matches a pattern
+advance: { on: 'event', name: 'saved' }     // your code calls controller.notify('saved')
+advance: { on: 'element', target: '#menu' } // wait for something to appear
+advance: { on: 'delay', ms: 4000 }
+```
+
+Click and input advances make the target interactive automatically. For other steps the target is blocked unless you set `interaction: 'allow'`.
+
+<Demo
+  tour={{
+    schemaVersion: 1,
+    id: 'advance',
+    steps: [
+      { id: 'click', target: { name: 'adv-click' }, title: 'Click to continue', body: 'The Next button is hidden; the click advances.', advance: { on: 'click' }, buttons: { next: false } },
+      { id: 'input', target: { name: 'adv-input' }, title: 'Type an email', body: 'Advances when the value looks like an address.', advance: { on: 'input', match: '^\\S+@\\S+$' }, placement: 'top' },
+      { id: 'blocked', target: { name: 'adv-blocked' }, title: 'Blocked', body: 'This button cannot be clicked while the step is shown.' },
+      { id: 'done', title: 'Done' },
+    ],
+  }}
+>
+  <div class="row">
+    <button type="button" data-docent="adv-click">Continue</button>
+    <input data-docent="adv-input" placeholder="you@example.com" />
+    <button type="button" data-docent="adv-blocked" onclick="alert('You should not see this during the tour')">Dangerous</button>
+  </div>
+</Demo>
+
+## Buttons and labels
+
+Hide buttons per step with `buttons: { back: false, skip: false, close: false, next: false }`. Change wording for the whole tour with `options.labels`, or for every tour with the renderer's `labels`.
+
+## Progress
+
+`{current} of {total}` counts every step, including ones later skipped by a condition, so the numbers never jump mid-tour.
