@@ -2,7 +2,7 @@
   "name": "docentjs",
   "private": true,
   "version": "0.0.0",
-  "description": "Docent monorepo — guided product tours for the web (and beyond).",
+  "description": "Docent monorepo \u2014 guided product tours for the web (and beyond).",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/FgrReloaded/docentjs.git"
@@ -26,11 +26,14 @@
     "changeset": "changeset",
     "version": "changeset version",
     "release": "pnpm build && changeset publish",
-    "clean": "turbo run clean && rm -rf node_modules"
+    "clean": "turbo run clean && rm -rf node_modules",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.14",
     "@changesets/cli": "^3.0.3",
+    "@playwright/test": "^1.63.0",
     "@size-limit/preset-small-lib": "^14.0.0",
     "playwright": "^1.63.0",
     "size-limit": "^14.0.0",

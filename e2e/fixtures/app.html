@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Docent e2e fixture</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "@docentjs/core": "/packages/core/dist/index.js",
+        "@docentjs/dom": "/packages/dom/dist/index.js"
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 15px/1.5 system-ui, sans-serif; background: #f3f4f6; color: #111; }
+    header { position: sticky; top: 0; height: 64px; display: flex; align-items: center; gap: 16px; padding: 0 24px; background: #111827; color: #fff; z-index: 10; }
+    header a { color: #cbd5e1; }
+    .layout { display: grid; grid-template-columns: 200px 1fr; }
+    aside { background: #fff; min-height: 220vh; padding: 16px; }
+    main { padding: 24px; }
+    button, input { font: inherit; padding: 8px 12px; }
+    .far { margin-top: 120vh; }
+    .bottom-right { position: fixed; right: 12px; bottom: 12px; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+    @media (max-width: 600px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { min-height: 0; }
+      header { padding: 0 12px; gap: 8px; }
+    }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <b>Fixture</b>
+    <a href="/app" data-nav>Home</a>
+    <a href="/app/settings" data-nav>Settings</a>
+    <span style="flex:1"></span>
+    <button id="start">Start</button>
+  </header>
+  <div class="layout">
+    <aside data-docent="sidebar">Sidebar</aside>
+    <main>
+      <section data-page="home">
+        <div class="toolbar">
+          <button id="save" data-docent="save">Save</button>
+          <button id="blocked">Blocked</button>
+          <button id="reveal">Reveal lazy</button>
+          <span id="lazy-slot"></span>
+        </div>
+        <p>Clicks on Blocked: <span id="blocked-count">0</span></p>
+        <div class="far">
+          <input id="search" placeholder="search" />
+        </div>
+      </section>
+      <section data-page="settings" hidden>
+        <h2>Settings</h2>
+        <button id="pref" data-docent="pref">Preference</button>
+      </section>
+      <button id="corner" class="bottom-right">Corner</button>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createTour, defineTour } from '@docentjs/dom'
+
+    const params = new URLSearchParams(location.search)
+    const events = []
+    window.events = events
+
+    document.getElementById('blocked').addEventListener('click', () => {
+      const el = document.getElementById('blocked-count')
+      el.textContent = String(Number(el.textContent) + 1)
+    })
+    document.getElementById('reveal').addEventListener('click', () => {
+      setTimeout(() => {
+        const el = document.createElement('button')
+        el.id = 'lazy'
+        el.textContent = 'Lazy'
+        document.getElementById('lazy-slot').appendChild(el)
+      }, 300)
+    })
+    if (params.has('autoreveal')) setTimeout(() => document.getElementById('reveal').click(), 200)
+
+    // Tiny SPA router: pushState + show/hide pages.
+    function renderRoute() {
+      const settings = location.pathname === '/app/settings'
+      document.querySelector('[data-page="home"]').hidden = settings
+      document.querySelector('[data-page="settings"]').hidden = !settings
+    }
+    for (const a of document.querySelectorAll('[data-nav]')) {
+      a.addEventListener('click', (e) => {
+        e.preventDefault()
+        history.pushState({}, '', a.getAttribute('href'))
+        renderRoute()
+      })
+    }
+    window.addEventListener('popstate', renderRoute)
+    renderRoute()
+
+    const tours = {
+      basic: defineTour({
+        id: 'basic',
+        options: { showProgress: true },
+        steps: [
+          { id: 'intro', title: 'Intro', body: 'Welcome' },
+          { id: 'save', target: { name: 'save' }, title: 'Save', body: 'Saves things', placement: 'bottom' },
+          { id: 'search', target: '#search', title: 'Search', body: 'Far down', placement: 'top' },
+          { id: 'corner', target: '#corner', title: 'Corner', body: 'Fixed', placement: 'bottom' },
+          { id: 'done', title: 'Done', body: 'Bye' },
+        ],
+      }),
+      modes: defineTour({
+        id: 'modes',
+        steps: [
+          { id: 'click', target: '#save', title: 'Click it', advance: { on: 'click' } },
+          { id: 'blocked', target: '#blocked', title: 'Blocked', interaction: 'block' },
+          { id: 'input', target: '#search', title: 'Type', advance: { on: 'input', match: '^ab' } },
+          { id: 'done', title: 'Done' },
+        ],
+      }),
+      lazy: defineTour({
+        id: 'lazy',
+        steps: [
+          { id: 'lazy', target: '#lazy', title: 'Lazy', onMissing: 'wait', waitFor: 5000 },
+          { id: 'done', title: 'Done' },
+        ],
+      }),
+      missing: defineTour({
+        id: 'missing',
+        steps: [
+          { id: 'nope', target: '#nope', title: 'Nope' },
+          { id: 'abort', target: '#nope2', title: 'Abort', onMissing: 'abort' },
+          { id: 'done', title: 'Done' },
+        ],
+      }),
+      routes: defineTour({
+        id: 'routes',
+        steps: [
+          { id: 'save', route: '/app', target: { name: 'save' }, title: 'Save' },
+          { id: 'pref', route: '/app/settings', target: { name: 'pref' }, title: 'Pref' },
+          { id: 'done', title: 'Done' },
+        ],
+      }),
+      persist: defineTour({
+        id: 'persist',
+        options: { persist: true },
+        steps: [
+          { id: 'one', title: 'One' },
+          { id: 'two', target: '#save', title: 'Two' },
+          { id: 'three', title: 'Three' },
+        ],
+      }),
+      sticky: defineTour({
+        id: 'sticky',
+        steps: [
+          // block:'start' puts the input right under the 64px sticky header.
+          { id: 'search', target: '#search', title: 'Under header', scroll: { block: 'start' } },
+          { id: 'smooth', target: '#save', title: 'Smooth', scroll: { block: 'start', behavior: 'smooth' } },
+        ],
+      }),
+      overlay: defineTour({
+        id: 'overlay',
+        options: { closeOnOverlayClick: true },
+        steps: [{ id: 'save', target: '#save', title: 'Save' }],
+      }),
+    }
+
+    const tour = tours[params.get('tour') ?? 'basic']
+    const controller = createTour(tour, {
+      sink: { emit: (e) => events.push(e.type + (e.stepId ? `:${e.stepId}` : '')) },
+    })
+    window.docent = controller
+    document.getElementById('start').addEventListener('click', () => controller.start())
+    if (params.has('resume')) controller.resume()
+    else if (params.has('start')) controller.start(params.get('start') || undefined)
+  </script>
+</body>
+</html>
