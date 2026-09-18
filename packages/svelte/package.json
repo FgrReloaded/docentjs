@@ -57,5 +57,9 @@
   },
   "peerDependencies": {
     "svelte": ">=5"
+  },
+  "devDependencies": {
+    "jsdom": "^30.1.0",
+    "svelte": "^5.57.0"
   }
 }

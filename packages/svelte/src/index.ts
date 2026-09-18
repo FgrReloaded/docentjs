@@ -4,4 +4,4 @@
  * Svelte bindings for Docent.
  */
 
-export {}
+export { type SvelteTourOptions, type TourHandle, tour, useTour } from './tour'
