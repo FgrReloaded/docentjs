@@ -1,0 +1,12 @@
+[
+  {
+    "name": "@docentjs/core",
+    "path": "packages/core/dist/index.js",
+    "limit": "4 kB"
+  },
+  {
+    "name": "@docentjs/core + @docentjs/dom",
+    "path": ["packages/core/dist/index.js", "packages/dom/dist/index.js"],
+    "limit": "10 kB"
+  }
+]
