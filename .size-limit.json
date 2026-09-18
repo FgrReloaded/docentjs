@@ -7,6 +7,6 @@
   {
     "name": "@docentjs/core + @docentjs/dom",
     "path": ["packages/core/dist/index.js", "packages/dom/dist/index.js"],
-    "limit": "10 kB"
+    "limit": "11 kB"
   }
 ]

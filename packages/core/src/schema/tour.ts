@@ -174,6 +174,31 @@ export type Trigger =
 export type Frequency = 'once' | 'until-completed' | 'always'
 
 // ---------------------------------------------------------------------------
+// Theme
+// ---------------------------------------------------------------------------
+
+/**
+ * Visual tokens, serialisable so a builder or customizer can produce them.
+ * Each maps to a CSS custom property in the renderer (`--docent-*`).
+ * Values are CSS strings, e.g. `'#111'`, `'12px'`, `'0 4px 12px rgba(0,0,0,.2)'`.
+ */
+export interface Theme {
+  background?: string
+  foreground?: string
+  muted?: string
+  accent?: string
+  accentForeground?: string
+  radius?: string
+  shadow?: string
+  font?: string
+  width?: string
+  overlay?: string
+  overlayOpacity?: string
+  duration?: string
+  zIndex?: string
+}
+
+// ---------------------------------------------------------------------------
 // Labels
 // ---------------------------------------------------------------------------
 
@@ -236,6 +261,10 @@ export interface TourOptions {
   overlay?: OverlayOptions
   scroll?: ScrollOptions
   labels?: Labels
+  /** Visual tokens applied on top of the renderer's theme. */
+  theme?: Theme
+  /** Name of a template registered on the renderer (slots, css, theme). */
+  template?: string
 }
 
 export interface Tour {

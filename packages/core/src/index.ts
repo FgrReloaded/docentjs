@@ -28,6 +28,7 @@ export {
   type StepButtons,
   type Target,
   type TargetSpec,
+  type Theme,
   type Tour,
   type TourOptions,
   type TourProgressState,

@@ -9,7 +9,13 @@ export { defineTour } from '@docentjs/core'
 export { isSafeUrl, renderBody, renderMedia } from './content'
 export { type CreateTourOptions, createTour, DomTourController } from './create'
 export { holePath, Overlay } from './overlay'
-export { buildPopover, DEFAULT_LABELS, formatProgress } from './popover'
+export {
+  buildHeadlessShell,
+  buildPopover,
+  DEFAULT_LABELS,
+  formatProgress,
+  resolveSlots,
+} from './popover'
 export {
   availableSpace,
   centerPosition,
@@ -32,3 +38,14 @@ export {
   toSpec,
   waitForTarget,
 } from './target'
+export {
+  applyTheme,
+  type HeadlessPopover,
+  mergeThemes,
+  type PopoverSlots,
+  type PopoverTemplate,
+  type SlotContent,
+  type SlotName,
+  type SlotRenderer,
+  THEME_VARS,
+} from './theme'

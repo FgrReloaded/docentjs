@@ -2,7 +2,7 @@
 import type { RenderContext } from '@docentjs/core'
 import { defineTour } from '@docentjs/core'
 import { describe, expect, it, vi } from 'vitest'
-import { buildPopover, formatProgress } from './popover'
+import { buildPopover, formatProgress, resolveSlots } from './popover'
 
 function context(
   partial: Partial<RenderContext> = {},
@@ -85,6 +85,36 @@ describe('buildPopover', () => {
   it('renders media', () => {
     const { el } = buildPopover(document, context({}, { media: { type: 'image', src: '/x.png' } }))
     expect(el.querySelector('.media img')?.getAttribute('src')).toBe('/x.png')
+  })
+})
+
+describe('resolveSlots', () => {
+  it('turns slot results into slot-tagged light-DOM elements', () => {
+    const node = document.createElement('nav')
+    const out = resolveSlots(
+      document,
+      {
+        buttons: () => node,
+        progress: () => 'p',
+        close: () => null,
+        title: () => undefined,
+        body: () => document.createTextNode('frag'),
+      },
+      context(),
+    )
+    expect(out.map((el) => `${el.tagName.toLowerCase()}[${el.getAttribute('slot')}]`)).toEqual([
+      'nav[buttons]',
+      'span[progress]',
+      'span[close]',
+      'div[body]',
+    ])
+    expect(out[1]?.textContent).toBe('p')
+    expect(out[3]?.textContent).toBe('frag')
+  })
+
+  it('moves initial focus to the dialog when the buttons slot is replaced', () => {
+    const { initialFocus, el } = buildPopover(document, context(), {}, { buttons: () => 'x' })
+    expect(initialFocus).toBe(el)
   })
 })
 

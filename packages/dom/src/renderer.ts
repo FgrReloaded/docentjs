@@ -2,14 +2,25 @@
  * The web renderer. Draws the overlay, spotlight and popover inside a shadow
  * root, keeps them glued to the target through scroll, resize and layout
  * changes, and wires gestures and keys back to the controller.
+ *
+ * Customisation layers, lowest to highest precedence:
+ * renderer options → template (by name) → tour options. Slots project
+ * light-DOM content into the built-in popover; headless mode replaces it.
  */
 
-import type { Labels, RenderContext, Renderer, Step, Target } from '@docentjs/core'
+import type { Labels, RenderContext, Renderer, Step, Target, Theme } from '@docentjs/core'
 import { Overlay } from './overlay'
-import { buildPopover } from './popover'
+import { buildHeadlessShell, buildPopover } from './popover'
 import { centerPosition, clipToViewport, computePosition, type Rect } from './position'
 import { STYLES } from './styles'
 import { resolveTarget, waitForTarget } from './target'
+import {
+  applyTheme,
+  type HeadlessPopover,
+  mergeThemes,
+  type PopoverSlots,
+  type PopoverTemplate,
+} from './theme'
 
 export interface DomRendererOptions {
   /** Document to render into. Defaults to the global document. */
@@ -20,6 +31,18 @@ export interface DomRendererOptions {
   gap?: number
   /** Spotlight defaults when a tour sets none. */
   spotlight?: { padding?: number; radius?: number }
+  /** Base theme tokens. Tours and templates layer on top. */
+  theme?: Theme
+  /** Replace regions of the built-in popover. */
+  slots?: PopoverSlots
+  /** Named templates that tours select with `options.template`. */
+  templates?: Record<string, PopoverTemplate>
+  /** Template to use when a tour names none. */
+  template?: string
+  /** Bring your own popover. Overlay, spotlight, positioning and keys stay. */
+  headless?: HeadlessPopover
+  /** Extra CSS injected into the shadow root. */
+  css?: string
 }
 
 type Cleanup = () => void
@@ -33,8 +56,10 @@ export class DomRenderer implements Renderer {
   private host: HTMLDivElement | undefined
   private shadow: ShadowRoot | undefined
   private overlay: Overlay | undefined
+  private templateStyle: HTMLStyleElement | undefined
   private popover: HTMLDivElement | undefined
   private arrow: HTMLDivElement | undefined
+  private headlessContainer: HTMLElement | undefined
   private ctx: RenderContext | undefined
   private target: Element | null = null
   private cleanups: Cleanup[] = []
@@ -65,16 +90,19 @@ export class DomRenderer implements Renderer {
 
   show(ctx: RenderContext): void {
     const firstStep = !this.host
-    this.mount()
+    const host = this.mount()
     this.teardownStep()
     this.ctx = ctx
     this.target = ctx.step.target === undefined ? null : resolveTarget(ctx.step.target, this.doc)
 
-    const { el, arrow, initialFocus } = buildPopover(this.doc, ctx, this.options.labels ?? {})
-    this.popover = el
-    this.arrow = arrow
-    el.setAttribute('data-entering', '')
-    this.shadow?.appendChild(el)
+    const template = this.template(ctx)
+    applyTheme(host, mergeThemes(this.options.theme, template?.theme, ctx.tour.options?.theme))
+    this.setTemplateCss(template?.css)
+
+    const initialFocus = this.options.headless
+      ? this.buildHeadless(ctx, host, this.options.headless)
+      : this.buildDefault(ctx, host, template)
+    this.popover?.setAttribute('data-entering', '')
 
     if (this.target) this.scrollIntoView(this.target, ctx.step)
     this.update()
@@ -83,7 +111,7 @@ export class DomRenderer implements Renderer {
 
     if (firstStep) this.previousFocus = this.doc.activeElement
     requestAnimationFrame(() => {
-      el.removeAttribute('data-entering')
+      this.popover?.removeAttribute('data-entering')
       initialFocus.focus({ preventScroll: true })
     })
   }
@@ -95,6 +123,7 @@ export class DomRenderer implements Renderer {
       this.host = undefined
       this.shadow = undefined
       this.overlay = undefined
+      this.templateStyle = undefined
     }
     const prev = this.previousFocus
     this.previousFocus = null
@@ -122,12 +151,14 @@ export class DomRenderer implements Renderer {
     const padding = spotlight.padding ?? 6
     const radius = spotlight.radius ?? 6
     const floating = { width: popover.offsetWidth, height: popover.offsetHeight }
+    const external = this.headlessContainer
 
     if (!this.target?.isConnected) {
       overlay.update(viewport, { target: null, padding, radius }, false)
       const { x, y } = centerPosition(floating, viewport)
       popover.style.transform = `translate(${x}px, ${y}px)`
       popover.setAttribute('data-side', 'center')
+      external?.setAttribute('data-side', 'center')
       return
     }
 
@@ -148,19 +179,94 @@ export class DomRenderer implements Renderer {
       this.arrow.style.left = vertical ? `${pos.arrow - 6}px` : ''
       this.arrow.style.top = vertical ? '' : `${pos.arrow - 6}px`
     }
+    if (external) {
+      external.setAttribute('data-side', pos.side)
+      external.style.setProperty('--docent-arrow', `${pos.arrow}px`)
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Popover construction
+  // -------------------------------------------------------------------------
+
+  private template(ctx: RenderContext): PopoverTemplate | undefined {
+    const name = ctx.tour.options?.template ?? this.options.template
+    return name === undefined ? undefined : this.options.templates?.[name]
+  }
+
+  private buildDefault(
+    ctx: RenderContext,
+    host: HTMLElement,
+    template: PopoverTemplate | undefined,
+  ): HTMLElement {
+    const slots: PopoverSlots = { ...this.options.slots, ...template?.slots }
+    const { el, arrow, initialFocus, slotted } = buildPopover(
+      this.doc,
+      ctx,
+      this.options.labels ?? {},
+      slots,
+    )
+    this.popover = el
+    this.arrow = arrow
+    for (const node of slotted) {
+      host.appendChild(node)
+      this.cleanups.push(() => node.remove())
+    }
+    this.shadow?.appendChild(el)
+    return initialFocus
+  }
+
+  private buildHeadless(
+    ctx: RenderContext,
+    host: HTMLElement,
+    headless: HeadlessPopover,
+  ): HTMLElement {
+    const { el, arrow } = buildHeadlessShell(this.doc)
+    this.popover = el
+    this.arrow = arrow
+    this.shadow?.appendChild(el)
+
+    const container = this.doc.createElement('div')
+    container.setAttribute('slot', 'popover')
+    container.setAttribute('data-docent-popover', '')
+    container.setAttribute('role', 'dialog')
+    container.tabIndex = -1
+    host.appendChild(container)
+    this.headlessContainer = container
+    const cleanup = headless.render(ctx, container)
+    this.cleanups.push(() => {
+      cleanup?.()
+      container.remove()
+      this.headlessContainer = undefined
+    })
+    return container
+  }
+
+  private setTemplateCss(css: string | undefined): void {
+    if (!this.shadow) return
+    if (!css) {
+      this.templateStyle?.remove()
+      this.templateStyle = undefined
+      return
+    }
+    if (!this.templateStyle) {
+      this.templateStyle = this.doc.createElement('style')
+      this.shadow.appendChild(this.templateStyle)
+    }
+    if (this.templateStyle.textContent !== css) this.templateStyle.textContent = css
   }
 
   // -------------------------------------------------------------------------
   // Internals
   // -------------------------------------------------------------------------
 
-  private mount(): void {
-    if (this.host) return
+  private mount(): HTMLDivElement {
+    if (this.host) return this.host
     const host = this.doc.createElement('div')
     host.setAttribute('data-docent-host', '')
     const shadow = host.attachShadow({ mode: 'open' })
     const style = this.doc.createElement('style')
-    style.textContent = STYLES
+    style.textContent = this.options.css ? `${STYLES}\n${this.options.css}` : STYLES
     shadow.appendChild(style)
     const overlay = new Overlay(this.doc)
     shadow.appendChild(overlay.el)
@@ -169,6 +275,7 @@ export class DomRenderer implements Renderer {
     this.host = host
     this.shadow = shadow
     this.overlay = overlay
+    return host
   }
 
   private teardownStep(): void {
@@ -231,15 +338,12 @@ export class DomRenderer implements Renderer {
 
     on('scroll', this.scheduleUpdate, { capture: true, passive: true })
     on('resize', this.scheduleUpdate, { passive: true })
-    if (this.target && typeof ResizeObserver !== 'undefined') {
+    if (typeof ResizeObserver !== 'undefined') {
       const ro = new ResizeObserver(this.scheduleUpdate)
-      ro.observe(this.target)
+      if (this.target) ro.observe(this.target)
       ro.observe(this.doc.documentElement)
-      this.cleanups.push(() => ro.disconnect())
-    }
-    if (this.popover && typeof ResizeObserver !== 'undefined') {
-      const ro = new ResizeObserver(this.scheduleUpdate)
-      ro.observe(this.popover)
+      if (this.popover) ro.observe(this.popover)
+      if (this.headlessContainer) ro.observe(this.headlessContainer)
       this.cleanups.push(() => ro.disconnect())
     }
 
@@ -261,8 +365,8 @@ export class DomRenderer implements Renderer {
       ctx.actions.skip()
       return
     }
-    if (e.key === 'Tab' && this.popover) {
-      this.trapTab(e, this.popover)
+    if (e.key === 'Tab') {
+      this.trapTab(e)
       return
     }
     if (options.keyboard === false) return
@@ -279,10 +383,17 @@ export class DomRenderer implements Renderer {
   }
 
   /** Keep Tab cycling inside the popover when focus is already in it. */
-  private trapTab(e: KeyboardEvent, popover: HTMLElement): void {
-    const active = this.shadow?.activeElement
-    if (!active || !popover.contains(active)) return
-    const items = Array.from(popover.querySelectorAll<HTMLElement>(FOCUSABLE))
+  private trapTab(e: KeyboardEvent): void {
+    const scope = this.headlessContainer ?? this.popover
+    if (!scope) return
+    const active = this.headlessContainer ? this.doc.activeElement : this.shadow?.activeElement
+    const inside = active && (scope.contains(active) || this.host?.contains(active))
+    if (!active || !inside) return
+    // Slotted light-DOM controls are children of the host; include them in the cycle.
+    const roots: ParentNode[] = this.headlessContainer
+      ? [scope]
+      : [scope, ...(this.host ? [this.host] : [])]
+    const items = roots.flatMap((r) => Array.from(r.querySelectorAll<HTMLElement>(FOCUSABLE)))
     if (items.length === 0) return
     const first = items[0] as HTMLElement
     const last = items[items.length - 1] as HTMLElement

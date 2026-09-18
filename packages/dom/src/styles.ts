@@ -59,6 +59,14 @@ export const STYLES = `
   transition: transform var(--docent-duration) ease, opacity var(--docent-duration) ease;
 }
 .popover[data-entering] { opacity: 0; }
+.popover.headless {
+  width: auto;
+  max-width: none;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+}
 .arrow {
   position: absolute;
   width: 12px;
@@ -89,12 +97,19 @@ export const STYLES = `
 .body { margin-top: 6px; }
 .body p { margin: 0 0 8px; }
 .body p:last-child { margin-bottom: 0; }
-.body code { font-family: ui-monospace, monospace; font-size: 0.9em; padding: 1px 4px; border-radius: 4px; background: rgba(127, 127, 127, 0.15); }
+.body code {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(127, 127, 127, 0.15);
+}
 .body a { color: var(--docent-accent); }
 .media { margin: 10px 0 0; }
 .media img, .media video { display: block; max-width: 100%; border-radius: 8px; }
 .footer { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
 .progress { flex: 1; color: var(--docent-muted); font-size: 12px; }
+.buttons { display: flex; gap: 8px; }
 .button {
   appearance: none;
   border: 0;

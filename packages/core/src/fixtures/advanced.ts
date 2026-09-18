@@ -23,6 +23,8 @@ export const advancedTour = defineTour({
     spotlight: { padding: 8, radius: 6, animate: true },
     overlay: { color: '#000', opacity: 0.6 },
     labels: { progress: '{current} / {total}' },
+    theme: { accent: '#7c3aed', radius: '16px' },
+    template: 'card',
   },
   steps: [
     {
