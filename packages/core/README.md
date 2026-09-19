@@ -22,6 +22,7 @@ export const welcome: Tour = defineTour({
 ## What's here
 
 - **Schema types**: `Tour`, `Step`, `Target`, `Condition`, `Trigger`, `Theme`, and the rest of the JSON contract.
+- **`Docent`**: the tour manager. Watches triggers, checks conditions and frequency per user, runs one tour at a time. Use `createDocent` from `@docentjs/dom` in the browser.
 - **`TourController`**: drives one tour against a `Renderer`; handles hooks, lazy targets, route pauses, persistence and events.
 - **Engine helpers**: `reduce`, `evaluateCondition`, `matchRoute`, `shouldShow`, `ProgressStore`, `createEvent`.
 - **Seams**: `TourSource`, `Identity`, `StorageAdapter`, `EventSink` so tours can come from and report to anywhere.

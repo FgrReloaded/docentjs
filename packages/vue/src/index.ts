@@ -4,7 +4,8 @@
  * Vue bindings for Docent.
  */
 
-export { TourPopover } from './TourPopover'
+export { type PopoverHost, TourPopover } from './TourPopover'
+export { type DocentHandle, type UseDocentOptions, useDocent } from './useDocent'
 export {
   DOCENT_KEY,
   type DocentDefaults,

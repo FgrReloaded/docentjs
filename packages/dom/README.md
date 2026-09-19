@@ -24,6 +24,18 @@ createTour(tour).start()
 
 Mark targets with `data-docent="sidebar"` or use CSS selectors.
 
+## Many tours: the manager
+
+```ts
+import { createDocent } from '@docentjs/dom'
+
+const docent = createDocent({ tours: [welcome, invoices, whatsNew] })
+docent.identify(user.id, { plan: user.plan })
+docent.track('invoice-saved')
+```
+
+It starts tours from their `trigger` (page load, route, element, event), checks `conditions` against the user's traits, respects `frequency` per user, and runs one tour at a time.
+
 ## Customize
 
 ```ts

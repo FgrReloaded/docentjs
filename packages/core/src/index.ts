@@ -8,6 +8,7 @@
 export { defineTour } from './define'
 export * from './engine'
 export type { StepContext, StepHooks, TourHooks } from './hooks'
+export * from './manager'
 export {
   type Advance,
   type Alignment,

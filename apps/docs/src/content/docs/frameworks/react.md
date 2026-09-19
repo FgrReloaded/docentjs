@@ -74,3 +74,17 @@ Share renderer defaults, identity, storage, and sink with every tour below.
   <App />
 </DocentProvider>
 ```
+
+## Many tours: `useDocent`
+
+```tsx
+const docent = useDocent({ tours: [welcome, invoices], popover: (ctx) => <Card ctx={ctx} /> })
+
+useEffect(() => {
+  if (user) docent.identify(user.id, { plan: user.plan })
+}, [user])
+
+return <>{docent.portal}</>
+```
+
+The manager starts tours from their triggers, conditions, and frequency. `docent.state.active` is the running tour. See [Tour manager](/guides/manager/).

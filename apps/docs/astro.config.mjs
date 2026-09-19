@@ -18,6 +18,7 @@ export default defineConfig({
           items: [
             { slug: 'guides/targets' },
             { slug: 'guides/steps' },
+            { slug: 'guides/manager' },
             { slug: 'guides/triggers-and-conditions' },
             { slug: 'guides/routes-and-persistence' },
             { slug: 'guides/events-and-hooks' },

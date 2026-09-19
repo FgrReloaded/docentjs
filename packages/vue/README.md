@@ -34,6 +34,15 @@ const tour = useTour(welcomeTour, { popover: true })
 </template>
 ```
 
+## Many tours
+
+```ts
+const docent = useDocent({ tours: [welcome, invoices] })
+docent.identify(user.id, { plan: user.plan })
+```
+
+Tours start from their own triggers, conditions and frequency. `<TourPopover :tour="docent">` works with it too.
+
 Also `provideDocentDefaults()` to share renderer defaults, identity, storage and sink.
 
 MIT

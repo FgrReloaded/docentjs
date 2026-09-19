@@ -25,6 +25,15 @@ const tour = useTour(welcomeTour, { popover: (ctx) => <Card ctx={ctx} /> })
 
 The component is portalled into a container the library positions, so context, hooks and CSS all work. The library keeps the overlay, spotlight, keyboard and focus handling.
 
+## Many tours
+
+```tsx
+const docent = useDocent({ tours: [welcome, invoices] })
+useEffect(() => void docent.identify(user.id, { plan: user.plan }), [user])
+```
+
+Tours start from their own triggers, conditions and frequency.
+
 ## Also
 
 - `<Tour tour autoStart popover>{(t) => …}</Tour>` component form.

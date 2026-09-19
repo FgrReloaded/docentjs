@@ -65,7 +65,7 @@
   </div>
 
   <script type="module">
-    import { createTour, defineTour } from '@docentjs/dom'
+    import { createDocent, createTour, defineTour } from '@docentjs/dom'
 
     const params = new URLSearchParams(location.search)
     const events = []
@@ -169,14 +169,40 @@
       }),
     }
 
-    const tour = tours[params.get('tour') ?? 'basic']
-    const controller = createTour(tour, {
-      sink: { emit: (e) => events.push(e.type + (e.stepId ? `:${e.stepId}` : '')) },
-    })
-    window.docent = controller
-    document.getElementById('start').addEventListener('click', () => controller.start())
-    if (params.has('resume')) controller.resume()
-    else if (params.has('start')) controller.start(params.get('start') || undefined)
+    const sink = { emit: (e) => events.push(e.type + (e.stepId ? `:${e.stepId}` : '')) }
+
+    if (params.has('manager')) {
+      // Tour manager mode: tours start themselves from their triggers.
+      const managed = [
+        defineTour({
+          id: 'm-welcome',
+          trigger: { type: 'auto', delay: 100 },
+          conditions: [{ type: 'trait', key: 'plan', op: 'eq', value: 'trial' }],
+          steps: [{ id: 'hello', title: 'Welcome, trial user' }],
+        }),
+        defineTour({
+          id: 'm-settings',
+          trigger: { type: 'route', pattern: '/app/settings' },
+          steps: [{ id: 'pref', target: { name: 'pref' }, title: 'Your preferences' }],
+        }),
+        defineTour({
+          id: 'm-lazy',
+          trigger: { type: 'element', target: '#lazy' },
+          options: { frequency: 'always' },
+          steps: [{ id: 'lazy', target: '#lazy', title: 'It appeared' }],
+        }),
+      ]
+      const docent = createDocent({ tours: managed, sink })
+      window.docent = docent
+      docent.identify(params.get('user') ?? 'u1', { plan: params.get('plan') ?? 'trial' })
+    } else {
+      const tour = tours[params.get('tour') ?? 'basic']
+      const controller = createTour(tour, { sink })
+      window.docent = controller
+      document.getElementById('start').addEventListener('click', () => controller.start())
+      if (params.has('resume')) controller.resume()
+      else if (params.has('start')) controller.start(params.get('start') || undefined)
+    }
   </script>
 </body>
 </html>

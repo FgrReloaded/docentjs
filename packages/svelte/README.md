@@ -27,6 +27,15 @@ pnpm add @docentjs/svelte
 const tour = useTour(welcomeTour, { popover: Card }) // mounted per step with `ctx` as a prop
 ```
 
+## Many tours
+
+```ts
+const docent = useDocent({ tours: [welcome, invoices] })
+docent.identify(user.id, { plan: user.plan })
+```
+
+Tours start from their own triggers, conditions and frequency.
+
 Also the `use:tour={handle}` action, which starts on mount and destroys on removal.
 
 MIT

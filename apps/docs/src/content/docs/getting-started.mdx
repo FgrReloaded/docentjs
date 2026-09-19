@@ -91,6 +91,19 @@ controller.start()
   </div>
 </Demo>
 
+## Many tours with rules
+
+When you have several tours with rules about who sees them and when, hand them all to the manager instead:
+
+```ts
+import { createDocent } from '@docentjs/dom'
+
+const docent = createDocent({ tours: [welcome, invoices, whatsNew] })
+docent.identify(user.id, { plan: user.plan })
+```
+
+Each tour's `trigger`, `conditions`, and `frequency` decide the rest. See [Tour manager](/guides/manager/).
+
 ## Next
 
 - [Concepts](/concepts/) explains the pieces: schema, engine, renderer, seams.

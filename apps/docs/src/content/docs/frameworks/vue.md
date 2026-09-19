@@ -54,3 +54,20 @@ provideDocentDefaults({
   identity: { id: user.id, traits: { plan: user.plan } },
 })
 ```
+
+## Many tours: `useDocent`
+
+```vue
+<script setup lang="ts">
+import { TourPopover, useDocent } from '@docentjs/vue'
+
+const docent = useDocent({ tours: [welcome, invoices], popover: true })
+docent.identify(user.id, { plan: user.plan })
+</script>
+
+<template>
+  <TourPopover :tour="docent" v-slot="{ ctx }"><Card :ctx="ctx" /></TourPopover>
+</template>
+```
+
+See [Tour manager](/guides/manager/).

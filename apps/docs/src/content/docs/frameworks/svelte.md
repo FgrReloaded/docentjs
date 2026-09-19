@@ -57,3 +57,18 @@ Pass a component. It is mounted into the positioned container for every step wit
 ```svelte
 <div use:tour={handle}>…</div>
 ```
+
+## Many tours: `useDocent`
+
+```svelte
+<script lang="ts">
+  import { useDocent } from '@docentjs/svelte'
+  import { onDestroy } from 'svelte'
+
+  const docent = useDocent({ tours: [welcome, invoices], popover: Card })
+  docent.identify(user.id, { plan: user.plan })
+  onDestroy(docent.destroy)
+</script>
+```
+
+See [Tour manager](/guides/manager/).
