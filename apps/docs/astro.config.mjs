@@ -29,6 +29,7 @@ export default defineConfig({
           label: 'Customize',
           items: [
             { slug: 'customize/theming' },
+            { slug: 'customize/arrows-and-spotlight' },
             { slug: 'customize/slots-and-templates' },
             { slug: 'customize/headless' },
           ],

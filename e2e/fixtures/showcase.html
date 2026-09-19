@@ -1,6 +1,7 @@
 <!doctype html>
 <!-- Design review page for the default popover. Serve with `node e2e/server.mjs`, open
-     /e2e/fixtures/showcase.html?step=new (params: step, font=serif, theme=dark). Not used by tests. -->
+     /e2e/fixtures/showcase.html?step=new (params: step, font=serif, theme=dark, arrow, shape,
+     ring, overlay). Not used by tests. -->
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -59,7 +60,12 @@
         { id: 'export', target: { name: 'export' }, title: "You're all set", body: 'Export to CSV whenever your accountant asks.', placement: 'bottom' },
       ],
     })
-    const opts = p.get('theme') === 'dark' ? { renderer: { theme: themes.dark } } : {}
+    const renderer = {}
+    if (p.get('theme') === 'dark') renderer.theme = themes.dark
+    if (p.get('arrow')) renderer.arrow = p.get('arrow')
+    if (p.get('shape') || p.get('ring')) renderer.spotlight = { ...(p.get('shape') ? { shape: p.get('shape') } : {}), ...(p.get('ring') ? { ring: p.get('ring') } : {}) }
+    if (p.get('overlay')) renderer.overlay = { style: p.get('overlay') }
+    const opts = { renderer }
     createTour(tour, { ...opts, storage: { get: () => null, set() {}, remove() {} } }).start(p.get('step') ?? undefined)
   </script>
 </body>

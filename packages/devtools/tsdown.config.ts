@@ -7,4 +7,6 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
+  // Bundle Preact so the panel never shares an instance (or its global hooks) with the host app.
+  noExternal: ['preact', /^preact\//, '@preact/signals', '@preact/signals-core'],
 })

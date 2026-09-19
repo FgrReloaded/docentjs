@@ -4,7 +4,7 @@
  */
 
 import { defineComponent, onBeforeUnmount, onMounted, type PropType } from 'vue'
-import type { MountOptions } from './panel'
+import type { MountOptions } from './app/mount'
 import { type DevtoolsTarget, resolveDocent } from './resolve'
 
 export const DocentDevtools = defineComponent({
@@ -24,7 +24,7 @@ export const DocentDevtools = defineComponent({
       const options: MountOptions = {}
       if (props.open !== undefined) options.open = props.open
       if (props.shortcut !== undefined) options.shortcut = props.shortcut
-      void import('./panel').then(({ mount }) => {
+      void import('./app/mount').then(({ mount }) => {
         if (!cancelled) unmount = mount(manager, options)
       })
     })

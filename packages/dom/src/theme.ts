@@ -4,7 +4,13 @@
  * the popover without forking the renderer.
  */
 
-import type { RenderContext, Theme } from '@docentjs/core'
+import type {
+  ArrowStyle,
+  OverlayOptions,
+  RenderContext,
+  SpotlightOptions,
+  Theme,
+} from '@docentjs/core'
 
 /** Token → CSS custom property (without the `--docent-` prefix). */
 export const THEME_VARS: Record<keyof Theme, string> = {
@@ -21,6 +27,8 @@ export const THEME_VARS: Record<keyof Theme, string> = {
   overlayOpacity: 'overlay-opacity',
   duration: 'duration',
   zIndex: 'z',
+  connector: 'connector',
+  ring: 'ring',
 }
 
 /** Write theme tokens as inline custom properties on an element. Clears unset ones. */
@@ -81,6 +89,10 @@ export type PopoverSlots = Partial<Record<SlotName, SlotRenderer>>
 export interface PopoverTemplate {
   theme?: Theme
   slots?: PopoverSlots
+  /** Arrow style for tours using this template. */
+  arrow?: ArrowStyle
+  spotlight?: SpotlightOptions
+  overlay?: OverlayOptions
   /** Extra CSS injected into the shadow root while this template is active. */
   css?: string
 }

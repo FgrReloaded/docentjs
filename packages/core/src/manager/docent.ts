@@ -231,6 +231,18 @@ export class Docent {
     return record.state
   }
 
+  /**
+   * Replace a tour's definition, e.g. from a live editor. If it is running, the
+   * current step re-renders with the new content. Triggers are not re-armed, so
+   * editing never starts a tour by itself.
+   */
+  async updateTour(tour: Tour): Promise<void> {
+    await this.ready
+    this.tours.set(tour.id, tour)
+    if (this.activeId === tour.id) await this.controller?.updateTour(tour)
+    this.emitState()
+  }
+
   /** Forget progress for one tour, or all of them, so they show again. */
   async reset(tourId?: string): Promise<void> {
     await this.ready

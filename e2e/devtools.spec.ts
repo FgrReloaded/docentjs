@@ -54,4 +54,34 @@ test.describe('devtools', () => {
     await expect(panel(page).locator('.event').first()).toContainText('step:shown m-welcome')
     await expect(panel(page).locator('.event').last()).toContainText('tour:started m-welcome')
   })
+
+  test('live-edits the running step and picks a target from the page', async ({ page }) => {
+    await page.goto('/app?manager&devtools&user=dt4&plan=trial')
+    await expect(popover(page).locator('.title')).toHaveText('Welcome, trial user')
+
+    await panel(page).getByRole('tab', { name: 'Edit' }).click()
+    const title = panel(page).locator('.field', { hasText: 'Title' }).locator('input')
+    await title.fill('Welcome aboard')
+    await expect(popover(page).locator('.title')).toHaveText('Welcome aboard')
+
+    // Point the step at the Save button with the picker.
+    await panel(page).getByRole('button', { name: 'Pick' }).click()
+    await page.mouse.move(10, 10)
+    const save = await page.locator('#save').boundingBox()
+    if (!save) throw new Error('no save button')
+    await page.mouse.move(save.x + save.width / 2, save.y + save.height / 2)
+    await page.mouse.click(save.x + save.width / 2, save.y + save.height / 2)
+    const best = panel(page).locator('.candidate').first()
+    await expect(best).toContainText('name: save')
+    await best.click()
+    await expect(popover(page)).not.toHaveAttribute('data-side', 'center')
+    const tours = await page.evaluate(() =>
+      (
+        window as unknown as {
+          docent: { getTours(): Array<{ id: string; steps: Array<{ target?: unknown }> }> }
+        }
+      ).docent.getTours(),
+    )
+    expect(tours.find((t) => t.id === 'm-welcome')?.steps[0]?.target).toEqual({ name: 'save' })
+  })
 })

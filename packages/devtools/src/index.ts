@@ -9,6 +9,9 @@
  * ```
  */
 
+export { type MountOptions, mount } from './app/mount'
+export { auditTours, type Issue, type Severity } from './audit'
+export { contrastRatio, toHex } from './contrast'
 export {
   type ConditionCheck,
   describeCondition,
@@ -16,5 +19,6 @@ export {
   type TourExplanation,
   type TourVerdict,
 } from './explain'
-export { type MountOptions, mount } from './panel'
+export { type PerfRecorder, type PerfSnapshot, recordPerf, type StepTiming } from './perf'
+export { suggestName, type TargetCandidate, targetCandidates } from './selectors'
 export { checkTarget, type TargetHealth } from './targets'

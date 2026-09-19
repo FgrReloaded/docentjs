@@ -58,6 +58,57 @@ describe('DomRenderer', () => {
     r.hide()
   })
 
+  it('resolves arrow, spotlight and overlay from renderer, template, tour and step', () => {
+    document.body.innerHTML = '<button id="target">go</button>'
+    const r = new DomRenderer({
+      arrow: 'dashed',
+      spotlight: { shape: 'pill' },
+      overlay: { style: 'blur', blur: 6 },
+      templates: { t: { arrow: 'curve', spotlight: { ring: 'glow' } } },
+    })
+    const base = ctx()
+    const tour = {
+      ...base.tour,
+      options: { template: 't', overlay: { opacity: 0.3, color: 'red' } },
+    }
+    r.show({ ...base, tour })
+    const h = host() as HTMLElement
+    expect(h.getAttribute('data-arrow')).toBe('curve')
+    expect(h.getAttribute('data-shape')).toBe('pill')
+    expect(h.getAttribute('data-ring')).toBe('glow')
+    expect(h.getAttribute('data-overlay')).toBe('blur')
+    expect(h.style.getPropertyValue('--docent-overlay')).toBe('red')
+    expect(h.style.getPropertyValue('--docent-overlay-opacity')).toBe('0.3')
+    expect(h.style.getPropertyValue('--docent-blur')).toBe('6px')
+
+    const step = { ...base.step, arrow: 'none' as const, spotlight: { ring: 'pulse' as const } }
+    r.show({ ...base, tour, step })
+    expect(h.getAttribute('data-arrow')).toBe('none')
+    expect(h.getAttribute('data-ring')).toBe('pulse')
+    r.hide()
+  })
+
+  it('draws a connector for connector styles and clears it otherwise', async () => {
+    document.body.innerHTML = '<button id="target">go</button>'
+    // jsdom reports a 0px viewport, which would switch to the mobile sheet (no connector).
+    const r = new DomRenderer({ arrow: 'loop', sheetBreakpoint: 0 })
+    r.show(ctx())
+    // The connector code is a lazy chunk; it draws once the import resolves.
+    const svg = await vi.waitFor(() => {
+      const el = shadow().querySelector('svg.connector')
+      if (!el?.querySelector('path.stroke')) throw new Error('connector not drawn yet')
+      return el as SVGSVGElement
+    })
+    expect(svg.querySelectorAll('path.stroke').length).toBeGreaterThan(1)
+    expect(svg.classList.contains('animate')).toBe(true)
+    // A later layout update redraws without replaying the draw-in.
+    r.update(true)
+    expect(svg.classList.contains('animate')).toBe(false)
+    r.show({ ...ctx(), step: { ...ctx().step, arrow: 'caret' } })
+    expect(svg.childElementCount).toBe(0)
+    r.hide()
+  })
+
   it('applies renderer, template and tour themes in order', () => {
     const r = new DomRenderer({
       theme: { accent: 'base', radius: '1px', width: '10px' },

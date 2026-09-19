@@ -4,6 +4,7 @@
  * blocker element covers it when the step forbids interaction.
  */
 
+import type { SpotlightShape } from '@docentjs/core'
 import { inflate, type Rect, type Size } from './position'
 
 export function holePath(viewport: Size, hole: Rect, radius: number): string {
@@ -22,6 +23,26 @@ export interface OverlayUpdate {
   target: Rect | null
   padding: number
   radius: number
+  shape?: SpotlightShape
+}
+
+/** The padded cutout and its corner radius for a shape. */
+export function holeFor(
+  target: Rect,
+  padding: number,
+  radius: number,
+  shape: SpotlightShape = 'rounded',
+): { hole: Rect; radius: number } {
+  if (shape === 'circle') {
+    const cx = target.x + target.width / 2
+    const cy = target.y + target.height / 2
+    const rr = Math.hypot(target.width, target.height) / 2 + padding
+    return { hole: { x: cx - rr, y: cy - rr, width: rr * 2, height: rr * 2 }, radius: rr }
+  }
+  const hole = inflate(target, padding)
+  if (shape === 'rect') return { hole, radius: 0 }
+  if (shape === 'pill') return { hole, radius: Math.min(hole.width, hole.height) / 2 }
+  return { hole, radius: Math.max(0, Math.min(radius, hole.width / 2, hole.height / 2)) }
 }
 
 export class Overlay {
@@ -60,28 +81,35 @@ export class Overlay {
     return this.lastHole
   }
 
-  update(viewport: Size, { target, padding, radius }: OverlayUpdate, block: boolean): void {
-    if (target) {
-      this.lastHole = inflate(target, padding)
-    } else {
+  update(viewport: Size, { target, padding, radius, shape }: OverlayUpdate, block: boolean): void {
+    if (!target) {
       // Collapse to a point so the path keeps the same structure and can animate.
       const c = this.lastHole
       const cx = c ? c.x + c.width / 2 : viewport.width / 2
       const cy = c ? c.y + c.height / 2 : viewport.height / 2
       this.lastHole = null
+      this.setCentre(cx, cy)
       this.el.style.clipPath = holePath(viewport, { x: cx, y: cy, width: 0, height: 0 }, 0)
       this.placeRing({ x: cx, y: cy, width: 0, height: 0 }, 0, false)
       this.blocker.hidden = true
       return
     }
-    const hole = this.lastHole
-    this.el.style.clipPath = holePath(viewport, hole, radius)
-    this.placeRing(hole, Math.max(0, Math.min(radius, hole.width / 2, hole.height / 2)), true)
+    const { hole, radius: r } = holeFor(target, padding, radius, shape)
+    this.lastHole = hole
+    this.setCentre(hole.x + hole.width / 2, hole.y + hole.height / 2)
+    this.el.style.clipPath = holePath(viewport, hole, r)
+    this.placeRing(hole, r, true)
     this.blocker.hidden = !block
     if (block) {
       this.blocker.style.transform = `translate(${hole.x}px, ${hole.y}px)`
       this.blocker.style.width = `${hole.width}px`
       this.blocker.style.height = `${hole.height}px`
     }
+  }
+
+  /** Exposed for the vignette style, which is centred on the cutout. */
+  private setCentre(x: number, y: number): void {
+    this.el.style.setProperty('--docent-hole-x', `${Math.round(x)}px`)
+    this.el.style.setProperty('--docent-hole-y', `${Math.round(y)}px`)
   }
 }

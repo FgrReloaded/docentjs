@@ -58,9 +58,14 @@ Toggle the panel with the **Docent** button or **Alt+Shift+D**.
 
 ## What it shows
 
-- **Tours**: a verdict per tour (running, eligible, waiting, blocked, manual) and the reason, e.g. `Condition failed: trait plan eq "trial" (user has "pro")`. Expand for trigger, frequency, each condition, and each step's target health (which selector matched, or what was tried). Hover a step to highlight its target. Play from any step, reset progress, copy the tour JSON.
+- **Tours**: a verdict per tour (running, eligible, waiting, blocked, manual) and the reason, e.g. `Condition failed: trait plan eq "trial" (user has "pro")`. Expand for trigger, frequency, each condition, and each step's target health. Play from any step, reset progress, copy the tour JSON.
+- **Edit**: change steps, targets, tour options, arrows, spotlight, overlay and theme, and watch the running tour update live. Pick a target by clicking the page and get stable selector suggestions. Copy or download the edited JSON.
 - **Simulate**: change the user id and traits, fire `track()` events, navigate client-side.
 - **Events**: every lifecycle event with timestamps; copy as JSON.
+- **Audit**: missing and fragile targets, contrast, duplicate ids, clicks the tour blocks and other mistakes, ranked by severity.
+- **Performance**: time to show each step, long frames, popover moves and DOM cost for a played tour.
+
+The panel docks right, bottom or left and resizes. It is built with Preact, bundled inside the package, so your app needs no extra dependencies.
 
 `mount(docent, { open, shortcut })` returns a function that removes the panel.
 

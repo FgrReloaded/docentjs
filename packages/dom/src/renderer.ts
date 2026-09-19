@@ -8,7 +8,19 @@
  * light-DOM content into the built-in popover; headless mode replaces it.
  */
 
-import type { Labels, RenderContext, Renderer, Step, Target, Theme } from '@docentjs/core'
+import type {
+  ArrowStyle,
+  Labels,
+  OverlayOptions,
+  RenderContext,
+  Renderer,
+  SpotlightOptions,
+  Step,
+  Target,
+  Theme,
+} from '@docentjs/core'
+import { arrowGap, isConnector } from './arrows'
+import type { Connector, Point } from './connector'
 import { uncover } from './occlusion'
 import { Overlay } from './overlay'
 import { buildHeadlessShell, buildPopover } from './popover'
@@ -36,8 +48,12 @@ export interface DomRendererOptions {
   labels?: Labels
   /** Distance between target and popover, in px. */
   gap?: number
-  /** Spotlight defaults when a tour sets none. */
-  spotlight?: { padding?: number; radius?: number }
+  /** Spotlight defaults when a tour sets none: padding, radius, shape, ring. */
+  spotlight?: SpotlightOptions
+  /** Arrow style when a tour sets none. Default `caret`. */
+  arrow?: ArrowStyle
+  /** Overlay defaults when a tour sets none: style, color, opacity, blur. */
+  overlay?: OverlayOptions
   /** Base theme tokens. Tours and templates layer on top. */
   theme?: Theme
   /** Replace regions of the built-in popover. */
@@ -61,6 +77,14 @@ export interface DomRendererOptions {
 
 type Cleanup = () => void
 
+interface Look {
+  arrow: ArrowStyle
+  spotlight: SpotlightOptions
+  overlay: OverlayOptions
+}
+
+const DEFAULT_LOOK: Look = { arrow: 'caret', spotlight: {}, overlay: {} }
+
 const FOCUSABLE =
   'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
 
@@ -81,6 +105,17 @@ export class DomRenderer implements Renderer {
   private previousFocus: Element | null = null
   /** Set once per step after the sheet has scrolled the target clear. */
   private sheetAdjusted = false
+  private connector: Connector | undefined
+  /** Loaded on first use: connector styles cost nothing for tours that never use them. */
+  private connectorModule: typeof import('./connector') | undefined
+  private connectorLoading: Promise<void> | undefined
+  /** Arrow, spotlight and overlay settings for the current step. */
+  private look: Look = DEFAULT_LOOK
+  /** Until then the step's own transition runs; scroll updates may animate. */
+  private settleUntil = 0
+  /** Play the connector draw-in on its next render. */
+  private drawConnector = false
+  private trackingFrame: number | undefined
 
   constructor(options: DomRendererOptions = {}) {
     this.options = options
@@ -117,6 +152,9 @@ export class DomRenderer implements Renderer {
     const template = this.template(ctx)
     applyTheme(host, mergeThemes(this.options.theme, template?.theme, ctx.tour.options?.theme))
     this.setTemplateCss(template?.css)
+    this.applyLook(host, this.resolveLook(ctx, template))
+    this.settleUntil = performance.now() + this.duration(host) * 1.5
+    this.drawConnector = true
 
     const initialFocus = this.options.headless
       ? this.buildHeadless(ctx, host, this.options.headless)
@@ -155,6 +193,7 @@ export class DomRenderer implements Renderer {
       this.host = undefined
       this.shadow = undefined
       this.overlay = undefined
+      this.connector = undefined
       this.templateStyle = undefined
     }
     const prev = this.previousFocus
@@ -166,23 +205,25 @@ export class DomRenderer implements Renderer {
   // Layout
   // -------------------------------------------------------------------------
 
-  /** Re-measure and re-position everything. Safe to call often. */
-  update(): void {
+  /**
+   * Re-measure and re-position everything. Safe to call often. `tracking`
+   * marks updates caused by scroll or resize: once the step's own transition
+   * has finished, those follow the target instantly instead of trailing it.
+   */
+  update(tracking = false): void {
     const ctx = this.ctx
     const overlay = this.overlay
     const popover = this.popover
     const win = this.doc.defaultView
     if (!ctx || !overlay || !popover || !win) return
+    if (tracking && performance.now() > this.settleUntil) this.markTracking()
 
     const viewport = this.viewport()
     const overlaySize = { width: overlay.el.offsetWidth, height: overlay.el.offsetHeight }
-    const spotlight = {
-      ...this.options.spotlight,
-      ...ctx.tour.options?.spotlight,
-      ...ctx.step.spotlight,
-    }
+    const spotlight = this.look.spotlight
     const padding = spotlight.padding ?? 8
     const radius = spotlight.radius ?? 10
+    const shape = spotlight.shape ?? 'rounded'
     const external = this.headlessContainer
     const sheet = this.isSheet(viewport)
     popover.classList.toggle('sheet', sheet)
@@ -193,9 +234,10 @@ export class DomRenderer implements Renderer {
       const rect = this.target?.isConnected ? toRect(this.target.getBoundingClientRect()) : null
       overlay.update(
         overlaySize,
-        { target: rect, padding, radius },
+        { target: rect, padding, radius, shape },
         this.blocksInteraction(ctx.step),
       )
+      this.connector?.clear()
       const vx = viewport.x ?? 0
       const top = (viewport.y ?? 0) + viewport.height - floating.height
       popover.style.transform = `translate(${vx}px, ${top}px)`
@@ -207,6 +249,7 @@ export class DomRenderer implements Renderer {
 
     if (!this.target?.isConnected) {
       overlay.update(overlaySize, { target: null, padding, radius }, false)
+      this.connector?.clear()
       const { x, y } = centerPosition(floating, viewport)
       popover.style.transform = `translate(${x}px, ${y}px)`
       popover.setAttribute('data-side', 'center')
@@ -215,14 +258,18 @@ export class DomRenderer implements Renderer {
     }
 
     const rect = toRect(this.target.getBoundingClientRect())
-    overlay.update(overlaySize, { target: rect, padding, radius }, this.blocksInteraction(ctx.step))
+    overlay.update(
+      overlaySize,
+      { target: rect, padding, radius, shape },
+      this.blocksInteraction(ctx.step),
+    )
     const hole = overlay.hole ?? rect
     const pos = computePosition({
       anchor: clipToViewport(hole, viewport),
       floating,
       viewport,
       placement: ctx.step.placement ?? 'auto',
-      gap: this.options.gap ?? 12,
+      gap: this.options.gap ?? arrowGap(this.look.arrow),
     })
     popover.style.transform = `translate(${pos.x}px, ${pos.y}px)`
     popover.setAttribute('data-side', pos.side)
@@ -235,6 +282,139 @@ export class DomRenderer implements Renderer {
       external.setAttribute('data-side', pos.side)
       external.style.setProperty('--docent-arrow', `${pos.arrow}px`)
     }
+    this.renderConnector(pos, floating, hole)
+  }
+
+  /** Draw the connector for connector arrow styles; clear it otherwise. */
+  private renderConnector(
+    pos: { x: number; y: number; side: string; arrow: number },
+    floating: { width: number; height: number },
+    hole: Rect,
+  ): void {
+    const style = this.look.arrow
+    if (!isConnector(style)) {
+      this.connector?.clear()
+      return
+    }
+    const mod = this.connectorModule
+    const connector = this.connector
+    if (!mod || !connector) {
+      this.loadConnector()
+      return
+    }
+    const inset = 6
+    const clampX = (x: number) => Math.min(Math.max(x, hole.x + 10), hole.x + hole.width - 10)
+    const clampY = (y: number) => Math.min(Math.max(y, hole.y + 10), hole.y + hole.height - 10)
+    const cx = hole.x + hole.width / 2
+    const cy = hole.y + hole.height / 2
+    // Leave from 30% or 70% along the edge (away from the target's centre) so the
+    // connector runs diagonally and each style reads distinctly.
+    const alongX = pos.x + floating.width * (cx < pos.x + floating.width / 2 ? 0.3 : 0.7)
+    const alongY = pos.y + floating.height * (cy < pos.y + floating.height / 2 ? 0.3 : 0.7)
+    let from: Point
+    let to: Point
+    switch (pos.side) {
+      case 'bottom':
+        from = { x: alongX, y: pos.y }
+        to = { x: clampX(cx), y: hole.y + hole.height + inset }
+        break
+      case 'top':
+        from = { x: alongX, y: pos.y + floating.height }
+        to = { x: clampX(cx), y: hole.y - inset }
+        break
+      case 'right':
+        from = { x: pos.x, y: alongY }
+        to = { x: hole.x + hole.width + inset, y: clampY(cy) }
+        break
+      default:
+        from = { x: pos.x + floating.width, y: alongY }
+        to = { x: hole.x - inset, y: clampY(cy) }
+    }
+    // Bow curves outward, away from the popover's middle.
+    const bend =
+      pos.side === 'top' || pos.side === 'bottom'
+        ? to.x < from.x
+          ? 1
+          : -1
+        : to.y < from.y
+          ? -1
+          : 1
+    connector.render(
+      mod.connectorShape(style, from, to, pos.side === 'top' || pos.side === 'left' ? -bend : bend),
+      this.drawConnector,
+    )
+    this.drawConnector = false
+  }
+
+  /** Fetch the connector module once, then draw with it. */
+  private loadConnector(): void {
+    this.connectorLoading ??= import('./connector').then((mod) => {
+      this.connectorModule = mod
+      if (this.shadow) this.attachConnector(this.shadow, mod)
+      this.update()
+    })
+  }
+
+  /** Add the connector layer and its styles, beneath any popover. */
+  private attachConnector(shadow: ShadowRoot, mod: typeof import('./connector')): void {
+    if (this.connector) return
+    const style = this.doc.createElement('style')
+    style.textContent = mod.CONNECTOR_STYLES_CSS
+    this.connector = new mod.Connector(this.doc)
+    const before = this.popover ?? null
+    shadow.insertBefore(style, before)
+    shadow.insertBefore(this.connector.el, before)
+  }
+
+  private resolveLook(ctx: RenderContext, template: PopoverTemplate | undefined): Look {
+    const tour = ctx.tour.options ?? {}
+    const step = ctx.step
+    return {
+      arrow: step.arrow ?? tour.arrow ?? template?.arrow ?? this.options.arrow ?? 'caret',
+      spotlight: {
+        ...this.options.spotlight,
+        ...template?.spotlight,
+        ...tour.spotlight,
+        ...step.spotlight,
+      },
+      overlay: { ...this.options.overlay, ...template?.overlay, ...tour.overlay, ...step.overlay },
+    }
+  }
+
+  /** Expose the look to the stylesheet as host attributes and variables. */
+  private applyLook(host: HTMLElement, look: Look): void {
+    this.look = look
+    host.setAttribute('data-arrow', look.arrow)
+    host.setAttribute('data-ring', look.spotlight.ring ?? 'hairline')
+    host.setAttribute('data-shape', look.spotlight.shape ?? 'rounded')
+    host.setAttribute('data-overlay', look.overlay.style ?? 'dim')
+    const { color, opacity, blur } = look.overlay
+    if (color !== undefined) host.style.setProperty('--docent-overlay', color)
+    if (opacity !== undefined) host.style.setProperty('--docent-overlay-opacity', String(opacity))
+    if (blur !== undefined) host.style.setProperty('--docent-blur', `${blur}px`)
+    else host.style.removeProperty('--docent-blur')
+  }
+
+  /** The current transition duration in ms, from the --docent-duration token. */
+  private duration(host: HTMLElement): number {
+    const raw =
+      this.doc.defaultView?.getComputedStyle(host).getPropertyValue('--docent-duration').trim() ??
+      ''
+    const n = Number.parseFloat(raw)
+    if (Number.isNaN(n)) return 220
+    return raw.endsWith('ms') ? n : n * 1000
+  }
+
+  /** Disable transitions for this frame so scroll-driven moves stay glued to the target. */
+  private markTracking(): void {
+    const host = this.host
+    if (!host) return
+    host.setAttribute('data-tracking', '')
+    if (this.trackingFrame !== undefined) cancelAnimationFrame(this.trackingFrame)
+    this.trackingFrame = requestAnimationFrame(() => {
+      this.trackingFrame = undefined
+      host.removeAttribute('data-tracking')
+    })
   }
 
   /**
@@ -389,6 +569,7 @@ export class DomRenderer implements Renderer {
     shadow.appendChild(overlay.el)
     shadow.appendChild(overlay.ring)
     shadow.appendChild(overlay.blocker)
+    if (this.connectorModule) this.attachConnector(shadow, this.connectorModule)
     this.doc.body.appendChild(host)
     this.host = host
     this.shadow = shadow
@@ -403,6 +584,7 @@ export class DomRenderer implements Renderer {
     this.frame = undefined
     this.popover?.remove()
     this.popover = undefined
+    this.connector?.clear()
     this.arrow = undefined
     this.ctx = undefined
     this.target = null
@@ -441,7 +623,7 @@ export class DomRenderer implements Renderer {
     if (this.frame !== undefined) return
     this.frame = requestAnimationFrame(() => {
       this.frame = undefined
-      this.update()
+      this.update(true)
     })
   }
 

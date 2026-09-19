@@ -6,6 +6,7 @@
 
 // Re-exported so browser users need a single import.
 export { defineTour } from '@docentjs/core'
+export { arrowGap, CONNECTOR_STYLES, type ConnectorStyle, isConnector } from './arrows'
 export { isSafeUrl, renderBody, renderMedia } from './content'
 export { type CreateTourOptions, createTour, DomTourController } from './create'
 export { type CreateDocentOptions, createDocent } from './docent'

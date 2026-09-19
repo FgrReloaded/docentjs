@@ -450,6 +450,26 @@ describe('Docent sources and state', () => {
     ])
   })
 
+  it('updateTour swaps a definition and re-renders the running tour only', async () => {
+    const { docent, shown } = setup([
+      oneStep('a', { trigger: { type: 'auto' } }),
+      oneStep('b', {
+        trigger: { type: 'route', pattern: '/**' },
+        options: { frequency: 'always' },
+      }),
+    ])
+    await docent.ready
+    await settle()
+    expect(shown).toEqual(['a:only'])
+    await docent.updateTour(defineTour({ id: 'a', steps: [{ id: 'only', title: 'new' }] }))
+    expect(shown).toEqual(['a:only', 'a:only'])
+    expect(docent.getTours().find((t) => t.id === 'a')?.steps[0]?.title).toBe('new')
+    // Editing an inactive tour never starts it.
+    await docent.updateTour(oneStep('b', { trigger: { type: 'route', pattern: '/**' } }))
+    await settle()
+    expect(shown).toEqual(['a:only', 'a:only'])
+  })
+
   it('destroy stops everything', async () => {
     const { docent, shown, f } = setup([
       oneStep('r', { trigger: { type: 'route', pattern: '/x' } }),

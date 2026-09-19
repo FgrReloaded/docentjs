@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
-import { holePath, Overlay } from './overlay'
+import { holeFor, holePath, Overlay } from './overlay'
 
 const viewport = { width: 100, height: 50 }
 
@@ -51,5 +51,21 @@ describe('Overlay', () => {
     expect(o.hole).toBeNull()
     expect(o.el.style.clipPath).toContain('M20 15H20')
     expect(o.blocker.hidden).toBe(true)
+  })
+})
+
+describe('holeFor', () => {
+  const t = { x: 10, y: 20, width: 40, height: 20 }
+  it('pads, and sets the radius per shape', () => {
+    expect(holeFor(t, 5, 10, 'rounded')).toEqual({
+      hole: { x: 5, y: 15, width: 50, height: 30 },
+      radius: 10,
+    })
+    expect(holeFor(t, 5, 10, 'rect').radius).toBe(0)
+    expect(holeFor(t, 5, 10, 'pill').radius).toBe(15)
+    const c = holeFor(t, 0, 10, 'circle')
+    expect(c.hole.width).toBe(c.hole.height)
+    expect(c.radius).toBeCloseTo(Math.hypot(40, 20) / 2)
+    expect(c.hole.x + c.hole.width / 2).toBe(30)
   })
 })

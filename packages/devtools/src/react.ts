@@ -4,7 +4,7 @@
  */
 
 import { useEffect } from 'react'
-import type { MountOptions } from './panel'
+import type { MountOptions } from './app/mount'
 import { type DevtoolsTarget, resolveDocent } from './resolve'
 
 export interface DocentDevtoolsProps extends MountOptions {
@@ -20,7 +20,7 @@ export function DocentDevtools({ docent, ...options }: DocentDevtoolsProps): nul
     if (process.env.NODE_ENV === 'production' || !manager) return
     let cancelled = false
     let unmount: (() => void) | undefined
-    void import('./panel').then(({ mount }) => {
+    void import('./app/mount').then(({ mount }) => {
       if (!cancelled) unmount = mount(manager, options)
     })
     return () => {

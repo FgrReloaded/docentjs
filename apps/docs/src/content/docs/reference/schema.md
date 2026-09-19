@@ -29,8 +29,9 @@ All fields are optional unless marked. Types are exported from `@docentjs/core`.
 | `allowClose` | `boolean` | `true` (Escape and the close button) |
 | `closeOnOverlayClick` | `boolean` | `false` |
 | `keyboard` | `boolean` | `true` (arrow keys) |
-| `spotlight` | `{ padding?, radius?, animate? }` | `6`, `6`, `true` |
-| `overlay` | `{ color?, opacity? }` | `#000`, `0.55` |
+| `arrow` | `ArrowStyle` | `'caret'`; see [Arrows, spotlight and overlay](/customize/arrows-and-spotlight/) |
+| `spotlight` | `{ padding?, radius?, shape?, ring?, animate? }` | `8`, `10`, `'rounded'`, `'hairline'`, `true` |
+| `overlay` | `{ style?, color?, opacity?, blur? }` | `'dim'`, tinted ink, `0.52`, `4` |
 | `scroll` | `{ enabled?, behavior?, block? }` | `true`, `'auto'`, `'center'` |
 | `labels` | `Labels` | English defaults; `progress` supports `{current}` and `{total}` |
 | `theme` | `Theme` | tokens applied on top of the renderer's theme |
@@ -46,7 +47,9 @@ All fields are optional unless marked. Types are exported from `@docentjs/core`.
 | `format` | `'text' \| 'markdown'` | markdown subset: bold, italic, code, links, paragraphs; never raw HTML |
 | `media` | `{ type: 'image' \| 'video', src, alt? }` | |
 | `placement` | `Placement` | `'auto'`, a side, or `side-start` / `side-end` |
+| `arrow` | `ArrowStyle` | per-step override |
 | `spotlight` | `SpotlightOptions` | per-step override |
+| `overlay` | `OverlayOptions` | per-step override |
 | `advance` | `Advance` | how the step completes; see [Steps](/guides/steps/) |
 | `interaction` | `'block' \| 'allow'` | default: `allow` for click/input advances, else `block` |
 | `condition` | `Condition` | skip the step when false |
@@ -104,4 +107,14 @@ A string is a CSS selector. An object is the portable form:
 
 ## Theme
 
-Tokens map to `--docent-*` custom properties: `background`, `foreground`, `muted`, `accent`, `accentForeground`, `radius`, `shadow`, `font`, `width`, `overlay`, `overlayOpacity`, `duration`, `zIndex`. All are CSS strings.
+Tokens map to `--docent-*` custom properties: `background`, `foreground`, `muted`, `accent`, `accentForeground`, `radius`, `shadow`, `font`, `width`, `overlay`, `overlayOpacity`, `duration`, `zIndex`, `connector`, `ring`. All are CSS strings.
+
+## Looks
+
+```ts
+type ArrowStyle = 'caret' | 'none' | 'line' | 'dashed' | 'dotted' | 'curve' | 'curve-dashed'
+  | 'squiggle' | 'loop' | 'elbow' | 'sketch' | 'pin'
+type SpotlightShape = 'rounded' | 'rect' | 'pill' | 'circle'
+type SpotlightRing = 'hairline' | 'none' | 'glow' | 'pulse' | 'dashed' | 'solid'
+type OverlayStyle = 'dim' | 'blur' | 'vignette' | 'none'
+```

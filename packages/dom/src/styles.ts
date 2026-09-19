@@ -53,13 +53,27 @@ export const STYLES = `
 /* ------------------------------------------------------------------ overlay */
 
 .overlay {
+  --_scrim: color-mix(in oklch, var(--docent-overlay) calc(var(--docent-overlay-opacity) * 100%), transparent);
   position: absolute;
   inset: 0;
-  background: var(--docent-overlay);
-  opacity: var(--docent-overlay-opacity);
+  background: var(--_scrim);
   pointer-events: auto;
   transition: clip-path var(--docent-duration) var(--docent-easing);
 }
+/* Overlay styles. The scrim is a translucent color (not element opacity), so blur stays crisp. */
+:host([data-overlay="blur"]) .overlay {
+  -webkit-backdrop-filter: blur(var(--docent-blur, 4px));
+  backdrop-filter: blur(var(--docent-blur, 4px));
+}
+:host([data-overlay="vignette"]) .overlay {
+  background: radial-gradient(
+    circle at var(--docent-hole-x, 50%) var(--docent-hole-y, 50%),
+    transparent 0,
+    color-mix(in oklch, var(--docent-overlay) calc(var(--docent-overlay-opacity) * 30%), transparent) 22%,
+    var(--_scrim) 78%
+  );
+}
+:host([data-overlay="none"]) .overlay { background: transparent; pointer-events: none; }
 .blocker {
   position: absolute;
   left: 0;
@@ -72,10 +86,11 @@ export const STYLES = `
   left: 0;
   top: 0;
   pointer-events: none;
-  /* Always light: it sits on the scrim, not on the popover, in every theme. */
+  /* Light by default: it sits on the scrim, not on the popover, in every theme. */
+  color: var(--docent-ring, oklch(98% 0.004 285));
   box-shadow:
-    0 0 0 1px oklch(98% 0.004 285 / 0.58),
-    0 0 0 6px oklch(98% 0.004 285 / 0.08);
+    0 0 0 1px color-mix(in oklch, currentColor 58%, transparent),
+    0 0 0 6px color-mix(in oklch, currentColor 8%, transparent);
   transition:
     transform var(--docent-duration) var(--docent-easing),
     width var(--docent-duration) var(--docent-easing),
@@ -83,6 +98,39 @@ export const STYLES = `
     border-radius var(--docent-duration) var(--docent-easing),
     opacity var(--docent-duration) var(--docent-easing);
 }
+
+/* Ring styles. */
+:host([data-overlay="none"]) .ring { color: var(--docent-ring, var(--docent-accent)); }
+:host([data-ring="none"]) .ring { box-shadow: none; }
+:host([data-ring="glow"]) .ring {
+  box-shadow:
+    0 0 0 1.5px color-mix(in oklch, currentColor 85%, transparent),
+    0 0 20px 4px color-mix(in oklch, currentColor 42%, transparent);
+}
+:host([data-ring="solid"]) .ring { box-shadow: 0 0 0 2px currentColor; }
+:host([data-ring="dashed"]) .ring {
+  box-shadow: none;
+  outline: 1.5px dashed color-mix(in oklch, currentColor 85%, transparent);
+  outline-offset: 3px;
+}
+:host([data-ring="pulse"]) .ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  animation: docent-pulse 1.8s var(--docent-easing) infinite;
+}
+@keyframes docent-pulse {
+  from { box-shadow: 0 0 0 0 color-mix(in oklch, currentColor 60%, transparent); }
+  to { box-shadow: 0 0 0 14px transparent; }
+}
+
+:host(:not([data-arrow="caret"])) .arrow { display: none; }
+
+/* Scroll-driven updates follow the target instantly. */
+:host([data-tracking]) .overlay,
+:host([data-tracking]) .ring,
+:host([data-tracking]) .popover { transition: none; }
 
 /* ------------------------------------------------------------------ popover */
 
@@ -312,6 +360,7 @@ export const STYLES = `
 
 @media (prefers-reduced-motion: reduce) {
   .overlay, .popover, .ring { transition: none; }
+  .ring::after { animation: none !important; }
   .popover[data-moving] > * { animation: none; }
 }
 `

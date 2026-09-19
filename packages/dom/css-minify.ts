@@ -1,5 +1,6 @@
 /**
- * Build-time minification for the stylesheet template literal in src/styles.ts.
+ * Build-time minification for CSS template literals: the stylesheet in
+ * src/styles.ts and the connector CSS constant in src/connector.ts.
  * Conservative on purpose: strips comments, collapses whitespace, and removes
  * spaces only around `{ } ; , >` and after `:`. It never touches `+`/`-`
  * (which calc() needs) or descendant-selector spaces.
@@ -14,16 +15,29 @@ export function minifyCss(css: string): string {
     .trim()
 }
 
-/** Rolldown plugin: minify every template literal in styles.ts (they contain only CSS). */
+/** Rolldown plugin that minifies the CSS literals at build time. */
 export function minifyStylesPlugin() {
   return {
     name: 'docent-minify-styles',
     transform(code: string, id: string) {
-      if (!/[\\/]src[\\/]styles\.ts$/.test(id)) return null
-      return {
-        code: code.replace(/`([^`]*)`/g, (_m, css: string) => `\`${minifyCss(css)}\``),
-        map: null,
+      // styles.ts contains only CSS literals.
+      if (/[\\/]src[\\/]styles\.ts$/.test(id)) {
+        return {
+          code: code.replace(/`([^`]*)`/g, (_m, css: string) => `\`${minifyCss(css)}\``),
+          map: null,
+        }
       }
+      // connector.ts has other template literals; only its CSS constant is minified.
+      if (/[\\/]src[\\/]connector\.ts$/.test(id)) {
+        return {
+          code: code.replace(
+            /(CONNECTOR_STYLES_CSS = `)([^`]*)(`)/,
+            (_m, open: string, css: string, close: string) => open + minifyCss(css) + close,
+          ),
+          map: null,
+        }
+      }
+      return null
     },
   }
 }

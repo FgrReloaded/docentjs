@@ -425,6 +425,28 @@ describe('persistence and resume', () => {
     expect(renderer.last()?.step.id).toBe('intro')
   })
 
+  it('updateTour re-renders the current step with new content', async () => {
+    const { controller, renderer } = setup(threeSteps)
+    await controller.start()
+    await controller.next()
+    const edited = defineTour({
+      ...threeSteps,
+      steps: threeSteps.steps.map((s) => (s.id === 'a' ? { ...s, title: 'Edited' } : s)),
+    })
+    await controller.updateTour(edited)
+    expect(renderer.last()).toMatchObject({ step: { id: 'a', title: 'Edited' }, index: 1 })
+    expect(controller.getState()).toMatchObject({ status: 'running', index: 1, history: [0] })
+  })
+
+  it('updateTour falls back to the nearest step when the current one is removed', async () => {
+    const { controller, renderer } = setup(threeSteps)
+    await controller.start('b')
+    await controller.updateTour(defineTour({ ...threeSteps, steps: threeSteps.steps.slice(0, 2) }))
+    expect(renderer.last()?.step.id).toBe('a')
+    await controller.updateTour(defineTour({ ...threeSteps, steps: [] }))
+    expect(controller.getState()).toMatchObject({ status: 'aborted', reason: 'tour-emptied' })
+  })
+
   it('can start again right after destroy without the reset clobbering it', async () => {
     const { controller, renderer } = setup(threeSteps)
     await controller.start()

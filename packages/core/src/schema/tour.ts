@@ -59,20 +59,62 @@ export type Alignment = 'start' | 'center' | 'end'
  */
 export type Placement = 'auto' | Side | `${Side}-${Exclude<Alignment, 'center'>}`
 
+/**
+ * What connects the popover to its target.
+ * - `caret` (default): a small notch on the popover's edge.
+ * - `none`: nothing.
+ * - Connectors, drawn from the popover to the target: `line`, `dashed`,
+ *   `dotted`, `curve`, `curve-dashed`, `squiggle`, `loop`, `elbow`, `sketch`
+ *   (hand-drawn double stroke) and `pin` (dotted line ending in a dot).
+ */
+export type ArrowStyle =
+  | 'caret'
+  | 'none'
+  | 'line'
+  | 'dashed'
+  | 'dotted'
+  | 'curve'
+  | 'curve-dashed'
+  | 'squiggle'
+  | 'loop'
+  | 'elbow'
+  | 'sketch'
+  | 'pin'
+
+/** Shape of the cutout around the target. `circle` circumscribes the target. */
+export type SpotlightShape = 'rounded' | 'rect' | 'pill' | 'circle'
+
+/** Outline drawn around the cutout. `pulse` gently repeats to draw the eye. */
+export type SpotlightRing = 'hairline' | 'none' | 'glow' | 'pulse' | 'dashed' | 'solid'
+
+/**
+ * How the rest of the page is treated.
+ * - `dim` (default): a tinted scrim.
+ * - `blur`: scrim plus a soft blur of the page.
+ * - `vignette`: clear near the target, darker toward the edges.
+ * - `none`: no scrim and the page stays usable (hint-style tours).
+ */
+export type OverlayStyle = 'dim' | 'blur' | 'vignette' | 'none'
+
 export interface SpotlightOptions {
   /** Space between the target's edge and the cutout, in px. */
   padding?: number
-  /** Corner radius of the cutout, in px. */
+  /** Corner radius of the cutout, in px (for `rounded`). */
   radius?: number
   /** Animate the cutout moving between targets. */
   animate?: boolean
+  shape?: SpotlightShape
+  ring?: SpotlightRing
 }
 
 export interface OverlayOptions {
+  style?: OverlayStyle
   /** Backdrop colour, any CSS colour. */
   color?: string
   /** Backdrop opacity, 0–1. */
   opacity?: number
+  /** Blur radius for the `blur` style, in px. */
+  blur?: number
 }
 
 export interface ScrollOptions {
@@ -183,6 +225,10 @@ export type Frequency = 'once' | 'until-completed' | 'always'
  * Values are CSS strings, e.g. `'#111'`, `'12px'`, `'0 4px 12px rgba(0,0,0,.2)'`.
  */
 export interface Theme {
+  /** Color of drawn connectors (arrow styles other than caret). */
+  connector?: string
+  /** Color of the spotlight ring. */
+  ring?: string
   background?: string
   foreground?: string
   muted?: string
@@ -227,8 +273,12 @@ export interface Step {
   format?: 'text' | 'markdown'
   media?: Media
   placement?: Placement
+  /** Per-step override of the tour's arrow style. */
+  arrow?: ArrowStyle
   /** Per-step override of the tour's spotlight options. */
   spotlight?: SpotlightOptions
+  /** Per-step override of the tour's overlay options. */
+  overlay?: OverlayOptions
   advance?: Advance
   interaction?: Interaction
   /** Skip this step when the condition is false. */
@@ -257,6 +307,7 @@ export interface TourOptions {
   allowClose?: boolean
   closeOnOverlayClick?: boolean
   keyboard?: boolean
+  arrow?: ArrowStyle
   spotlight?: SpotlightOptions
   overlay?: OverlayOptions
   scroll?: ScrollOptions

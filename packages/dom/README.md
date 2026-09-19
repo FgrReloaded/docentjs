@@ -1,6 +1,6 @@
 # @docentjs/dom
 
-Web renderer for [Docent](https://github.com/FgrReloaded/docentjs), a guided product tour library. Overlay with a rounded spotlight, custom positioning, an accessible popover in a Shadow Root, keyboard and focus handling, a mobile bottom sheet, and a customization layer with theme tokens, slots, templates and headless mode. About 11 kB compressed including the core.
+Web renderer for [Docent](https://github.com/FgrReloaded/docentjs), a guided product tour library. Overlay with a rounded spotlight, custom positioning, an accessible popover in a Shadow Root, keyboard and focus handling, a mobile bottom sheet, and a customization layer with theme tokens, slots, templates and headless mode. About 13 kB compressed including the core.
 
 ```sh
 pnpm add @docentjs/dom
@@ -52,6 +52,23 @@ createTour(tour, {
 ```
 
 Tours can also carry `options.theme` and `options.template` in their JSON.
+
+## Arrows, spotlight and overlay
+
+```ts
+defineTour({
+  id: 'welcome',
+  options: {
+    arrow: 'curve',                                  // caret, none, line, dashed, dotted, curve,
+                                                     // curve-dashed, squiggle, loop, elbow, sketch, pin
+    spotlight: { shape: 'pill', ring: 'pulse' },     // rounded, rect, pill, circle / hairline, none, glow, pulse, dashed, solid
+    overlay: { style: 'blur', blur: 6 },             // dim, blur, vignette, none
+  },
+  steps: [{ id: 'save', target: '#save', title: 'Save', arrow: 'pin' }],  // or per step
+})
+```
+
+The default is a small caret, a rounded spotlight with a hairline ring, and a dimmed page. Drawn arrows load on first use as a separate 1.8 kB chunk, so tours that keep the caret never download them.
 
 ## Also
 

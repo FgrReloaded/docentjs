@@ -45,7 +45,7 @@ export type StateListener = (state: EngineState) => void
 const DEFAULT_WAIT_MS = 3000
 
 export class TourController {
-  readonly tour: Tour
+  tour: Tour
   private state: EngineState = IDLE_STATE
   private readonly renderer: Renderer
   private readonly identity: Identity
@@ -150,6 +150,25 @@ export class TourController {
     await this.leaveCurrent()
     this.dispatch({ type: 'abort', reason })
     await this.finish()
+  }
+
+  /**
+   * Swap in a new definition of this tour (live editing). A running tour
+   * re-renders its current step, or the nearest one if that step was removed.
+   */
+  async updateTour(tour: Tour): Promise<void> {
+    const currentId = this.currentStep()?.id
+    this.tour = tour
+    if (!this.isActive()) return
+    let index = currentId === undefined ? -1 : tour.steps.findIndex((s) => s.id === currentId)
+    if (index === -1) index = Math.min(this.state.index, tour.steps.length - 1)
+    if (index < 0) {
+      await this.abort('tour-emptied')
+      return
+    }
+    const history = this.state.history.filter((i) => i < tour.steps.length && i !== index)
+    this.setState({ ...this.state, index, history })
+    if (this.state.status === 'running') await this.showCurrent()
   }
 
   /** Report a named application event. Advances a step waiting on it. */
