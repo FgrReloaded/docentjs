@@ -1,5 +1,5 @@
-import { minimal } from '@docentjs/dom/themes'
 import { DocentProvider, useTour } from '@docentjs/react'
+import { minimal } from '@docentjs/react/themes'
 import { TourCard } from './TourCard'
 import { customTour, themedTour, welcomeTour } from './tours'
 

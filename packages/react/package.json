@@ -37,6 +37,16 @@
         "default": "./dist/index.cjs"
       }
     },
+    "./themes": {
+      "import": {
+        "types": "./dist/themes.d.ts",
+        "default": "./dist/themes.js"
+      },
+      "require": {
+        "types": "./dist/themes.d.cts",
+        "default": "./dist/themes.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "files": [

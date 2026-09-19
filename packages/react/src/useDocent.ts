@@ -48,7 +48,6 @@ export function useDocent(options: UseDocentOptions = {}): DocentHandle {
   const optionsRef = useRef(options)
   optionsRef.current = options
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: created once per provider defaults
   const docent = useMemo(() => {
     const { popover, ...own } = optionsRef.current
     const merged: CreateDocentOptions = {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RenderContext } from '@docentjs/core'
+import type { RenderContext } from '@docentjs/vue'
 import { ref } from 'vue'
 
 defineProps<{ ctx: RenderContext }>()

@@ -1,4 +1,4 @@
-import type { RenderContext } from '@docentjs/core'
+import type { RenderContext } from '@docentjs/react'
 import { useState } from 'react'
 
 /** A fully custom popover. Receives the render context, owns its own state. */

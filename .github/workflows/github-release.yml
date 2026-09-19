@@ -1,9 +1,16 @@
 name: GitHub release
 
-# Runs when `pnpm release:approve` pushes tags such as `@docentjs/core@0.2.0`.
+# One release per version. `pnpm release:approve` pushes a tag like `v0.2.1`
+# after the packages are live on npm. Run it by hand from the Actions tab to
+# create (or refresh) the release for an existing tag.
 on:
   push:
-    tags: ['@docentjs/*@*']
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to release, e.g. v0.2.0'
+        required: true
 
 permissions:
   contents: write
@@ -11,31 +18,34 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
+      # Always the default branch: its changelogs hold every released version,
+      # and older tags predate the notes script.
       - uses: actions/checkout@v4
-      - name: Extract changelog section
-        run: |
-          node --input-type=module -e '
-            import { readFileSync, writeFileSync } from "node:fs"
-            const tag = process.env.GITHUB_REF_NAME
-            const at = tag.lastIndexOf("@")
-            const pkg = tag.slice(0, at).split("/")[1]
-            const version = tag.slice(at + 1)
-            const log = readFileSync(`packages/${pkg}/CHANGELOG.md`, "utf8")
-            const start = log.indexOf(`## ${version}`)
-            let body = "See CHANGELOG.md."
-            if (start !== -1) {
-              const rest = log.slice(start + `## ${version}`.length)
-              const end = rest.search(/\n## /)
-              body = (end === -1 ? rest : rest.slice(0, end)).trim()
-            }
-            writeFileSync("notes.md", body + "\n")
-            writeFileSync(process.env.GITHUB_ENV, `PRERELEASE=${version.includes("-")}\n`, { flag: "a" })
-          '
-      - name: Create release
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Build release notes
+        run: node scripts/release-notes.mjs "$TAG" > notes.md && cat notes.md
+      - name: Create or update the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          args=(--title "$GITHUB_REF_NAME" --notes-file notes.md)
-          if [ "$PRERELEASE" = "true" ]; then args+=(--prerelease); fi
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" "${args[@]}"
+          git rev-parse --verify --quiet "refs/tags/$TAG" >/dev/null || { echo "tag $TAG not found"; exit 1; }
+          # Only the highest stable version is "Latest", so backfills never steal it.
+          highest=$(git tag -l 'v*' --sort=-v:refname | grep -vF -- '-' | head -1)
+          flags=()
+          if [[ "$TAG" == *-* ]]; then flags+=(--prerelease --latest=false)
+          elif [[ "$TAG" == "$highest" ]]; then flags+=(--latest)
+          else flags+=(--latest=false); fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "$TAG" --notes-file notes.md "${flags[@]}"
+          else
+            gh release create "$TAG" --verify-tag --title "$TAG" --notes-file notes.md "${flags[@]}"
+          fi

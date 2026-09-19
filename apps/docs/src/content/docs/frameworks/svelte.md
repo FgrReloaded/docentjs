@@ -7,6 +7,8 @@ description: Stores, a component prop, and an action for Svelte 4 and 5.
 pnpm add @docentjs/svelte
 ```
 
+This is the only package a Svelte app needs. It also exports `defineTour`, the tour and step types such as `RenderContext`, and `createLocalStorage`, and the theme presets come from `@docentjs/svelte/themes`.
+
 ## `useTour`
 
 Returns readable stores for state, plus the controls.
@@ -40,7 +42,7 @@ Pass a component. It is mounted into the positioned container for every step wit
 ```svelte
 <!-- Card.svelte -->
 <script lang="ts">
-  import type { RenderContext } from '@docentjs/core'
+  import type { RenderContext } from '@docentjs/svelte'
   let { ctx }: { ctx: RenderContext } = $props()
 </script>
 

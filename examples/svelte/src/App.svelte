@@ -1,5 +1,5 @@
 <script lang="ts">
-import { minimal } from '@docentjs/dom/themes'
+import { minimal } from '@docentjs/svelte/themes'
 import { useTour } from '@docentjs/svelte'
 import { onDestroy } from 'svelte'
 import TourCard from './TourCard.svelte'

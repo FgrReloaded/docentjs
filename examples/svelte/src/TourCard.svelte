@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { RenderContext } from '@docentjs/core'
+import type { RenderContext } from '@docentjs/svelte'
 
 let { ctx }: { ctx: RenderContext } = $props()
 let liked = $state(false)

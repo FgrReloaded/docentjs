@@ -9,8 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@docentjs/core": "workspace:*",
-    "@docentjs/dom": "workspace:*",
     "@docentjs/react": "workspace:*",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"

@@ -6,6 +6,8 @@ Svelte bindings for [Docent](https://github.com/FgrReloaded/docentjs), a guided 
 pnpm add @docentjs/svelte
 ```
 
+One install is enough: `defineTour`, the types, and `@docentjs/svelte/themes` all come from this package.
+
 ```svelte
 <script lang="ts">
   import { useTour } from '@docentjs/svelte'

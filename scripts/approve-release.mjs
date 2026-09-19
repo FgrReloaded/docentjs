@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Local step: approve the staged versions that match the current package versions,
- * then create and push the git tags, which triggers the GitHub release workflow.
+ * then tag the version (`v0.2.1`) and push it, which creates the GitHub release.
  * npm asks for your 2FA code for every approval.
  */
 import { spawnSync } from 'node:child_process'
@@ -25,6 +25,19 @@ for (const pkg of packages()) {
 
 if (pending.length === 0) {
   console.log('Nothing to approve. Pull main first if CI staged a new version.')
+  const all = packages()
+  const version = all[0]?.version
+  const live = all.every((p) => isPublished(p.name, p.version))
+  const tagged =
+    spawnSync('git', ['ls-remote', '--exit-code', '--tags', 'origin', `refs/tags/v${version}`], {
+      cwd: root,
+    }).status === 0
+  if (live && !tagged) {
+    console.log(
+      `\nv${version} is live on npm but not tagged. On the commit that set this version, run:`,
+    )
+    console.log(`  git tag -a v${version} -m v${version} && git push origin v${version}`)
+  }
   process.exit(0)
 }
 
@@ -48,7 +61,32 @@ for (const p of pending) {
   }
 }
 
-console.log('\ncreating git tags')
-spawnSync('pnpm', ['exec', 'changeset', 'git-tag'], { stdio: 'inherit', cwd: root })
-spawnSync('git', ['push', '--tags'], { stdio: 'inherit', cwd: root })
-console.log('\nDone. Tags pushed; the GitHub release workflow creates the release notes.')
+// One tag per version (all packages share it). A single tag push reliably
+// triggers the GitHub release workflow; GitHub drops tag events when more than
+// three tags are pushed at once.
+const versions = new Set(packages().map((p) => p.version))
+if (versions.size !== 1) {
+  console.error(`packages disagree on the version: ${[...versions].join(', ')}; tag skipped`)
+  process.exit(1)
+}
+const tag = `v${[...versions][0]}`
+const git = (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' })
+
+git('fetch', '--quiet', 'origin', 'main')
+const head = git('rev-parse', 'HEAD').stdout.trim()
+const main = git('rev-parse', 'origin/main').stdout.trim()
+if (head !== main) {
+  console.error(`\nPackages are live, but ${tag} was not tagged: HEAD is not origin/main.`)
+  console.error(
+    `Run \`git switch main && git pull\`, then: git tag -a ${tag} -m ${tag} && git push origin ${tag}`,
+  )
+  process.exit(1)
+}
+if (git('rev-parse', '--verify', '--quiet', `refs/tags/${tag}`).status !== 0) {
+  git('tag', '-a', tag, '-m', tag)
+}
+const push = spawnSync('git', ['push', 'origin', tag], { cwd: root, stdio: 'inherit' })
+if (push.status !== 0) process.exit(push.status ?? 1)
+console.log(
+  `\nDone. Pushed ${tag}; the GitHub release workflow creates the release from the changelogs.`,
+)

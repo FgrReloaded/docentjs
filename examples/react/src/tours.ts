@@ -1,4 +1,4 @@
-import { defineTour } from '@docentjs/core'
+import { defineTour } from '@docentjs/react'
 
 export const welcomeTour = defineTour({
   id: 'react-welcome',

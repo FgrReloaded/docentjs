@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { minimal } from '@docentjs/dom/themes'
+import { minimal } from '@docentjs/vue/themes'
 import { provideDocentDefaults, TourPopover, useTour } from '@docentjs/vue'
 import TourCard from './TourCard.vue'
 import { customTour, themedTour, welcomeTour } from './tours'

@@ -31,7 +31,7 @@ import Demo from '../../components/Demo.astro'
   </TabItem>
 </Tabs>
 
-`@docentjs/dom` is the web renderer and depends on `@docentjs/core`, the platform-agnostic engine. The framework packages depend on both.
+Install one package. `@docentjs/dom` is the web renderer and brings `@docentjs/core`, the engine, with it. Each framework package brings both and re-exports what you need, so in a React app you import `defineTour` and everything else from `@docentjs/react`.
 
 ## Define a tour
 

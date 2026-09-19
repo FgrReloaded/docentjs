@@ -6,6 +6,8 @@ React bindings for [Docent](https://github.com/FgrReloaded/docentjs), a guided p
 pnpm add @docentjs/react
 ```
 
+One install is enough: `defineTour`, the types, and `@docentjs/react/themes` all come from this package.
+
 ```tsx
 import { useTour } from '@docentjs/react'
 import { welcomeTour } from './tours'

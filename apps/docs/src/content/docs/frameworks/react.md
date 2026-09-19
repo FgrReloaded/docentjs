@@ -7,6 +7,9 @@ description: Hooks, a component, and a provider for React 18 and 19.
 pnpm add @docentjs/react
 ```
 
+This is the only package a React app needs. It also exports `defineTour`, the tour and step types such as `RenderContext`, and `createLocalStorage`, and the theme presets come from `@docentjs/react/themes`.
+The tour definition type is exported as `TourDefinition`, because `Tour` is the component.
+
 ## `useTour`
 
 ```tsx

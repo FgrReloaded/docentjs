@@ -7,6 +7,8 @@ description: A composable and a teleporting component for Vue 3.
 pnpm add @docentjs/vue
 ```
 
+This is the only package a Vue app needs. It also exports `defineTour`, the tour and step types such as `RenderContext`, and `createLocalStorage`, and the theme presets come from `@docentjs/vue/themes`.
+
 ## `useTour`
 
 ```vue

@@ -6,6 +6,8 @@ Vue 3 bindings for [Docent](https://github.com/FgrReloaded/docentjs), a guided p
 pnpm add @docentjs/vue
 ```
 
+One install is enough: `defineTour`, the types, and `@docentjs/vue/themes` all come from this package.
+
 ```vue
 <script setup lang="ts">
 import { useTour } from '@docentjs/vue'

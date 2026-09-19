@@ -76,4 +76,6 @@ const summary = staged.length
   : 'Nothing to stage: every package version is already published or staged.'
 
 console.log(`\n${summary}`)
-if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${summary}\n`)
+// biome-ignore lint/suspicious/noUndeclaredEnvVars: set by GitHub Actions, not a Turborepo task input
+const stepSummary = process.env.GITHUB_STEP_SUMMARY
+if (stepSummary) appendFileSync(stepSummary, `${summary}\n`)

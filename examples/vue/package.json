@@ -9,8 +9,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@docentjs/core": "workspace:*",
-    "@docentjs/dom": "workspace:*",
     "@docentjs/vue": "workspace:*",
     "vue": "^3.5.43"
   },
