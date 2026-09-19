@@ -1,0 +1,21 @@
+{
+  "name": "@docentjs/example-svelte",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@docentjs/core": "workspace:*",
+    "@docentjs/dom": "workspace:*",
+    "@docentjs/svelte": "workspace:*",
+    "svelte": "^5.57.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "vite": "^8.3.0"
+  }
+}

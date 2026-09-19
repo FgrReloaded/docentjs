@@ -1,0 +1,136 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font:
+    15px / 1.5 system-ui,
+    sans-serif;
+  color: #1f2937;
+  background: #f3f4f6;
+}
+header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  background: #111827;
+  color: #fff;
+  z-index: 10;
+}
+header .brand {
+  font-weight: 700;
+}
+header .spacer {
+  flex: 1;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 150vh;
+}
+aside {
+  background: #fff;
+  border-right: 1px solid #e5e7eb;
+  padding: 16px;
+}
+aside a {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: #374151;
+  text-decoration: none;
+}
+main {
+  padding: 24px;
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+button {
+  font: inherit;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  cursor: pointer;
+}
+button.primary {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.far {
+  margin-top: 70vh;
+}
+input {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  width: 260px;
+}
+@media (max-width: 600px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Custom popover rendered by the app (headless mode). Page CSS applies because it lives in the light DOM. */
+.tour-card {
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  background: #111827;
+  color: #f9fafb;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+}
+.tour-card h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+.tour-card p {
+  margin: 0 0 12px;
+  color: #cbd5e1;
+}
+.tour-card footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tour-card .dots {
+  flex: 1;
+  display: flex;
+  gap: 5px;
+}
+.tour-card .dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4b5563;
+}
+.tour-card .dots i.on {
+  background: #a78bfa;
+}
+.tour-card button {
+  background: #1f2937;
+  color: #f9fafb;
+  border-color: #374151;
+}
+.tour-card button.primary {
+  background: #7c3aed;
+  border-color: #7c3aed;
+}

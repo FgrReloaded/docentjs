@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:," />
+  <title>Docent — vanilla example</title>
+  <script type="importmap">
+    {
+      "imports": {
+        "@docentjs/core": "../../packages/core/dist/index.js",
+        "@docentjs/dom": "../../packages/dom/dist/index.js",
+        "@docentjs/dom/themes": "../../packages/dom/dist/themes.js"
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 15px/1.5 system-ui, sans-serif; color: #1f2937; background: #f3f4f6; }
+    header { position: sticky; top: 0; display: flex; align-items: center; gap: 16px; padding: 12px 24px; background: #111827; color: #fff; z-index: 10; }
+    header .brand { font-weight: 700; }
+    header nav a { color: #cbd5e1; margin-right: 12px; text-decoration: none; }
+    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 200vh; }
+    aside { background: #fff; border-right: 1px solid #e5e7eb; padding: 16px; }
+    aside a { display: block; padding: 8px 10px; border-radius: 6px; color: #374151; text-decoration: none; }
+    aside a.active { background: #eef2ff; color: #3730a3; }
+    main { padding: 24px; }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 16px; }
+    button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; }
+    button.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .far { margin-top: 90vh; }
+    .dots { display: flex; gap: 5px; align-items: center; }
+    .dots i { width: 7px; height: 7px; border-radius: 50%; background: #d1d5db; }
+    .dots i.on { background: #7c3aed; }
+    input { font: inherit; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; width: 260px; }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="brand">Acme</span>
+    <nav><a href="#">Home</a><a href="#">Reports</a><a href="#">Settings</a></nav>
+    <span style="flex:1"></span>
+    <button id="start" class="primary">Start tour</button>
+  </header>
+  <div class="layout">
+    <aside data-docent="sidebar">
+      <a class="active" href="#">Dashboard</a>
+      <a href="#">Projects</a>
+      <a href="#">Invoices</a>
+      <a href="#">Team</a>
+    </aside>
+    <main>
+      <div class="toolbar">
+        <button id="new-project" class="primary">New project</button>
+        <button id="import">Import</button>
+        <button id="export">Export</button>
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0">Welcome back</h2>
+        <p>Nothing much here. Scroll down for the search box.</p>
+      </div>
+      <div class="card far">
+        <label>Search projects<br /><input id="search" placeholder="Type anything" /></label>
+      </div>
+    </main>
+  </div>
+
+  <script type="module">
+    import { createTour, defineTour } from '@docentjs/dom'
+    import { minimal } from '@docentjs/dom/themes'
+
+    const tour = defineTour({
+      id: 'vanilla-demo',
+      version: 1,
+      options: {
+        showProgress: true,
+        closeOnOverlayClick: false,
+        spotlight: { padding: 8, radius: 8 },
+        theme: { accent: '#7c3aed', radius: '14px' },
+        template: 'brand',
+      },
+      steps: [
+        { id: 'intro', title: 'Welcome to Acme', body: 'This takes about a minute. Use **arrow keys** or the buttons.', format: 'markdown' },
+        { id: 'sidebar', target: { name: 'sidebar' }, title: 'Navigation', body: 'Everything you own lives here.', placement: 'right' },
+        { id: 'new', target: '#new-project', title: 'Create a project', body: 'Click it to continue.', placement: 'bottom-start', advance: { on: 'click' } },
+        { id: 'search', target: '#search', title: 'Find anything', body: 'Type a letter to move on.', placement: 'top', advance: { on: 'input' } },
+        { id: 'done', title: 'That is it', body: 'Replay from the header button any time.' },
+      ],
+    })
+
+    const controller = createTour(tour, {
+      sink: { emit: (e) => console.log('[docent]', e.type, e.stepId ?? '') },
+      renderer: {
+        theme: minimal,
+        templates: {
+          brand: {
+            // Custom progress dots, rendered in the page's DOM so page CSS applies.
+            slots: {
+              progress: (ctx) => {
+                const wrap = document.createElement('div')
+                wrap.className = 'dots'
+                for (let i = 1; i <= ctx.progress.total; i++) {
+                  const dot = document.createElement('i')
+                  if (i === ctx.progress.current) dot.className = 'on'
+                  wrap.appendChild(dot)
+                }
+                return wrap
+              },
+            },
+            css: '.popover { border: 1px solid rgba(124, 58, 237, 0.35); }',
+          },
+        },
+      },
+    })
+    window.docent = controller
+    document.getElementById('start').addEventListener('click', () => controller.start())
+
+    const params = new URLSearchParams(location.search)
+    if (params.has('start')) controller.start(params.get('start') || undefined)
+  </script>
+</body>
+</html>

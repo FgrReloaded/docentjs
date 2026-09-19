@@ -1,5 +1,33 @@
 # @docentjs/react
 
-React bindings for Docent.
+React bindings for [Docent](https://github.com/FgrReloaded/docentjs), a guided product tour library. React 18 and 19.
 
-Part of the [Docent](../../README.md) monorepo.
+```sh
+pnpm add @docentjs/react
+```
+
+```tsx
+import { useTour } from '@docentjs/react'
+import { welcomeTour } from './tours'
+
+function Dashboard() {
+  const tour = useTour(welcomeTour)
+  return <button onClick={() => tour.start()}>Take the tour</button>
+}
+```
+
+## Your own popover
+
+```tsx
+const tour = useTour(welcomeTour, { popover: (ctx) => <Card ctx={ctx} /> })
+// render {tour.portal} once anywhere in your tree
+```
+
+The component is portalled into a container the library positions, so context, hooks and CSS all work. The library keeps the overlay, spotlight, keyboard and focus handling.
+
+## Also
+
+- `<Tour tour autoStart popover>{(t) => …}</Tour>` component form.
+- `<DocentProvider renderer identity storage sink>` to share defaults.
+
+MIT

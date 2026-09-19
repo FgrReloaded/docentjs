@@ -1,6 +1,6 @@
 {
   "name": "@docentjs/dom",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Web renderer for Docent: overlay, spotlight, popover, positioning.",
   "license": "MIT",
   "repository": {
@@ -62,7 +62,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@docentjs/core": "workspace:*"
+    "@docentjs/core": "workspace:^"
   },
   "devDependencies": {
     "@types/jsdom": "^30.0.0",

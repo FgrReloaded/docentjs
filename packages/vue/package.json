@@ -1,6 +1,6 @@
 {
   "name": "@docentjs/vue",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Vue bindings for Docent.",
   "license": "MIT",
   "repository": {
@@ -52,8 +52,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@docentjs/core": "workspace:*",
-    "@docentjs/dom": "workspace:*"
+    "@docentjs/core": "workspace:^",
+    "@docentjs/dom": "workspace:^"
   },
   "peerDependencies": {
     "vue": ">=3.3"
