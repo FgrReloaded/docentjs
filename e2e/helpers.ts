@@ -34,3 +34,20 @@ export function viewport(page: Page) {
   if (!vp) throw new Error('viewport size unavailable')
   return vp
 }
+
+/** Wait until the popover has finished sliding to its spot (two equal readings in a row). */
+export async function settled(page: Page) {
+  let last = ''
+  await expect
+    .poll(
+      async () => {
+        const b = await popover(page).boundingBox()
+        const now = b ? `${Math.round(b.x)},${Math.round(b.y)}` : ''
+        const stable = now !== '' && now === last
+        last = now
+        return stable
+      },
+      { intervals: [50] },
+    )
+    .toBe(true)
+}

@@ -42,6 +42,22 @@ describe('DomRenderer', () => {
     expect(host()).toBeNull()
   })
 
+  it('fades in the first step and slides from the previous spot between steps', () => {
+    document.body.innerHTML = '<button id="target">go</button>'
+    const r = new DomRenderer()
+    r.show(ctx())
+    const first = shadow().querySelector('.popover') as HTMLElement
+    expect(first.hasAttribute('data-entering')).toBe(true)
+    first.style.transform = 'translate(10px, 20px)'
+
+    r.show(ctx())
+    const second = shadow().querySelector('.popover') as HTMLElement
+    expect(second).not.toBe(first)
+    expect(second.hasAttribute('data-entering')).toBe(false)
+    expect(second.hasAttribute('data-moving')).toBe(true)
+    r.hide()
+  })
+
   it('applies renderer, template and tour themes in order', () => {
     const r = new DomRenderer({
       theme: { accent: 'base', radius: '1px', width: '10px' },

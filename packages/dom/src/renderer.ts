@@ -107,6 +107,9 @@ export class DomRenderer implements Renderer {
   show(ctx: RenderContext): void {
     const firstStep = !this.host
     const host = this.mount()
+    // Where the previous step's popover sat, so the new one glides from there
+    // alongside the spotlight instead of vanishing and fading back in.
+    const from = this.popover?.style.transform || null
     this.teardownStep()
     this.ctx = ctx
     this.target = ctx.step.target === undefined ? null : resolveTarget(ctx.step.target, this.doc)
@@ -118,7 +121,12 @@ export class DomRenderer implements Renderer {
     const initialFocus = this.options.headless
       ? this.buildHeadless(ctx, host, this.options.headless)
       : this.buildDefault(ctx, host, template)
-    this.popover?.setAttribute('data-entering', '')
+    if (this.popover && from) {
+      this.popover.style.transform = from
+      this.popover.setAttribute('data-moving', '')
+    } else {
+      this.popover?.setAttribute('data-entering', '')
+    }
 
     if (this.target) {
       const smooth = this.scrollIntoView(this.target, ctx.step)

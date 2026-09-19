@@ -12,7 +12,9 @@ export const STYLES = `
   --docent-width: 320px;
   --docent-overlay: #000;
   --docent-overlay-opacity: 0.55;
-  --docent-duration: 250ms;
+  --docent-duration: 220ms;
+  /* Fast start, gentle stop: movement begins the moment you click. */
+  --docent-easing: cubic-bezier(0.2, 0.8, 0.2, 1);
   position: fixed;
   inset: 0;
   z-index: var(--docent-z, 2147483000);
@@ -36,7 +38,7 @@ export const STYLES = `
   background: var(--docent-overlay);
   opacity: var(--docent-overlay-opacity);
   pointer-events: auto;
-  transition: clip-path var(--docent-duration) ease;
+  transition: clip-path var(--docent-duration) var(--docent-easing);
 }
 .blocker {
   position: absolute;
@@ -56,9 +58,12 @@ export const STYLES = `
   padding: 16px;
   pointer-events: auto;
   outline: none;
-  transition: transform var(--docent-duration) ease, opacity var(--docent-duration) ease;
+  transition: transform var(--docent-duration) var(--docent-easing), opacity var(--docent-duration) var(--docent-easing);
 }
 .popover[data-entering] { opacity: 0; transition: none; }
+/* Between steps the popover slides; only its content cross-fades, briefly. */
+.popover[data-moving] > * { animation: docent-swap 160ms ease-out; }
+@keyframes docent-swap { from { opacity: 0; } to { opacity: 1; } }
 .popover.headless {
   width: auto;
   max-width: none;
@@ -130,5 +135,6 @@ export const STYLES = `
 .button:focus-visible, .close:focus-visible { outline: 2px solid var(--docent-accent); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   .overlay, .popover { transition: none; }
+  .popover[data-moving] > * { animation: none; }
 }
 `

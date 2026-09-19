@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { box, button, events, open, overlay, popover, state, viewport } from './helpers'
+import { box, button, events, open, overlay, popover, settled, state, viewport } from './helpers'
 
 test.describe('basic flow', () => {
   test('modal step is centred and progress counts every step', async ({ page, isMobile }) => {
@@ -28,6 +28,7 @@ test.describe('basic flow', () => {
     await button(page, 'Next').click()
     const p = popover(page)
     await expect(p).toHaveAttribute('data-side', 'bottom')
+    await settled(page)
     const target = await box(page.locator('#save'))
     const pop = await box(p)
     expect(pop.y).toBeGreaterThan(target.y + target.height)

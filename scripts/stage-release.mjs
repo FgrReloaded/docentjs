@@ -74,6 +74,11 @@ for (const pkg of packages()) {
       console.log(`skip ${spec}: already staged, waiting for approval`)
       continue
     }
+    // Approved between our "is it published?" check and staging (a push during approval).
+    if (/cannot publish over the previously published versions/i.test(text)) {
+      console.log(`skip ${spec}: went live while this run was checking`)
+      continue
+    }
     throw error
   }
 }
