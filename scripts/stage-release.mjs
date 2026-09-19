@@ -40,8 +40,21 @@ for (const pkg of packages()) {
   if (process.env.CI) args.push('--provenance')
   if (dryRun) args.push('--dry-run')
   console.log(`stage ${spec} (tag ${distTag(pkg.version)})`)
-  run('npm', args, { stdio: 'inherit' })
-  staged.push(spec)
+  try {
+    const output = run('npm', args)
+    if (output) console.log(output)
+    staged.push(spec)
+  } catch (error) {
+    const text = `${error.stdout ?? ''}${error.stderr ?? ''}`
+    console.log(text)
+    // CI cannot list staged versions (OIDC tokens only cover publishing), so a
+    // version staged by an earlier run is only detected here.
+    if (/already (been )?staged|E409|conflict/i.test(text)) {
+      console.log(`skip ${spec}: already staged, waiting for approval`)
+      continue
+    }
+    throw error
+  }
 }
 
 const summary = staged.length

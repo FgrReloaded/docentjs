@@ -19,27 +19,32 @@ jobs:
         with:
           fetch-depth: 0
       - uses: pnpm/action-setup@v4
+      # No `registry-url` here: it writes an .npmrc with a placeholder token that
+      # npm would send instead of using trusted publishing (OIDC).
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
-          registry-url: https://registry.npmjs.org
       # Staged publishing needs npm 11.15 or newer.
       - run: npm install -g npm@latest
       - run: pnpm install --frozen-lockfile
       - run: pnpm build:packages
       - run: pnpm check:publish
 
-      # With pending changesets: open/update the version PR.
-      # Without: stage any unpublished versions. Nothing goes live until a
-      # maintainer approves with 2FA (`pnpm release:approve`).
-      - name: Version PR or stage
+      # With pending changesets: open or update the version PR. Publishing is
+      # deliberately not handled by this action (it writes its own .npmrc).
+      - name: Version PR
+        id: changesets
         uses: changesets/action@v1
         with:
           title: 'chore: version packages'
           commit: 'chore: version packages'
           version: pnpm changeset:version
-          publish: pnpm release:stage
-          createGithubReleases: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # No pending changesets: stage any unpublished versions. Nothing goes live
+      # until a maintainer approves with 2FA (`pnpm release:approve`).
+      - name: Stage unpublished versions
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        run: node scripts/stage-release.mjs
