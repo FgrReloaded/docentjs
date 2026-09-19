@@ -9,6 +9,7 @@ import { createInterface } from 'node:readline/promises'
 import { isPublished, packages, root, stagedVersions } from './release-lib.mjs'
 
 const pending = []
+const waiting = []
 for (const pkg of packages()) {
   if (isPublished(pkg.name, pkg.version)) continue
   const match = stagedVersions(pkg.name).find((s) => s.version === pkg.version)
@@ -20,7 +21,20 @@ for (const pkg of packages()) {
     console.error(`cannot read the stage id for ${pkg.name}@${pkg.version}:`, match.raw)
     process.exit(1)
   }
+  if (match.raw?.status === 'validating') {
+    // npm is still checking the upload; approving now fails.
+    console.log(`still validating on npm: ${pkg.name}@${pkg.version} (rerun in a minute)`)
+    waiting.push(`${pkg.name}@${pkg.version}`)
+    continue
+  }
   pending.push({ spec: `${pkg.name}@${pkg.version}`, id: match.id })
+}
+
+if (pending.length === 0 && waiting.length > 0) {
+  console.log(
+    '\nNothing to approve yet: npm is still validating. Rerun `pnpm release:approve` in a minute.',
+  )
+  process.exit(0)
 }
 
 if (pending.length === 0) {
@@ -59,6 +73,13 @@ for (const p of pending) {
     )
     process.exit(r.status ?? 1)
   }
+}
+
+if (waiting.length > 0) {
+  console.log(
+    `\n${waiting.length} version(s) still validating. Rerun \`pnpm release:approve\` shortly; it tags once all are live.`,
+  )
+  process.exit(0)
 }
 
 // One tag per version (all packages share it). A single tag push reliably
