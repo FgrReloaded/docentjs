@@ -1,5 +1,12 @@
 # @docentjs/react
 
+## 0.5.1
+
+### Patch Changes
+
+- @docentjs/core@0.5.1
+  - @docentjs/dom@0.5.1
+
 ## 0.5.0
 
 ### Patch Changes
