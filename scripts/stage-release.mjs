@@ -37,7 +37,9 @@ for (const pkg of packages()) {
     '--tag',
     distTag(pkg.version),
   ]
-  if (process.env.CI) args.push('--provenance')
+  // Verbose logging surfaces npm's OIDC messages, which explain a refused
+  // trusted-publishing login; they are hidden at the default log level.
+  if (process.env.CI) args.push('--provenance', '--loglevel', 'verbose')
   if (dryRun) args.push('--dry-run')
   console.log(`stage ${spec} (tag ${distTag(pkg.version)})`)
   try {
@@ -46,7 +48,10 @@ for (const pkg of packages()) {
     staged.push(spec)
   } catch (error) {
     const text = `${error.stdout ?? ''}${error.stderr ?? ''}`
-    console.log(text)
+    const useful = text
+      .split('\n')
+      .filter((line) => !/^npm (verbose|timing|silly|http)\b/.test(line) || /oidc/i.test(line))
+    console.log(useful.join('\n'))
     // CI cannot list staged versions (OIDC tokens only cover publishing), so a
     // version staged by an earlier run is only detected here.
     if (/already (been )?staged|E409|conflict/i.test(text)) {
