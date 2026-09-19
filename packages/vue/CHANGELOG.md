@@ -1,5 +1,13 @@
 # @docentjs/vue
 
+## 0.2.1
+
+### Patch Changes
+
+- af0f00b: One install is now enough for framework apps. `@docentjs/react`, `@docentjs/vue` and `@docentjs/svelte` re-export `defineTour`, the tour and renderer types (`RenderContext`, `Step`, `Theme`, …) and `createLocalStorage`, and each has a `/themes` entry with the presets. Previously, importing these from `@docentjs/core` failed under pnpm unless core was installed separately. In React the tour type is exported as `TourDefinition`, since `Tour` is the component.
+- @docentjs/core@0.2.1
+  - @docentjs/dom@0.2.1
+
 ## 0.2.0
 
 ### Minor Changes
