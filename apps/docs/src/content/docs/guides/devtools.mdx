@@ -84,7 +84,16 @@ A live editor for any tour. Changes apply to the running tour as you type, so yo
 - **Look**: arrow style, overlay style and blur, spotlight shape, ring, padding and radius. See [Arrows, spotlight and overlay](/customize/arrows-and-spotlight/).
 - **Theme**: start from a preset and adjust colors, radius, width and font.
 
-Edits live in the panel, not in your code. Tours you changed are marked as edited. **Copy JSON** or **Download** the result and paste it back into your source; **Discard edits** returns to the original.
+### Keeping your edits
+
+Edits apply to the running page, not to your source files. To keep them, **Copy JSON** or **Download** the tour and put it back in your code. If your tours live in `.json` files, the download can replace the file as it is:
+
+```ts
+import welcomeJson from './tours/welcome.tour.json'
+export const welcome = defineTour(welcomeJson)
+```
+
+Until then, unsaved edits are kept in this browser, so a reload or a hot update does not lose them. The Edit tab tells you when edits were restored from an earlier session. It also warns you when the tour's code has changed since you edited it, so you can review the edits or discard them. Once your code matches the edits, the saved copy is dropped. **Discard edits** always returns to the version in your code.
 
 ## Simulate
 

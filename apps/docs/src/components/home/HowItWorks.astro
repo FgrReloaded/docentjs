@@ -1,0 +1,51 @@
+---
+import { Code } from '@astrojs/starlight/components'
+
+const define = `const tour = defineTour({
+  id: 'welcome',
+  steps: [
+    { id: 'hi', title: 'Welcome' },
+    { id: 'new', target: { name: 'new' },
+      title: 'Create a project' },
+  ],
+})`
+const mark = `<button data-docent="new">
+  New project
+</button>`
+const start = `createTour(tour).start()
+
+// or, for many tours with rules:
+createDocent({ tours: [welcome, billing] })`
+---
+
+<section class="home-section not-content">
+  <div class="section-head">
+    <p class="section-kicker">How it works</p>
+    <h2 class="section-title">A tour is a small JSON document.</h2>
+    <p class="section-lede">
+      You describe the steps, point each one at an element, and start it. Docent draws the
+      spotlight, places the popover, follows the element as the page scrolls and resizes, and
+      remembers where each user got to.
+    </p>
+  </div>
+  <div class="how">
+    <div class="how-step">
+      <span class="how-num">01</span>
+      <h3>Describe the steps</h3>
+      <p>Each step has a title, a sentence or two, and the element it points at.</p>
+      <Code code={define} lang="ts" />
+    </div>
+    <div class="how-step">
+      <span class="how-num">02</span>
+      <h3>Name the elements</h3>
+      <p>A <code>data-docent</code> name survives redesigns and refactors, unlike a CSS class.</p>
+      <Code code={mark} lang="html" />
+    </div>
+    <div class="how-step">
+      <span class="how-num">03</span>
+      <h3>Start it</h3>
+      <p>Start one tour yourself, or let the manager decide who sees which tour, and when.</p>
+      <Code code={start} lang="ts" />
+    </div>
+  </div>
+</section>

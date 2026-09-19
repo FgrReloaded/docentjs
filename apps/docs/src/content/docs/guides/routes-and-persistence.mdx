@@ -1,0 +1,59 @@
+---
+title: Routes and persistence
+description: Tours that span several pages, and tours that pick up where the user left off after a reload.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+## Multi-page tours
+
+Some tours need to cross pages: open the invoices list, then explain the editor. Give each step a `route` pattern saying which page it belongs to.
+
+```ts
+steps: [
+  { id: 'open', route: '/app', target: { name: 'nav-invoices' }, advance: { on: 'click' } },
+  { id: 'new', route: '/app/invoices', target: { name: 'new-invoice' } },
+]
+```
+
+When the current path does not match the step's route, the tour pauses and hides everything. When the user arrives on the right page, it carries on. Here, clicking the nav link navigates to `/app/invoices`, and the second step appears there.
+
+Patterns match the path only; query strings and hashes are ignored.
+
+| Pattern | Matches |
+| --- | --- |
+| `/settings` | exactly `/settings` |
+| `/users/:id` | `/users/42`, one segment |
+| `/users/*` | any one segment after `/users/` |
+| `/docs/**` | `/docs` and anything below it |
+
+`createTour` notices navigation through `popstate`, `hashchange` and the Navigation API, which covers most client-side routers. If yours changes the URL without any of those, call `controller.routeChanged()` after each navigation.
+
+## Remembering progress
+
+With `options.persist: true`, the current step is saved as the user moves through the tour. Call `resume()` instead of `start()` and the tour continues from that step after a reload or a full page navigation.
+
+```ts
+const tour = createTour(onboarding)   // options: { persist: true }
+tour.resume()
+```
+
+Progress is keyed by tour id and saved in `localStorage`, with an in-memory fallback when storage is blocked. The same record tracks whether the tour was completed or skipped, which is what [frequency](/guides/triggers-and-conditions/#frequency) rules read.
+
+## Saving progress somewhere else
+
+To keep progress on your server, so it follows the user across devices, pass any object with `get`, `set` and `remove`. They may be synchronous or return promises.
+
+```ts
+createTour(tour, {
+  storage: {
+    get: (key) => api.get(`/tour-progress/${key}`),
+    set: (key, value) => api.put(`/tour-progress/${key}`, value),
+    remove: (key) => api.delete(`/tour-progress/${key}`),
+  },
+})
+```
+
+<Aside>
+The manager scopes keys per user once you call `identify`, so one storage adapter serves every user.
+</Aside>

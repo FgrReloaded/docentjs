@@ -191,6 +191,13 @@ select { appearance: none; padding-right: 22px; background-image: linear-gradien
 .candidates { display: flex; flex-direction: column; gap: 4px; padding: 8px; border: 1px dashed var(--line); border-radius: 8px; }
 .candidate { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--line-soft); border-radius: 6px; background: var(--bg); color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
 .candidate:hover { border-color: var(--accent); }
+.notice {
+  margin: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--panel); color: var(--muted); line-height: 1.45;
+}
+.notice strong { color: var(--fg); font-weight: 600; }
+.notice.warn-notice { border-color: oklch(82% 0.13 85 / 0.45); background: oklch(82% 0.13 85 / 0.08); }
+.notice.warn-notice strong { color: var(--warn); }
 .hint-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; color: var(--muted); }
 code { padding: 1px 5px; border-radius: 4px; background: var(--raised); color: var(--fg); }
 

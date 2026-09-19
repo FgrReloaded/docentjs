@@ -1,111 +1,125 @@
 ---
 title: Getting started
-description: Install Docent and run your first tour in a few lines.
+description: Install Docent, describe a tour, and show it to someone. About five minutes from nothing to a working tour.
 ---
 
-import { Tabs, TabItem } from '@astrojs/starlight/components'
+import { Aside, LinkCard, CardGrid, Steps, Tabs, TabItem } from '@astrojs/starlight/components'
 import Demo from '../../components/Demo.astro'
 
-## Install
+A **tour** walks someone through your interface one element at a time. Each **step** dims the page, spotlights one element, and explains it in a small popover with Back and Next buttons. Docent handles the positioning, scrolling, keyboard and focus. You write the words and decide which element each step points at.
 
-<Tabs>
-  <TabItem label="Vanilla">
-    ```sh
-    pnpm add @docentjs/dom
-    ```
-  </TabItem>
-  <TabItem label="React">
-    ```sh
-    pnpm add @docentjs/react
-    ```
-  </TabItem>
-  <TabItem label="Vue">
-    ```sh
-    pnpm add @docentjs/vue
-    ```
-  </TabItem>
-  <TabItem label="Svelte">
-    ```sh
-    pnpm add @docentjs/svelte
-    ```
-  </TabItem>
-</Tabs>
+<Steps>
 
-Install one package. `@docentjs/dom` is the web renderer and brings `@docentjs/core`, the engine, with it. Each framework package brings both and re-exports what you need, so in a React app you import `defineTour` and everything else from `@docentjs/react`.
+1. **Install the package for your stack.**
 
-## Define a tour
+   <Tabs syncKey="framework">
+     <TabItem label="Vanilla">
+       ```sh
+       pnpm add @docentjs/dom
+       ```
+     </TabItem>
+     <TabItem label="React">
+       ```sh
+       pnpm add @docentjs/react
+       ```
+     </TabItem>
+     <TabItem label="Vue">
+       ```sh
+       pnpm add @docentjs/vue
+       ```
+     </TabItem>
+     <TabItem label="Svelte">
+       ```sh
+       pnpm add @docentjs/svelte
+       ```
+     </TabItem>
+   </Tabs>
 
-A tour is a plain JSON-compatible object. `defineTour` gives you type inference and stamps the schema version.
+   One package is enough. The framework packages include the web renderer and the engine, and re-export everything you need, so in a React app every import comes from `@docentjs/react`.
 
-```ts
-import { createTour, defineTour } from '@docentjs/dom'
+2. **Describe the tour.**
 
-const tour = defineTour({
-  id: 'welcome',
-  version: 1,
-  options: { showProgress: true },
-  steps: [
-    { id: 'intro', title: 'Welcome', body: 'This takes about a minute.' },
-    { id: 'sidebar', target: { name: 'sidebar' }, title: 'Navigation', placement: 'right' },
-    { id: 'new', target: '#new-project', title: 'Create a project', advance: { on: 'click' } },
-    { id: 'done', title: 'All set' },
-  ],
-})
-```
+   A tour is a plain object: an `id` and a list of `steps`. `defineTour` adds type checking and stamps the schema version.
 
-## Mark targets
+   ```ts title="tours.ts"
+   import { defineTour } from '@docentjs/dom'
 
-Prefer a logical name over a CSS selector. It survives refactors and works on native platforms later.
+   export const welcome = defineTour({
+     id: 'welcome',
+     options: { showProgress: true },
+     steps: [
+       { id: 'intro', title: 'Welcome', body: 'This takes about a minute.' },
+       { id: 'sidebar', target: { name: 'sidebar' }, title: 'Navigation', placement: 'right' },
+       { id: 'new', target: '#new-project', title: 'Create a project', advance: { on: 'click' } },
+       { id: 'done', title: 'All set' },
+     ],
+   })
+   ```
 
-```html
-<aside data-docent="sidebar">…</aside>
-```
+   A step without a `target` shows as a centred card, which suits a welcome and a goodbye. The last-but-one step uses `advance: { on: 'click' }`, so it moves on when the person clicks the button instead of pressing Next.
 
-A bare string target such as `'#new-project'` is treated as a CSS selector.
+3. **Mark the elements the steps point at.**
 
-## Start it
+   ```html
+   <aside data-docent="sidebar">…</aside>
+   <button id="new-project">New project</button>
+   ```
 
-```ts
-const controller = createTour(tour)
-controller.start()
-```
+   `target: { name: 'sidebar' }` finds `data-docent="sidebar"`. A plain string such as `'#new-project'` is a CSS selector. Names are the better habit: they survive redesigns, and they say plainly that an element is part of a tour.
 
-`createTour` wires the web renderer, `localStorage` persistence, and route tracking. Call `resume()` instead of `start()` to continue where the user left off.
+4. **Start it.**
+
+   ```ts
+   import { createTour } from '@docentjs/dom'
+   import { welcome } from './tours'
+
+   createTour(welcome).start()
+   ```
+
+   `createTour` connects the web renderer, saves progress to `localStorage`, and follows client-side navigation. Call `resume()` instead of `start()` to continue from where the person left off.
+
+</Steps>
+
+Here is the same tour running on this page:
 
 <Demo
+  caption="The tour from the steps above"
   tour={{
     schemaVersion: 1,
     id: 'getting-started',
     options: { showProgress: true },
     steps: [
       { id: 'intro', title: 'Welcome', body: 'This takes about a minute.' },
-      { id: 'sidebar', target: { name: 'gs-sidebar' }, title: 'Navigation', placement: 'right' },
-      { id: 'new', target: { name: 'gs-new' }, title: 'Create a project', body: 'Click it to continue.', advance: { on: 'click' } },
-      { id: 'done', title: 'All set' },
+      { id: 'sidebar', target: { name: 'gs-sidebar' }, title: 'Navigation', body: 'Everything you work on lives here.', placement: 'right' },
+      { id: 'new', target: { name: 'gs-new' }, title: 'Create a project', body: 'Click the button to continue.', advance: { on: 'click' } },
+      { id: 'done', title: 'All set', body: 'That is a whole tour.' },
     ],
   }}
 >
   <div class="row">
-    <div data-docent="gs-sidebar" style="padding: 0.5rem 1rem; border: 1px dashed var(--sl-color-hairline); border-radius: 8px;">Sidebar</div>
+    <span class="chip" data-docent="gs-sidebar">Sidebar</span>
     <button type="button" data-docent="gs-new">New project</button>
   </div>
 </Demo>
 
-## Many tours with rules
-
-When you have several tours with rules about who sees them and when, hand them all to the manager instead:
+<Aside type="tip" title="Showing tours automatically">
+`createTour(...).start()` shows a tour when you call it. To show tours on their own, for example once to new users on their first visit, hand them to the [tour manager](/guides/manager/) instead:
 
 ```ts
 import { createDocent } from '@docentjs/dom'
 
-const docent = createDocent({ tours: [welcome, invoices, whatsNew] })
+const docent = createDocent({ tours: [welcome, invoices] })
 docent.identify(user.id, { plan: user.plan })
 ```
 
-Each tour's `trigger`, `conditions`, and `frequency` decide the rest. See [Tour manager](/guides/manager/).
+Each tour's `trigger`, `conditions` and `frequency` then decide who sees it and when.
+</Aside>
 
-## Next
+## Where to go next
 
-- [Concepts](/concepts/) explains the pieces: schema, engine, renderer, seams.
-- [Targets](/guides/targets/) covers self-healing selectors and lazy elements.
-- [Theming](/customize/theming/) makes it look like your product.
+<CardGrid>
+  <LinkCard title="Concepts" description="How tours, the engine and the renderer fit together." href="/concepts/" />
+  <LinkCard title="Targets" description="Point steps at elements reliably, including ones that load late." href="/guides/targets/" />
+  <LinkCard title="Tour manager" description="Many tours, shown to the right people at the right time." href="/guides/manager/" />
+  <LinkCard title="Theming" description="Make the popover match your product." href="/customize/theming/" />
+</CardGrid>

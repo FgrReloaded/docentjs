@@ -1,0 +1,29 @@
+---
+/**
+ * Page title with the section it belongs to above it and the page's
+ * description below it as a lede, so every page opens by saying what it is.
+ */
+/** Starlight links "Overview" in the table of contents to this id. */
+const PAGE_TITLE_ID = '_top'
+
+const { entry, sidebar } = Astro.locals.starlightRoute
+type Item = (typeof sidebar)[number]
+function sectionOf(items: Item[], parent?: string): string | undefined {
+  for (const item of items) {
+    if (item.type === 'link' && item.isCurrent) return parent
+    if (item.type === 'group') {
+      const found = sectionOf(item.entries, item.label)
+      if (found) return found
+    }
+  }
+  return undefined
+}
+const section = sectionOf(sidebar)
+const { title, description } = entry.data
+---
+
+<header class="page-head">
+  {section && <p class="page-eyebrow">{section}</p>}
+  <h1 id={PAGE_TITLE_ID}>{title}</h1>
+  {description && <p class="page-lede">{description}</p>}
+</header>

@@ -2,10 +2,12 @@
  * Devtools state. Signals, so any component that reads a value re-renders
  * when it changes. Tours come from the manager; unsaved edits live in
  * `drafts` and are pushed to the manager (live preview) after a short pause.
+ * Drafts are also kept in localStorage and restored on the next load.
  */
 
 import type { Docent, DocentEvent, DocentState, Tour } from '@docentjs/core'
 import { computed, effect, signal } from '@preact/signals'
+import { loadDrafts, reconcile, type SavedDrafts, saveDrafts, stableJson } from '../drafts'
 import { type PerfSnapshot, recordPerf } from '../perf'
 
 export type Tab = 'tours' | 'edit' | 'simulate' | 'events' | 'audit' | 'perf'
@@ -67,6 +69,15 @@ export function createStore(docent: Docent, options: StoreOptions) {
   const perf = signal<PerfSnapshot>({ steps: [], missingTargets: 0 })
   const mountedAt = Date.now()
   const originals = new Map<string, Tour>()
+  /** Drafts from earlier sessions, until their tour shows up in the manager. */
+  const saved: SavedDrafts = loadDrafts()
+  /** Code version (stable JSON) each draft started from. */
+  const bases = new Map<string, string>()
+  const draftTimes = new Map<string, number>()
+  /** Tours whose edits were restored from an earlier session. */
+  const restored = signal<ReadonlySet<string>>(new Set())
+  /** Restored tours whose code changed after the edits were made. */
+  const stale = signal<ReadonlySet<string>>(new Set())
   let eventSeq = 0
   const cleanups: Array<() => void> = []
 
@@ -78,13 +89,48 @@ export function createStore(docent: Docent, options: StoreOptions) {
 
   const refreshTours = () => {
     const list = docent.getTours()
-    for (const t of list) if (!originals.has(t.id)) originals.set(t.id, t)
+    const restore: Tour[] = []
+    for (const t of list) {
+      if (originals.has(t.id)) continue
+      originals.set(t.id, t)
+      const draft = saved[t.id]
+      if (!draft) continue
+      const verdict = reconcile(draft, t)
+      delete saved[t.id]
+      if (verdict === 'saved') continue
+      bases.set(t.id, draft.base)
+      draftTimes.set(t.id, draft.at)
+      restore.push(draft.tour)
+      restored.value = new Set([...restored.value, t.id])
+      if (verdict === 'stale') stale.value = new Set([...stale.value, t.id])
+    }
     managerTours.value = list
+    if (restore.length > 0) {
+      drafts.value = { ...drafts.value, ...Object.fromEntries(restore.map((t) => [t.id, t])) }
+      for (const t of restore) void docent.updateTour(t)
+    }
   }
 
   cleanups.push(
     effect(() => {
       savePrefs({ open: open.value, dock: dock.value, size: size.value, tab: tab.value })
+    }),
+  )
+  cleanups.push(
+    effect(() => {
+      const current = drafts.value
+      // Drafts for tours this page has not registered (yet) are kept as they were.
+      const out: SavedDrafts = { ...saved }
+      for (const [id, tour] of Object.entries(current)) {
+        const original = originals.get(id)
+        if (!original || tour === original) continue
+        out[id] = {
+          tour,
+          base: bases.get(id) ?? stableJson(original),
+          at: draftTimes.get(id) ?? Date.now(),
+        }
+      }
+      saveDrafts(out)
     }),
   )
   cleanups.push(
@@ -130,6 +176,9 @@ export function createStore(docent: Docent, options: StoreOptions) {
     const current = tours.value.find((t) => t.id === id)
     if (!current) return
     const next = change(current)
+    const original = originals.get(id)
+    if (original && !bases.has(id)) bases.set(id, stableJson(original))
+    draftTimes.set(id, Date.now())
     drafts.value = { ...drafts.value, [id]: next }
     if (pending && pending.id !== id) flush()
     pending = next
@@ -142,6 +191,11 @@ export function createStore(docent: Docent, options: StoreOptions) {
     const original = originals.get(id)
     if (!original) return
     const { [id]: _removed, ...rest } = drafts.value
+    bases.delete(id)
+    draftTimes.delete(id)
+    const without = (set: ReadonlySet<string>) => new Set([...set].filter((x) => x !== id))
+    restored.value = without(restored.value)
+    stale.value = without(stale.value)
     drafts.value = rest
     if (pending?.id === id) pending = undefined
     void docent.updateTour(original)
@@ -162,6 +216,8 @@ export function createStore(docent: Docent, options: StoreOptions) {
     tours,
     drafts,
     edited,
+    restored,
+    stale,
     tick,
     events,
     selection,

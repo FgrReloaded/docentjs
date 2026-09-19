@@ -1,0 +1,135 @@
+---
+const arrows = ['caret', 'none', 'line', 'dashed', 'dotted', 'curve', 'curve-dashed', 'squiggle', 'loop', 'elbow', 'sketch', 'pin']
+const shapes = ['rounded', 'rect', 'pill', 'circle']
+const rings = ['hairline', 'none', 'glow', 'pulse', 'dashed', 'solid']
+const overlays = ['dim', 'blur', 'vignette', 'none']
+const groups = [
+  { name: 'arrow', label: 'Arrow', options: arrows, initial: 'curve' },
+  { name: 'shape', label: 'Spotlight shape', options: shapes, initial: 'pill' },
+  { name: 'ring', label: 'Ring', options: rings, initial: 'hairline' },
+  { name: 'overlay', label: 'Overlay', options: overlays, initial: 'dim' },
+]
+---
+
+<section class="home-section not-content">
+  <div class="section-head">
+    <p class="section-kicker">Make it yours</p>
+    <h2 class="section-title">Quiet by default. Expressive when you want it.</h2>
+    <p class="section-lede">
+      The default is a small caret, a soft spotlight and a dimmed page. Pick anything below to see
+      it on the button. Every choice is one field in the tour's JSON, for the whole tour or a single
+      step.
+    </p>
+  </div>
+  <div class="looks" data-looks>
+    <form class="looks-controls" data-looks-form>
+      {
+        groups.map((g) => (
+          <fieldset class="looks-group">
+            <legend>{g.label}</legend>
+            <div class="looks-options">
+              {g.options.map((o) => (
+                <label>
+                  <input type="radio" name={g.name} value={o} checked={o === g.initial} />
+                  <span>{o}</span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ))
+      }
+    </form>
+    <div class="looks-preview">
+      <div class="looks-canvas">
+        <span class="looks-target" data-docent="looks-target">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8M4.8 5.2 8 2l3.2 3.2M3 9.5v2.8A1.7 1.7 0 0 0 4.7 14h6.6a1.7 1.7 0 0 0 1.7-1.7V9.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          Share report
+        </span>
+      </div>
+      <div class="looks-bar">
+        <button type="button" class="dc-btn primary" data-looks-play>
+          <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4a.6.6 0 0 0 .9.5l6.6-4.2a.6.6 0 0 0 0-1L3.9 1.3a.6.6 0 0 0-.9.5Z" fill="currentColor" /></svg>
+          Preview
+        </button>
+        <p class="looks-hint">Choosing an option plays it. Press Escape or click the page to close.</p>
+      </div>
+      <pre class="looks-code" data-looks-code></pre>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { createTour, defineTour } from '@docentjs/dom'
+  import type { ArrowStyle, OverlayStyle, SpotlightRing, SpotlightShape } from '@docentjs/core'
+  import { dark } from '@docentjs/dom/themes'
+
+  const form = document.querySelector<HTMLFormElement>('[data-looks-form]')
+  const code = document.querySelector<HTMLElement>('[data-looks-code]')
+  let controller: ReturnType<typeof createTour> | undefined
+
+  const read = () => {
+    const data = new FormData(form ?? undefined)
+    return {
+      arrow: String(data.get('arrow')) as ArrowStyle,
+      shape: String(data.get('shape')) as SpotlightShape,
+      ring: String(data.get('ring')) as SpotlightRing,
+      overlay: String(data.get('overlay')) as OverlayStyle,
+    }
+  }
+
+  const escape = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+  const show = () => {
+    const l = read()
+    const str = (v: string) => `<span class="s">'${escape(v)}'</span>`
+    if (code) {
+      code.innerHTML = [
+        '<span class="k">options</span>: {',
+        `  arrow: ${str(l.arrow)},`,
+        `  spotlight: { shape: ${str(l.shape)}, ring: ${str(l.ring)} },`,
+        `  overlay: { style: ${str(l.overlay)} },`,
+        '}',
+      ].join('\n')
+    }
+  }
+
+  const play = () => {
+    const l = read()
+    controller?.destroy()
+    const isDark = document.documentElement.dataset.theme === 'dark'
+    controller = createTour(
+      defineTour({
+        id: 'home-looks',
+        options: {
+          arrow: l.arrow,
+          spotlight: { shape: l.shape, ring: l.ring },
+          overlay: { style: l.overlay },
+          closeOnOverlayClick: true,
+          showProgress: false,
+          labels: { done: 'Close' },
+        },
+        steps: [
+          {
+            id: 'look',
+            target: { name: 'looks-target' },
+            title: `${l.arrow} · ${l.shape} · ${l.ring}`,
+            body: `Overlay: ${l.overlay}. Change anything on the left to compare.`,
+            placement: 'bottom',
+            buttons: { back: false, skip: false },
+          },
+        ],
+      }),
+      {
+        renderer: isDark ? { theme: dark } : {},
+        storage: { get: () => null, set: () => {}, remove: () => {} },
+      },
+    )
+    void controller.start()
+  }
+
+  form?.addEventListener('change', () => {
+    show()
+    play()
+  })
+  document.querySelector('[data-looks-play]')?.addEventListener('click', play)
+  show()
+</script>

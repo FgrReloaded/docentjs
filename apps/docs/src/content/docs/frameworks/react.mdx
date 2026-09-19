@@ -1,0 +1,125 @@
+---
+title: React
+description: Hooks, a component and a provider for React 18 and 19, including your own popover component.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+```sh
+pnpm add @docentjs/react
+```
+
+This is the only package a React app needs. It re-exports `defineTour`, the types such as `RenderContext`, and `createLocalStorage`. Theme presets come from `@docentjs/react/themes`.
+
+<Aside>
+The tour definition type is exported as `TourDefinition`, because `Tour` is the name of the component.
+</Aside>
+
+## One tour: `useTour`
+
+```tsx
+import { useTour } from '@docentjs/react'
+import { welcomeTour } from './tours'
+
+function Dashboard() {
+  const tour = useTour(welcomeTour)
+  return (
+    <>
+      <button onClick={() => tour.start()}>Take the tour</button>
+      <p>Status: {tour.state.status}</p>
+    </>
+  )
+}
+```
+
+The hook returns the state and the controls: `start`, `resume`, `next`, `back`, `skip`, `goTo` and `notify`. The tour is created once and cleaned up when the component unmounts.
+
+It is recreated only when the tour's `id` or `version` changes. Define tours outside your components, or memoize them, so they are not rebuilt on every render.
+
+## Your own popover
+
+Pass a render function as `popover`. Your component renders inside the box Docent positions, through a portal, so context, hooks and your CSS all work as usual. Render `tour.portal` once, anywhere in your tree.
+
+```tsx
+import type { RenderContext } from '@docentjs/react'
+
+function Card({ ctx }: { ctx: RenderContext }) {
+  return (
+    <div className="card">
+      <h3>{ctx.step.title}</h3>
+      <p>{ctx.step.body}</p>
+      <button onClick={ctx.actions.next}>{ctx.isLast ? 'Done' : 'Next'}</button>
+    </div>
+  )
+}
+
+function Dashboard() {
+  const tour = useTour(welcomeTour, { popover: (ctx) => <Card ctx={ctx} /> })
+  return (
+    <>
+      <button onClick={() => tour.start()}>Start</button>
+      {tour.portal}
+    </>
+  )
+}
+```
+
+Docent still draws the spotlight, positions your card, and handles the keyboard and focus. See [Headless mode](/customize/headless/) for what the context contains.
+
+## The `<Tour>` component
+
+The component form renders the portal for you and passes the controls to its children. `autoStart` starts the tour on mount; `autoStart="resume"` continues saved progress.
+
+```tsx
+<Tour tour={welcomeTour} autoStart="resume" popover={(ctx) => <Card ctx={ctx} />}>
+  {(t) => <button onClick={() => t.skip()}>Skip the tour</button>}
+</Tour>
+```
+
+## Shared settings: `<DocentProvider>`
+
+Set the theme, templates, user, storage and analytics once for every tour below the provider.
+
+```tsx
+import { DocentProvider } from '@docentjs/react'
+import { minimal } from '@docentjs/react/themes'
+
+<DocentProvider
+  renderer={{ theme: minimal, templates: { card } }}
+  identity={{ id: user.id, traits: { plan: user.plan } }}
+  sink={{ emit: (e) => analytics.track(e.type, e) }}
+>
+  <App />
+</DocentProvider>
+```
+
+## Many tours: `useDocent`
+
+`useDocent` creates the [tour manager](/guides/manager/) for the component's lifetime. Use it once, near the root of your app.
+
+```tsx
+import { useDocent } from '@docentjs/react'
+import { invoices, welcome } from './tours'
+
+function App({ user }) {
+  const docent = useDocent({ tours: [welcome, invoices], popover: (ctx) => <Card ctx={ctx} /> })
+
+  useEffect(() => {
+    if (user) docent.identify(user.id, { plan: user.plan })
+  }, [user])
+
+  return <>{docent.portal}</>
+}
+```
+
+Tours now start from their own triggers, conditions and frequency. `docent.state.active` is the id of the running tour, and `docent.start(id)` starts one by hand. It works under React StrictMode.
+
+## Devtools
+
+```tsx
+import { DocentDevtools } from '@docentjs/devtools/react'
+
+<DocentDevtools docent={docent} />
+```
+
+It renders nothing in production builds. See [Devtools](/guides/devtools/).

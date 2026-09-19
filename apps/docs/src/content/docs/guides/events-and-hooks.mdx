@@ -1,0 +1,91 @@
+---
+title: Events and hooks
+description: Send tour activity to your analytics, and run your own code before and after each step.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+Docent tells you what happens in two ways. **Events** are records you can send anywhere, such as analytics. **Hooks** are functions that run at a moment in the tour, so you can prepare the page or react to it.
+
+## Events
+
+Every lifecycle event goes to the `sink` you pass in. Connect it to your analytics to learn where people drop off.
+
+```ts
+createTour(tour, {
+  sink: {
+    emit: (e) => analytics.track(e.type, { tour: e.tourId, step: e.stepId }),
+  },
+})
+```
+
+| Event | When |
+| --- | --- |
+| `tour:started` | a tour begins |
+| `tour:completed` | the person reaches the end |
+| `tour:skipped` | they close or skip it |
+| `tour:aborted` | it ends for another reason, such as a missing target with `onMissing: 'abort'` |
+| `step:shown` | a step appears |
+| `step:completed` | a step is finished and the tour moves on |
+| `step:skipped` | a step is passed over, for example by a condition |
+| `step:missing` | a step's target could not be found |
+
+Each event carries the tour id and version, the step id and index where it applies, a timestamp, and the user's identity.
+
+To send events to several places, combine sinks. `@docentjs/core` comes with every Docent package; add it to your own dependencies to import from it directly.
+
+```ts
+import { combineSinks } from '@docentjs/core'
+
+createTour(tour, { sink: combineSinks(analyticsSink, loggingSink) })
+```
+
+## Hooks
+
+Hooks are functions, so they live in your code rather than in the tour JSON.
+
+```ts
+createTour(tour, {
+  hooks: {
+    onStart: (tour) => {},
+    onStepChange: ({ step, index }) => {},
+    onComplete: (tour) => {},
+    onSkip: ({ step }) => {},
+    onAbort: (tour, reason) => {},
+    steps: {
+      'menu-item': {
+        beforeShow: async () => {
+          await openMenu()   // make sure the target exists
+        },
+        afterShow: () => {},
+        beforeHide: () => closeMenu(),
+      },
+    },
+  },
+})
+```
+
+`beforeShow` is the most useful one. It runs before the step looks for its target, so it can open a menu, expand a section, switch a tab or fetch data. Return `false` from it to skip the step.
+
+<Aside type="tip">
+With the manager, pass hooks keyed by tour id: `createDocent({ tours, hooks: { onboarding: { steps: { … } } } })`.
+</Aside>
+
+## Reading the state
+
+Subscribe to a controller to follow the tour, or read the state on demand:
+
+```ts
+const unsubscribe = controller.subscribe((state) => {
+  console.log(state.status, state.index)
+})
+
+controller.getState()   // { status, index, history, reason? }
+```
+
+| Status | Meaning |
+| --- | --- |
+| `idle` | not started |
+| `running` | a step is showing |
+| `paused` | waiting for the user to reach the step's route |
+| `completed`, `skipped`, `aborted` | ended, and how |

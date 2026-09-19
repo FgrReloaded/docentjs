@@ -1,57 +1,81 @@
 ---
 title: Theming
-description: Make the popover look like your product with tokens and presets.
+description: Match the popover to your product with a handful of tokens, a preset, or your own CSS.
 ---
 
+import { Aside } from '@astrojs/starlight/components'
 import Demo from '../../../components/Demo.astro'
 
-## Tokens
-
-Theme tokens are part of the tour JSON, so a builder can set them and they travel with the tour.
-
-```ts
-options: {
-  theme: { accent: '#7c3aed', radius: '14px', width: '340px', overlayOpacity: '0.7' },
-}
-```
-
-Each token becomes a `--docent-*` custom property on the shadow host: `background`, `foreground`, `muted`, `accent`, `accentForeground`, `radius`, `shadow`, `font`, `width`, `overlay`, `overlayOpacity`, `duration`, `zIndex`.
+Docent looks finished out of the box, and most teams change one thing: the accent color. This page goes from that one change to full control.
 
 ## The default look
 
-Ink on paper: a near-white surface, near-black text and an ink primary button, all tinted very slightly toward Docent's violet, with hairline edges. It is designed to look finished on any product without competing with its brand, so the usual first customization is just `accent`.
+Ink on paper: a near-white card, near-black text and an ink Next button, all tinted very slightly toward violet, with hairline edges instead of heavy borders. It is meant to sit quietly in any product without competing with its brand.
 
-**Fonts are inherited.** The popover uses your site's own font, so tours feel native. Set the `font` token only if you want something different:
+- **Your font.** The popover inherits your site's font, so tours feel native. Set the `font` token only if you want something else.
+- **Light by default.** Dark mode never switches on from the operating system setting, because a dark popover on a light site looks broken. On a dark product, use the `dark` preset or your own tokens.
 
-```ts
-options: { theme: { font: '"Söhne", system-ui, sans-serif' } }
-```
+## Tokens
 
-**Light is the default.** Dark mode never switches on automatically from the operating system, because a dark popover on a light site looks broken. Use the `dark` preset, or your own tokens, on dark products.
-
-Layers apply lowest to highest: renderer `theme`, then the template's theme, then the tour's `options.theme`.
-
-## Presets
+Tokens are a few named values, such as colors and sizes. They are part of the tour JSON, so they travel with the tour and a builder can set them.
 
 ```ts
-import { dark, minimal, contrast } from '@docentjs/dom/themes'
-createTour(tour, { renderer: { theme: minimal } })
+defineTour({
+  id: 'welcome',
+  options: {
+    theme: { accent: '#0d9488', radius: '8px', width: '320px' },
+  },
+  steps: [ … ],
+})
 ```
 
-The presets ship from a separate entry so they cost nothing unless imported. `light` spells out the default, `dark` is for dark products, `minimal` is flatter and tighter, and `contrast` maximises legibility.
+| Token | Controls |
+| --- | --- |
+| `accent`, `accentForeground` | the Next button's background and text |
+| `background`, `foreground`, `muted` | the card, its main text, and secondary text |
+| `radius`, `width`, `shadow` | the card's corners, width and shadow |
+| `font` | the font family, if not your site's |
+| `overlay`, `overlayOpacity` | the dimmed backdrop's color and strength |
+| `ring`, `connector` | the spotlight ring and drawn arrows |
+| `duration` | how long transitions take |
+| `zIndex` | the stacking order, if something of yours sits above tours |
 
-<Demo label="Tour theme tokens"
+Each token becomes a `--docent-*` CSS custom property, for example `--docent-accent`. Values are CSS strings, so any CSS color or length works.
+
+<Demo
+  caption="Tokens set in the tour JSON"
   tour={{
     schemaVersion: 1,
     id: 'theme-tokens',
     options: { theme: { accent: '#0d9488', radius: '4px', width: '280px', background: '#f0fdfa', foreground: '#134e4a' } },
-    steps: [{ id: 'a', target: { name: 'theme-target' }, title: 'Teal and square', body: 'Tokens came from the tour JSON.' }],
+    steps: [{ id: 'a', target: { name: 'theme-target' }, title: 'Teal and square', body: 'Every color and size here came from the tour JSON.' }],
   }}
 >
   <button type="button" data-docent="theme-target">Target</button>
 </Demo>
 
-<Demo label="Contrast preset" renderer={{ theme: 'contrast' }}
+## Presets
+
+Four ready-made themes ship in a separate entry point, so they add nothing to your bundle unless you import one.
+
+```ts
+import { dark } from '@docentjs/dom/themes'
+
+createTour(tour, { renderer: { theme: dark } })
+```
+
+| Preset | For |
+| --- | --- |
+| `light` | the default, spelled out, to build on |
+| `dark` | dark products |
+| `minimal` | flatter and tighter |
+| `contrast` | maximum legibility |
+
+In React, Vue and Svelte, import presets from `@docentjs/react/themes`, `@docentjs/vue/themes` or `@docentjs/svelte/themes`.
+
+<Demo
+  caption="The contrast preset"
+  renderer={{ theme: 'contrast' }}
   tour={{
     schemaVersion: 1,
     id: 'theme-contrast',
@@ -61,13 +85,31 @@ The presets ship from a separate entry so they cost nothing unless imported. `li
   <button type="button" data-docent="theme-target-2">Target</button>
 </Demo>
 
+## Where themes can be set
+
+Themes stack. Each layer overrides only the tokens it sets, from lowest to highest:
+
+1. the renderer's `theme`, for every tour in your app,
+2. the template's theme, when the tour names a [template](/customize/slots-and-templates/#templates),
+3. the tour's `options.theme`.
+
+A common setup is a preset on the renderer, your brand accent on top, and occasional per-tour tweaks in the JSON.
+
 ## CSS parts
 
-For anything tokens do not cover, style parts from your own stylesheet. Parts: `overlay`, `ring` (the hairline around the spotlight), `connector` (drawn arrows), `popover`, `arrow`, `header`, `title`, `close`, `body`, `media`, `footer`, `progress`, `meter`, `count`, `buttons`, `button`, `button-next`, `button-back`, `button-skip`.
+For anything tokens do not cover, style the popover's parts from your own stylesheet with `::part()`:
 
 ```css
-[data-docent-host]::part(title) { text-transform: uppercase; letter-spacing: 0.04em; }
-[data-docent-host]::part(button-next) { border-radius: 999px; }
+[data-docent-host]::part(title) {
+  letter-spacing: -0.01em;
+}
+[data-docent-host]::part(button-next) {
+  border-radius: 999px;
+}
 ```
 
-Or inject CSS into the shadow root with the renderer's `css` option or a template's `css`.
+The parts are `overlay`, `ring`, `connector`, `popover`, `arrow`, `header`, `title`, `close`, `body`, `media`, `footer`, `progress`, `meter`, `count`, `buttons`, `button`, `button-next`, `button-back` and `button-skip`.
+
+<Aside type="tip">
+To add CSS inside the shadow root instead, use the renderer's `css` option or a template's `css`. That lets you target any element, not only named parts.
+</Aside>

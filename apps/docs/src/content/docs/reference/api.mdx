@@ -1,0 +1,120 @@
+---
+title: API
+description: Every export, package by package. For the fields of a tour itself, see the tour schema.
+---
+
+Most apps use one package: `@docentjs/dom` without a framework, or the adapter for their framework. The adapters re-export what you need from the packages below them.
+
+## `@docentjs/dom`
+
+The web renderer, plus browser-ready versions of the engine's entry points.
+
+| Export | What it is |
+| --- | --- |
+| `createTour(tour, options?)` | a controller for one tour, with the DOM renderer, `localStorage` progress and route following connected; see [the controller](#tourcontroller) |
+| `createDocent(options?)` | the [tour manager](/guides/manager/), ready for the browser; see [the manager](#docent) |
+| `defineTour(tour)` | returns the tour with `schemaVersion` set, and checks its type |
+| `createLocalStorage()` | a storage adapter over `localStorage` that falls back to memory |
+| `DomRenderer` | the renderer itself, for use with `TourController` directly |
+| `computePosition`, `resolveTarget`, `waitForTarget` | the positioning and target helpers, for building your own renderer pieces |
+
+`createTour` options: everything in `ControllerOptions` below, plus `renderer` (renderer options) and `followRoutes`.
+
+`createDocent` options: `tours` (an array or a `TourSource`), `identity`, `storage`, `sink`, `hooks` keyed by tour id, `custom` predicates, `renderer`, `document`, and `connect` (`false` to start watching later with `connect()`).
+
+### Renderer options
+
+| Option | Purpose |
+| --- | --- |
+| `theme` | [theme tokens](/customize/theming/) for every tour |
+| `arrow`, `spotlight`, `overlay` | default [looks](/customize/arrows-and-spotlight/) |
+| `slots`, `templates`, `template` | [slots and templates](/customize/slots-and-templates/) |
+| `headless` | [your own popover](/customize/headless/) |
+| `css` | extra CSS inside the shadow root |
+| `labels` | button and progress wording |
+| `gap` | space between the popover and the target, in px |
+| `sheetBreakpoint` | the width below which the popover becomes a bottom sheet; `0` turns it off |
+| `avoidOcclusion` | move the target out from under sticky headers (default `true`) |
+| `document` | render into another document, such as an iframe |
+
+### `@docentjs/dom/themes`
+
+The presets `light`, `dark`, `minimal` and `contrast`, and `presets`, all four by name.
+
+## `@docentjs/core`
+
+The engine. It has no DOM code and runs anywhere.
+
+### `TourController`
+
+Drives one tour against a renderer. `createTour` returns a subclass with everything connected.
+
+| Method | What it does |
+| --- | --- |
+| `start(at?)` | start from the beginning, or from a step id or index |
+| `resume()` | continue saved progress, or start |
+| `next()`, `back()`, `skip()`, `goTo(step)` | move through the tour |
+| `abort(reason)` | end the tour, recorded as aborted |
+| `notify(name)` | move on a step waiting for `{ on: 'event', name }` |
+| `routeChanged()` | re-check the current route after a navigation it could not see |
+| `updateTour(tour)` | replace the definition while it runs, keeping the current step |
+| `getState()`, `subscribe(fn)` | the engine state: `{ status, index, history, reason? }` |
+| `destroy()` | stop and remove everything |
+
+`ControllerOptions`: `tour`, `renderer`, `identity`, `storage`, `sink`, `hooks`, `custom`, `tourState`, `defaultWaitMs`, `now`.
+
+### `Docent`
+
+The tour manager. Build it with `createDocent` from the dom package, which supplies the browser environment.
+
+| Member | What it does |
+| --- | --- |
+| `ready` | a promise that resolves once tours and progress are loaded |
+| `identify(id, traits)` | set the current user |
+| `track(name)` | report an event |
+| `start(id, { at? })`, `stop()` | start a tour by hand, or end the running one |
+| `reset(id?)`, `refresh()` | forget progress; re-check triggers |
+| `isEligible(id)`, `tourState(id)` | whether a tour would show now; its progress for this user |
+| `updateTour(tour)` | replace a tour's definition, even while it runs |
+| `getState()`, `subscribe(fn)` | `{ active, tours }` |
+| `getTours()`, `onEvent(fn)`, `getConditionEnv()` | for tooling such as the devtools |
+| `activeController` | the running tour's controller |
+| `connect()`, `disconnect()`, `destroy()` | start or stop watching; remove everything |
+
+### Helpers and types
+
+- **Helpers:** `reduce`, `evaluateCondition`, `evaluateAll`, `matchRoute`, `shouldShow`, `ProgressStore`, `createMemoryStorage`, `createEvent`, `combineSinks`, `NOOP_SINK`.
+- **Types:** everything in the [tour schema](/reference/schema/), plus `Renderer`, `RenderContext`, `EngineState`, `TourHooks`, `StepHooks`, `DocentEvent`, and the four seams: `TourSource`, `Identity`, `StorageAdapter`, `EventSink`.
+
+## `@docentjs/react`
+
+| Export | What it is |
+| --- | --- |
+| `useTour(tour, options?)` | `{ state, active, start, resume, next, back, skip, goTo, notify, controller, portal }`; `options.popover` renders your own popover |
+| `useDocent(options?)` | the manager for the component's lifetime: `{ state, docent, identify, track, start, stop, reset, refresh, portal }` |
+| `<Tour tour autoStart popover>` | the component form; children receive the controls |
+| `<DocentProvider>` | shares `renderer`, `identity`, `storage` and `sink` with every tour below it |
+
+## `@docentjs/vue`
+
+| Export | What it is |
+| --- | --- |
+| `useTour(tour, options?)` | refs `state`, `active`, `popoverContext`, `popoverTarget`, the controls, and `destroy` |
+| `useDocent(options?)` | a reactive `state`, the manager methods, `popoverContext`, `popoverTarget`, and `destroy` |
+| `<TourPopover :tour v-slot="{ ctx }">` | teleports its slot into the positioned box when `popover: true` |
+| `provideDocentDefaults(defaults)` | shares defaults with descendants |
+
+## `@docentjs/svelte`
+
+| Export | What it is |
+| --- | --- |
+| `useTour(tour, options?)` | stores `state` and `active`, the controls, and `destroy`; `options.popover` is a component |
+| `useDocent(options?)` | a `state` store, the manager methods, and `destroy` |
+| `use:tour={handle}` | starts on mount, cleans up on removal |
+
+## `@docentjs/devtools`
+
+| Export | What it is |
+| --- | --- |
+| `DocentDevtools` from `/react`, `/vue`, `/svelte` | a component that mounts the panel in development and renders nothing in production |
+| `mount(docent, { open?, shortcut? })` | mounts the panel directly and returns a function that removes it |

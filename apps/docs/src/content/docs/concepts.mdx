@@ -1,0 +1,73 @@
+---
+title: Concepts
+description: The few ideas behind Docent. Read this once and the rest of the docs will make sense.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+## A tour is data
+
+Everything about a tour that can be written down lives in one JSON document: its steps, what each step points at, how it moves on, when the tour starts, who should see it, and how it looks.
+
+```ts
+{
+  schemaVersion: 1,
+  id: 'invoices',
+  trigger: { type: 'route', pattern: '/invoices' },
+  conditions: [{ type: 'trait', key: 'plan', op: 'eq', value: 'trial' }],
+  options: { showProgress: true, theme: { accent: '#0d9488' } },
+  steps: [{ id: 'new', target: { name: 'new-invoice' }, title: 'Create an invoice' }],
+}
+```
+
+Because it is data, a tour can sit in your repo, come from an API, be edited in the [devtools](/guides/devtools/), and later come from a visual builder, all without code changes. `schemaVersion` lets the format grow without breaking old tours.
+
+Only two things are code instead of data: **hooks**, the functions that run around a step, and **custom rendering**. Both attach in your app, keyed by step id, so the JSON stays portable.
+
+## Three layers
+
+| Layer | Package | Job |
+| --- | --- | --- |
+| Engine | `@docentjs/core` | Tour state, conditions, routes, progress and events. No DOM, so it runs anywhere. |
+| Renderer | `@docentjs/dom` | Finds elements, draws the overlay and spotlight, places the popover, handles keyboard and focus. |
+| Adapters | `@docentjs/react`, `/vue`, `/svelte` | Connect a tour's lifecycle and state to your framework, and let you render your own popover. |
+
+The engine never touches the page, which keeps it small and testable. The same engine can drive native renderers for iOS and Android later, from the same tour JSON.
+
+## Two ways to run tours
+
+**One tour, on demand.** `createTour(tour)` returns a controller. You decide when it starts, typically from a "Take the tour" button.
+
+```ts
+const tour = createTour(welcome)
+tour.start()          // or tour.resume() to continue saved progress
+tour.next(); tour.back(); tour.skip(); tour.goTo('step-id')
+tour.notify('saved')  // moves on a step waiting for { on: 'event', name: 'saved' }
+tour.subscribe((state) => console.log(state.status, state.index))
+tour.destroy()
+```
+
+**Many tours, by rule.** `createDocent({ tours })` returns the [tour manager](/guides/manager/). It watches each tour's trigger, checks its conditions against the current user, respects how often it may show, and runs one tour at a time.
+
+## Seams
+
+Four small interfaces connect Docent to the rest of your system. Each has a sensible default, so you only replace the ones you need.
+
+| Seam | What it provides | Default on the web |
+| --- | --- | --- |
+| `TourSource` | the tours | the array you pass in |
+| `Identity` | who the user is, and their traits | anonymous |
+| `StorageAdapter` | where progress is saved | `localStorage`, falling back to memory |
+| `EventSink` | where lifecycle events go | nowhere |
+
+Point them at your own backend, or a hosted service, without touching a single tour.
+
+## How it renders
+
+The overlay, spotlight and built-in popover render inside a [shadow root](https://developer.mozilla.org/en-US/docs/Web/API/Web_components/Using_shadow_DOM). Your page's CSS cannot reach in and break them, and theirs cannot leak out and break your page.
+
+Theme tokens are CSS custom properties, which do cross that boundary, on purpose. That is how [theming](/customize/theming/) works.
+
+<Aside>
+Content you supply yourself, through [slots](/customize/slots-and-templates/) or a [custom popover](/customize/headless/), stays in your page's normal DOM. Your styles and your framework's event handling keep working on it.
+</Aside>

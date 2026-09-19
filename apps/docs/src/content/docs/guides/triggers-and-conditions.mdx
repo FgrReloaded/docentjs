@@ -1,0 +1,98 @@
+---
+title: Triggers and conditions
+description: Decide when a tour starts, who sees it, how often, and which of its steps each person gets.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+Three fields in a tour's JSON answer three questions:
+
+- **`trigger`**: when should the tour start?
+- **`conditions`**: who should see it?
+- **`options.frequency`**: how often?
+
+The [tour manager](/guides/manager/) applies them. A single tour started with `createTour(tour).start()` ignores all three, because you already decided to show it.
+
+## Triggers
+
+```ts
+trigger: { type: 'auto', delay: 1000 }               // when the page loads
+trigger: { type: 'route', pattern: '/invoices/**' }  // on a matching path
+trigger: { type: 'element', target: '#new-menu' }    // when an element appears
+trigger: { type: 'event', name: 'invoice-saved' }    // when you call docent.track('invoice-saved')
+trigger: { type: 'manual' }                          // only docent.start(id)
+```
+
+`delay` waits before starting, so the page can settle. When the delay ends, the trigger is checked again: a route tour does not start if the user has already moved to another page.
+
+Route patterns are explained in [Routes and persistence](/guides/routes-and-persistence/#multi-page-tours).
+
+## Conditions
+
+Conditions are data too, so they live in the tour JSON and can be evaluated anywhere. All of a tour's `conditions` must hold for it to show.
+
+```ts
+conditions: [
+  { type: 'trait', key: 'plan', op: 'eq', value: 'trial' },
+  { type: 'trait', key: 'role', op: 'in', value: ['owner', 'admin'] },
+  { type: 'not', condition: { type: 'tour', id: 'welcome', state: 'completed' } },
+]
+```
+
+This reads: trial users who are owners or admins and have not completed the welcome tour.
+
+| Condition | True when |
+| --- | --- |
+| `{ type: 'trait', key, op, value }` | the user's trait compares true; see the operators below |
+| `{ type: 'route', pattern }` | the current path matches |
+| `{ type: 'element', target, exists? }` | the element is on the page, or with `exists: false`, is not |
+| `{ type: 'tour', id, state }` | another tour is `not-started`, `in-progress`, `completed` or `skipped` for this user |
+| `{ type: 'all', conditions }`, `{ type: 'any', conditions }` | every one, or at least one, holds |
+| `{ type: 'not', condition }` | the inner condition does not hold |
+| `{ type: 'custom', name, args? }` | your own predicate, registered by name |
+
+Traits come from `docent.identify(id, traits)`. The operators are:
+
+| Operator | Meaning |
+| --- | --- |
+| `eq`, `neq` | equal, not equal |
+| `gt`, `gte`, `lt`, `lte` | greater or less than, for numbers |
+| `in`, `nin` | the trait is, or is not, one of a list |
+| `contains` | a list or string trait contains the value |
+| `exists`, `missing` | the trait is set, or not set |
+
+### Your own conditions
+
+For anything the built-in types cannot express, register a predicate by name and refer to it from the JSON:
+
+```ts
+createDocent({
+  tours,
+  custom: { isWeekend: () => [0, 6].includes(new Date().getDay()) },
+})
+
+// in the tour:
+conditions: [{ type: 'custom', name: 'isWeekend' }]
+```
+
+### Conditions on a single step
+
+A step's `condition` skips just that step when it is false. This works with `createTour` too.
+
+```ts
+{ id: 'team', condition: { type: 'trait', key: 'seats', op: 'gt', value: 1 }, title: 'Invite your team' }
+```
+
+## Frequency
+
+| `options.frequency` | Shows |
+| --- | --- |
+| `'once'` (default) | once per version, whether it was completed or skipped |
+| `'until-completed'` | again after a skip, until it is completed |
+| `'always'` | every time the trigger fires |
+
+An `auto` trigger fires at most once per page load, even with `always`.
+
+<Aside type="tip" title="Showing an updated tour again">
+Bump the tour's `version` after a meaningful change. Everyone who saw an older version will see it once more.
+</Aside>

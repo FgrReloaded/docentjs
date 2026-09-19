@@ -1,0 +1,104 @@
+---
+title: Vue
+description: Composables and a teleporting component for Vue 3, including your own popover component.
+---
+
+```sh
+pnpm add @docentjs/vue
+```
+
+This is the only package a Vue app needs. It re-exports `defineTour`, the types such as `RenderContext`, and `createLocalStorage`. Theme presets come from `@docentjs/vue/themes`.
+
+## One tour: `useTour`
+
+```vue
+<script setup lang="ts">
+import { useTour } from '@docentjs/vue'
+import { welcomeTour } from './tours'
+
+const tour = useTour(welcomeTour)
+</script>
+
+<template>
+  <button @click="tour.start()">Take the tour</button>
+  <p>Status: {{ tour.state.value.status }}</p>
+</template>
+```
+
+`state` and `active` are refs. The composable also returns the controls: `start`, `resume`, `next`, `back`, `skip`, `goTo` and `notify`.
+
+Called inside `setup()`, the tour is cleaned up with the component. Outside a component, call `tour.destroy()` yourself.
+
+## Your own popover
+
+Turn on headless mode with `popover: true` and place a `<TourPopover>` anywhere in the template. Its default slot is teleported into the box Docent positions, and receives the render context.
+
+```vue
+<script setup lang="ts">
+import { TourPopover, useTour } from '@docentjs/vue'
+import Card from './Card.vue'
+import { welcomeTour } from './tours'
+
+const tour = useTour(welcomeTour, { popover: true })
+</script>
+
+<template>
+  <button @click="tour.start()">Start</button>
+  <TourPopover :tour="tour" v-slot="{ ctx }">
+    <Card :ctx="ctx" />
+  </TourPopover>
+</template>
+```
+
+Docent still draws the spotlight, positions your card, and handles the keyboard and focus. See [Headless mode](/customize/headless/) for what the context contains.
+
+## Shared settings
+
+Call `provideDocentDefaults` in a parent component's `setup()` to set the theme, templates, user, storage and analytics for every tour below it.
+
+```ts
+import { provideDocentDefaults } from '@docentjs/vue'
+import { minimal } from '@docentjs/vue/themes'
+
+provideDocentDefaults({
+  renderer: { theme: minimal, templates: { card } },
+  identity: { id: user.id, traits: { plan: user.plan } },
+})
+```
+
+## Many tours: `useDocent`
+
+`useDocent` creates the [tour manager](/guides/manager/). Use it once, near the root of your app.
+
+```vue
+<script setup lang="ts">
+import { TourPopover, useDocent } from '@docentjs/vue'
+import Card from './Card.vue'
+import { invoices, welcome } from './tours'
+
+const docent = useDocent({ tours: [welcome, invoices], popover: true })
+docent.identify(user.id, { plan: user.plan })
+</script>
+
+<template>
+  <TourPopover :tour="docent" v-slot="{ ctx }">
+    <Card :ctx="ctx" />
+  </TourPopover>
+</template>
+```
+
+Leave out `popover: true` and `<TourPopover>` to use the built-in popover.
+
+## Devtools
+
+```vue
+<script setup lang="ts">
+import { DocentDevtools } from '@docentjs/devtools/vue'
+</script>
+
+<template>
+  <DocentDevtools :docent="docent" />
+</template>
+```
+
+It renders nothing in production builds. See [Devtools](/guides/devtools/).

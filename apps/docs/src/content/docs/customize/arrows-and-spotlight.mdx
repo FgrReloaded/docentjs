@@ -3,9 +3,14 @@ title: Arrows, spotlight and overlay
 description: Twelve arrow styles, four spotlight shapes, six rings and four overlay styles, all set in the tour JSON.
 ---
 
+import { Aside } from '@astrojs/starlight/components'
 import Demo from '../../../components/Demo.astro'
 
-The default is a small caret, a rounded cutout with a hairline ring, and a dimmed page. Every part can change per tour or per step, in plain JSON, so a builder can author it too.
+Three things connect the popover to the page: the **arrow** between the popover and the element, the **spotlight** cut around the element, and the **overlay** that dims everything else. The defaults are a small caret, a rounded spotlight with a hairline ring, and a dimmed page. Each can change for a whole tour or for a single step, in plain JSON.
+
+<Aside type="tip">
+The [home page](/) has a playground where you can try every combination on one button.
+</Aside>
 
 ## Arrows
 
@@ -28,7 +33,7 @@ steps: [{ id: 'save', arrow: 'pin' }] // or one step
 
 Connector styles (everything except `caret` and `none`) place the popover a little further away so the line has room, and draw in after the popover settles. Their code, about 1.8 kB, loads the first time a tour uses one, so tours with the default caret never download it.
 
-<Demo label="Walk through the arrow styles"
+<Demo caption="Ten drawn arrows, one per step"
   tour={{
     schemaVersion: 1,
     id: 'arrow-gallery',
@@ -48,7 +53,7 @@ Connector styles (everything except `caret` and `none`) place the popover a litt
   }}
 >
   <div class="row">
-    <button type="button" data-docent="arrow-target">Target</button>
+    <button type="button" data-docent="arrow-target">Share report</button>
   </div>
 </Demo>
 
@@ -66,7 +71,7 @@ options: { spotlight: { shape: 'circle', ring: 'pulse', padding: 10 } }
 
 `circle` circumscribes the target, so it suits buttons and icons more than wide cards. `pulse` repeats gently to draw the eye and stops for users who prefer reduced motion.
 
-<Demo label="Walk through shapes and rings"
+<Demo caption="Shapes, then rings"
   tour={{
     schemaVersion: 1,
     id: 'spotlight-gallery',
@@ -101,7 +106,7 @@ options: { overlay: { style: 'blur', blur: 6, opacity: 0.4 } }
 
 `color` and `opacity` tint the scrim; `blur` sets the blur radius. With `none`, connectors and the ring switch to the accent color so they stay visible on the page.
 
-<Demo label="Walk through overlay styles"
+<Demo caption="Blur, vignette, and no overlay"
   tour={{
     schemaVersion: 1,
     id: 'overlay-gallery',
@@ -113,12 +118,19 @@ options: { overlay: { style: 'blur', blur: 6, opacity: 0.4 } }
   }}
 >
   <div class="row">
-    <button type="button" data-docent="overlay-target">Target</button>
+    <button type="button" data-docent="overlay-target">Export</button>
   </div>
 </Demo>
 
 ## Where to set it
 
-From lowest to highest precedence: renderer options (`createTour(tour, { renderer: { arrow, spotlight, overlay } })`), a [template](/customize/slots-and-templates/), the tour's `options`, then the step. Colors come from the `connector` and `ring` theme tokens.
+Settings stack. Each layer overrides the one before it:
+
+1. renderer options, for every tour: `createTour(tour, { renderer: { arrow: 'curve' } })`,
+2. a [template](/customize/slots-and-templates/#templates),
+3. the tour's `options`,
+4. the step itself.
+
+So a tour can use curved arrows throughout, and one step can switch to a pin for a small icon. Colors come from the `connector` and `ring` [theme tokens](/customize/theming/#tokens).
 
 The [devtools](/guides/devtools/) Edit tab switches all of these live on a running tour.

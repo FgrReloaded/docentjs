@@ -119,6 +119,30 @@ function inherit<T extends string>(
   ]
 }
 
+/**
+ * Edits are kept in this browser until they reach the code. Say so, and warn
+ * when the code has changed underneath restored edits.
+ */
+function DraftNotice({ store, tourId }: { store: Store; tourId: string }) {
+  if (store.stale.value.has(tourId)) {
+    return (
+      <p class="notice warn-notice" role="status">
+        <strong>The code for this tour changed after these edits.</strong> Review them, or discard
+        to use the version in your code.
+      </p>
+    )
+  }
+  const restored = store.restored.value.has(tourId)
+  return (
+    <p class="notice" role="status">
+      {restored
+        ? 'Restored unsaved edits from your last session. '
+        : 'Edits are kept in this browser. '}
+      Copy or download the JSON into your code to keep them for good.
+    </p>
+  )
+}
+
 /** Defaults of the built-in look (styles.ts in @docentjs/dom). */
 const DEFAULT_THEME = { radius: 14, width: 344, overlayOpacity: 0.52, duration: 220 }
 
@@ -183,6 +207,8 @@ export function EditTab({ store }: { store: Store }) {
           onClick={() => store.resetTour(tour.id)}
         />
       </div>
+
+      {edited && <DraftNotice store={store} tourId={tour.id} />}
 
       <Section
         title={`Steps (${tour.steps.length})`}

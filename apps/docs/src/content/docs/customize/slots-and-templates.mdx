@@ -1,13 +1,32 @@
 ---
 title: Slots and templates
-description: Replace regions of the popover, and bundle themes, slots, and CSS under a name.
+description: Replace one part of the popover with your own content, and bundle a look under a name that tours can pick.
 ---
 
+import { Aside } from '@astrojs/starlight/components'
 import Demo from '../../../components/Demo.astro'
+
+Customization comes in levels. Use the lowest one that does the job:
+
+| You want to | Use |
+| --- | --- |
+| change colors, corners, width or font | [theme tokens](/customize/theming/) |
+| restyle a part a little | [CSS parts](/customize/theming/#css-parts) |
+| replace one part with your own content | **slots**, on this page |
+| reuse a whole look across tours by name | **templates**, on this page |
+| draw the entire popover yourself | [headless mode](/customize/headless/) |
 
 ## Slots
 
-Any region of the built-in popover can be replaced: `header`, `title`, `close`, `body`, `media`, `footer`, `progress`, `buttons`. A slot renderer receives the render context and returns a `Node`, a string, `null` to remove the region, or `undefined` to keep the default.
+A slot is one region of the built-in popover: `header`, `title`, `close`, `body`, `media`, `footer`, `progress` or `buttons`. Give the renderer a function for a slot and it is called for every step.
+
+The function receives the render context and returns one of:
+
+- a DOM `Node` or a string, to replace the region,
+- `null`, to remove the region,
+- `undefined`, to keep the default.
+
+This example replaces the step counter with dots and removes the close button:
 
 ```ts
 createTour(tour, {
@@ -29,37 +48,44 @@ createTour(tour, {
 })
 ```
 
-Custom content is projected through native Shadow DOM slots, so it stays in your page's DOM: your CSS applies and your framework's event handling keeps working.
+Your content is projected through native shadow DOM slots, so it stays in your page's DOM. Your CSS styles it, and your framework's event handling keeps working.
 
 ## Templates
 
-A template bundles a theme, slots, and CSS under a name. Tours pick one with `options.template`, which keeps the JSON side builder-friendly while the code side stays in your app.
+A template bundles a theme, slots and CSS under a name. Register templates in code, then let each tour pick one by name in its JSON:
 
 ```ts
 createTour(tour, {
   renderer: {
     templates: {
       card: {
-        theme: { radius: '16px', shadow: '0 24px 48px rgba(0,0,0,.25)' },
+        theme: { radius: '16px' },
         slots: { progress: dots },
-        css: '.popover { border: 1px solid rgba(124,58,237,.35) }',
+        css: '.popover { border: 1px solid rgba(124, 58, 237, 0.35) }',
       },
     },
   },
 })
-// tour: { options: { template: 'card' } }
 ```
 
-Set the renderer's `template` to apply one when a tour names none.
+```ts
+// in the tour JSON
+options: { template: 'card' }
+```
 
-<Demo label="Template with slot and CSS"
-  renderer={{ templates: { outlined: { theme: { accent: '#7c3aed' }, css: '.popover { border: 2px solid var(--docent-accent) } .progress { font-weight: 700 }' } } }}
+This split is deliberate. Code stays in your app, while the JSON only says "use card", so a builder or an API can choose looks without shipping functions. Set the renderer's `template` to apply one when a tour names none.
+
+Templates can also set `arrow`, `spotlight` and `overlay`, so a "hint" template could use no overlay and a pin arrow everywhere.
+
+<Demo
+  caption="A template with CSS, picked by name in the tour"
+  renderer={{ templates: { outlined: { theme: { accent: '#7c3aed' }, css: '.popover { box-shadow: 0 0 0 2px var(--docent-accent), 0 12px 32px -12px rgb(0 0 0 / .3) } .count { font-weight: 700 }' } } }}
   tour={{
     schemaVersion: 1,
     id: 'template-demo',
     options: { template: 'outlined', showProgress: true },
     steps: [
-      { id: 'a', target: { name: 'tpl-a' }, title: 'Outlined', body: 'Border and bold progress come from the template CSS.' },
+      { id: 'a', target: { name: 'tpl-a' }, title: 'Outlined', body: 'The outline and bold count come from the template CSS.' },
       { id: 'b', target: { name: 'tpl-b' }, title: 'Same template', body: 'Every step of the tour uses it.' },
     ],
   }}
@@ -70,4 +96,6 @@ Set the renderer's `template` to apply one when a tour names none.
   </div>
 </Demo>
 
-Slots are functions, so this demo only shows the theme and CSS parts of a template. See the React, Vue, and Svelte pages for slot-like customization through components.
+<Aside>
+Slots are functions, which cannot travel in JSON, so this demo shows only the theme and CSS parts of a template. In React, Vue and Svelte, a custom popover component is usually simpler than slots; see the [framework pages](/frameworks/react/).
+</Aside>

@@ -1,0 +1,61 @@
+---
+import { Code, TabItem, Tabs } from '@astrojs/starlight/components'
+
+const react = `import { DocentDevtools } from '@docentjs/devtools/react'
+import { useDocent } from '@docentjs/react'
+import { billing, welcome } from './tours'
+
+export function App({ user }) {
+  const docent = useDocent({ tours: [welcome, billing] })
+  useEffect(() => docent.identify(user.id, { plan: user.plan }), [user])
+
+  return <DocentDevtools docent={docent} />
+}`
+const vue = `<script setup lang="ts">
+import { useDocent } from '@docentjs/vue'
+import { billing, welcome } from './tours'
+
+const docent = useDocent({ tours: [welcome, billing] })
+docent.identify(user.id, { plan: user.plan })
+</script>`
+const svelte = `<script lang="ts">
+  import { useDocent } from '@docentjs/svelte'
+  import { billing, welcome } from './tours'
+
+  const docent = useDocent({ tours: [welcome, billing] })
+  docent.identify(user.id, { plan: user.plan })
+</script>`
+const vanilla = `import { createDocent } from '@docentjs/dom'
+import { billing, welcome } from './tours'
+
+const docent = createDocent({ tours: [welcome, billing] })
+docent.identify(user.id, { plan: user.plan })`
+---
+
+<section class="home-section not-content">
+  <div class="frameworks">
+    <div>
+      <div class="section-head">
+        <p class="section-kicker">Frameworks</p>
+        <h2 class="section-title">Fits the app you already have.</h2>
+        <p class="section-lede">
+          One package per framework, each a thin layer over the same engine. Use the built-in
+          popover, or render your own component and keep the spotlight, positioning and keyboard
+          handling.
+        </p>
+      </div>
+      <nav class="fw-links" aria-label="Framework guides">
+        <a href="/frameworks/react/">React <span>Hooks and a component</span></a>
+        <a href="/frameworks/vue/">Vue <span>Composables and a teleport</span></a>
+        <a href="/frameworks/svelte/">Svelte <span>Stores and an action</span></a>
+        <a href="/getting-started/">No framework <span>Plain JavaScript</span></a>
+      </nav>
+    </div>
+    <Tabs syncKey="framework">
+      <TabItem label="React"><Code code={react} lang="tsx" /></TabItem>
+      <TabItem label="Vue"><Code code={vue} lang="vue" /></TabItem>
+      <TabItem label="Svelte"><Code code={svelte} lang="svelte" /></TabItem>
+      <TabItem label="Vanilla"><Code code={vanilla} lang="ts" /></TabItem>
+    </Tabs>
+  </div>
+</section>

@@ -1,0 +1,64 @@
+---
+title: Headless mode
+description: Draw the whole popover yourself and keep everything else Docent does.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+When slots are not enough, for example when the popover must be your design system's own component, replace it entirely. Docent keeps doing the hard parts:
+
+- the overlay and spotlight, including blocking clicks on the page,
+- positioning, flipping, keeping on screen, and the mobile bottom sheet,
+- scrolling the element into view and moving the popover out from under sticky headers,
+- Escape, arrow keys, keeping Tab inside your popover, and returning focus afterwards,
+- state, saved progress, events and hooks.
+
+You only render what goes in the box.
+
+## The render function
+
+```ts
+createTour(tour, {
+  renderer: {
+    headless: {
+      render(ctx, container) {
+        const card = document.createElement('div')
+        card.className = 'my-card'
+
+        const title = document.createElement('h3')
+        title.textContent = ctx.step.title ?? ''
+
+        const next = document.createElement('button')
+        next.textContent = ctx.isLast ? 'Done' : 'Next'
+        next.onclick = ctx.actions.next
+
+        card.append(title, next)
+        container.append(card)
+        return () => card.remove()   // cleanup, run before the next step
+      },
+    },
+  },
+})
+```
+
+`render` is called for every step. It receives:
+
+- **`ctx`**: the `step`, the `tour`, the step's `index`, `progress` (`current` and `total`), the flags `isFirst`, `isLast` and `canGoBack`, and `actions`: `next()`, `back()`, `skip()` and `goTo(stepIdOrIndex)`. Wire your close button to `skip()`.
+- **`container`**: an element in your page that Docent positions next to the target. Put your popover inside it.
+
+Return a function to clean up before the next step.
+
+## Drawing your own arrow
+
+The container tells you where it ended up. `data-side` is `top`, `right`, `bottom`, `left`, `center` or `sheet`, and the `--docent-arrow` custom property is the arrow's offset along that side, in pixels.
+
+```css
+[data-docent-popover][data-side='bottom'] .my-arrow {
+  top: -6px;
+  left: calc(var(--docent-arrow) - 6px);
+}
+```
+
+<Aside type="tip">
+In React, Vue and Svelte you do not need `render` at all. Pass your component and the adapter mounts it into the container for you. See [React](/frameworks/react/#your-own-popover), [Vue](/frameworks/vue/#your-own-popover) and [Svelte](/frameworks/svelte/#your-own-popover).
+</Aside>

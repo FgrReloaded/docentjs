@@ -113,6 +113,30 @@ describe('devtools panel', () => {
     await docent.destroy()
   })
 
+  it('keeps unsaved edits across a reload and drops them once discarded', async () => {
+    const first = setup()
+    tab('Edit')
+    await vi.waitFor(() => expect(panelText()).toContain('Step · hello'))
+    const title = Array.from(shadow().querySelectorAll('.field')).find((f) =>
+      f.textContent?.startsWith('Title'),
+    )
+    await type(title?.querySelector('input') as HTMLInputElement, 'Hello again')
+    await vi.waitFor(() => expect(panelText()).toContain('Edits are kept in this browser'))
+    expect(localStorage.getItem('docent-devtools-drafts')).toContain('Hello again')
+    first.unmount()
+    await first.docent.destroy()
+
+    // A fresh page: same code, new manager, new panel.
+    const second = setup()
+    await vi.waitFor(() => expect(second.docent.getTours()[0]?.steps[0]?.title).toBe('Hello again'))
+    await vi.waitFor(() => expect(panelText()).toContain('Restored unsaved edits'))
+    button('Discard edits').click()
+    await vi.waitFor(() => expect(second.docent.getTours()[0]?.steps[0]?.title).toBe('Hello'))
+    expect(localStorage.getItem('docent-devtools-drafts')).toBeNull()
+    second.unmount()
+    await second.docent.destroy()
+  })
+
   it('changes the arrow, spotlight and overlay look live', async () => {
     const { docent, unmount } = setup()
     await docent.start('trial', { at: 'save' })

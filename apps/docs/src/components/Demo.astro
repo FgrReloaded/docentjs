@@ -1,8 +1,8 @@
 ---
 /**
  * A live tour running on the docs page itself. Each demo gets its own tour
- * definition (passed as JSON) and a Start button; the targets are elements
- * inside the demo box marked with data-docent names.
+ * definition (passed as JSON) and a play button; the targets are elements
+ * inside the stage marked with data-docent names.
  */
 import type { Tour } from '@docentjs/core'
 
@@ -10,19 +10,29 @@ interface Props {
   tour: Tour
   /** Extra renderer options as JSON, e.g. a theme or template. */
   renderer?: Record<string, unknown>
+  /** Text of the play button. */
   label?: string
+  /** One line in the demo's bar saying what it shows. */
+  caption?: string
 }
-const { tour, renderer = {}, label = 'Start tour' } = Astro.props
+const { tour, renderer = {}, label = 'Play', caption } = Astro.props
 const id = `demo-${tour.id}`
 ---
 
-<div class="demo" id={id} data-tour={JSON.stringify(tour)} data-renderer={JSON.stringify(renderer)}>
-  <div class="demo-toolbar">
-    <button type="button" class="primary" data-start>{label}</button>
+<figure class="demo not-content" id={id} data-tour={JSON.stringify(tour)} data-renderer={JSON.stringify(renderer)}>
+  <figcaption class="demo-bar">
+    <span class="demo-kicker">Live</span>
+    <span class="demo-title">{caption ?? tour.name ?? ''}</span>
     <slot name="toolbar" />
+    <button type="button" class="primary" data-start>
+      <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.8v8.4a.6.6 0 0 0 .9.5l6.6-4.2a.6.6 0 0 0 0-1L3.9 1.3a.6.6 0 0 0-.9.5Z" fill="currentColor" /></svg>
+      {label}
+    </button>
+  </figcaption>
+  <div class="demo-stage">
+    <slot />
   </div>
-  <slot />
-</div>
+</figure>
 
 <script>
   import { createTour } from '@docentjs/dom'

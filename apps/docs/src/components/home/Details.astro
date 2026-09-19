@@ -1,0 +1,29 @@
+---
+const details = [
+  ['Small', 'About <b>13 kB</b> compressed for the engine and the web renderer together. Drawn arrows load only when a tour uses one.'],
+  ['Accessible', 'Dialog semantics, focus kept inside the popover and returned after, full keyboard control, reduced motion, and 44 px touch targets.'],
+  ['Isolated', 'The popover renders in a shadow root. Your CSS cannot break it, and its CSS cannot leak into your page.'],
+  ['Mobile-ready', 'On narrow screens the popover becomes a bottom sheet and scrolls the target clear of it.'],
+  ['Data, not code', 'Tours are JSON. Store them in your repo, load them from an API, or edit them in a builder.'],
+  ['Rules built in', 'Triggers, conditions on user traits, and per-user frequency decide who sees which tour.'],
+  ['Any framework', 'React, Vue and Svelte bindings, each about 1 kB. Or none at all.'],
+  ['Devtools', 'See why a tour is or is not showing, edit it live, audit targets and contrast.'],
+]
+---
+
+<section class="home-section not-content">
+  <div class="section-head">
+    <p class="section-kicker">Details</p>
+    <h2 class="section-title">Made carefully where it counts.</h2>
+  </div>
+  <dl class="details">
+    {
+      details.map(([term, text]) => (
+        <div class="detail">
+          <dt>{term}</dt>
+          <dd set:html={text} />
+        </div>
+      ))
+    }
+  </dl>
+</section>

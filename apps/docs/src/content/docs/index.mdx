@@ -3,50 +3,18 @@ title: Docent
 description: Guided product tours for the web. Spotlight an element, explain it, move on.
 template: splash
 hero:
-  tagline: Guided product tours for the web. Spotlight an element, explain it, move on. Small, accessible, framework-agnostic, and built for customization.
-  actions:
-    - text: Get started
-      link: /getting-started/
-      icon: right-arrow
-    - text: GitHub
-      link: https://github.com/FgrReloaded/docentjs
-      icon: external
-      variant: minimal
+  title: Show people around <em>your product.</em>
+  tagline: Docent spotlights one element, explains it in a sentence or two, and gets out of the way. Tours are plain JSON, so they are easy to write, review and change.
 ---
 
-import { Card, CardGrid } from '@astrojs/starlight/components'
-import Demo from '../../components/Demo.astro'
+import HowItWorks from '../../components/home/HowItWorks.astro'
+import Looks from '../../components/home/Looks.astro'
+import Details from '../../components/home/Details.astro'
+import Frameworks from '../../components/home/Frameworks.astro'
+import Closing from '../../components/home/Closing.astro'
 
-<Demo
-  label="Try it on this page"
-  tour={{
-    schemaVersion: 1,
-    id: 'home',
-    options: { showProgress: true, spotlight: { padding: 8, radius: 8 } },
-    steps: [
-      { id: 'intro', title: 'This is Docent', body: 'A tour is a JSON document. This one has four steps.' },
-      { id: 'card-1', target: { name: 'home-small' }, title: 'Spotlight', body: 'The overlay cuts a hole around the target and the popover positions itself.', placement: 'bottom' },
-      { id: 'card-2', target: { name: 'home-custom' }, title: 'Keyboard works', body: 'Try the **arrow keys** or **Escape**.', format: 'markdown', placement: 'top' },
-      { id: 'done', title: 'That is it', body: 'Read on to build your own.' },
-    ],
-  }}
->
-  <CardGrid stagger>
-    <div data-docent="home-small">
-      <Card title="Small" icon="rocket">
-        Core plus web renderer is about 11 kB compressed. Framework adapters add about 1 kB each.
-      </Card>
-    </div>
-    <div data-docent="home-custom">
-      <Card title="Yours to customize" icon="pen">
-        Theme tokens in JSON, slots for any region, named templates, or bring your own popover component.
-      </Card>
-    </div>
-    <Card title="Accessible" icon="approve-check">
-      Dialog semantics, focus trapping and restore, keyboard navigation, reduced motion, and a mobile bottom sheet.
-    </Card>
-    <Card title="Portable" icon="setting">
-      A platform-agnostic core. The same tour JSON is the contract for web today and native renderers later.
-    </Card>
-  </CardGrid>
-</Demo>
+<HowItWorks />
+<Looks />
+<Details />
+<Frameworks />
+<Closing />

@@ -1,0 +1,99 @@
+---
+title: Svelte
+description: Stores, a component prop and an action for Svelte 4 and 5, including your own popover component.
+---
+
+```sh
+pnpm add @docentjs/svelte
+```
+
+This is the only package a Svelte app needs. It re-exports `defineTour`, the types such as `RenderContext`, and `createLocalStorage`. Theme presets come from `@docentjs/svelte/themes`.
+
+## One tour: `useTour`
+
+`useTour` returns readable stores for the state, plus the controls: `start`, `resume`, `next`, `back`, `skip`, `goTo` and `notify`.
+
+```svelte
+<script lang="ts">
+  import { useTour } from '@docentjs/svelte'
+  import { onDestroy } from 'svelte'
+  import { welcomeTour } from './tours'
+
+  const tour = useTour(welcomeTour)
+  const state = tour.state
+  onDestroy(tour.destroy)
+</script>
+
+<button onclick={() => tour.start()}>Take the tour</button>
+<p>Status: {$state.status}</p>
+```
+
+Call `destroy` when the component goes away, as above.
+
+## Your own popover
+
+Pass a component as `popover`. Docent mounts it into the box it positions for every step, with `ctx` as a prop, and unmounts it before the next one.
+
+```svelte
+<script lang="ts">
+  import { useTour } from '@docentjs/svelte'
+  import Card from './Card.svelte'
+  import { welcomeTour } from './tours'
+
+  const tour = useTour(welcomeTour, { popover: Card })
+</script>
+```
+
+```svelte title="Card.svelte"
+<script lang="ts">
+  import type { RenderContext } from '@docentjs/svelte'
+  let { ctx }: { ctx: RenderContext } = $props()
+</script>
+
+<div class="card">
+  <h3>{ctx.step.title}</h3>
+  <p>{ctx.step.body}</p>
+  <button onclick={ctx.actions.next}>{ctx.isLast ? 'Done' : 'Next'}</button>
+</div>
+```
+
+Docent still draws the spotlight, positions your card, and handles the keyboard and focus. See [Headless mode](/customize/headless/) for what the context contains.
+
+## The `tour` action
+
+`use:tour` starts a tour when an element mounts and cleans it up when the element is removed. It suits tours tied to one part of the page.
+
+```svelte
+<div use:tour={handle}>…</div>
+```
+
+## Many tours: `useDocent`
+
+`useDocent` creates the [tour manager](/guides/manager/). Use it once, near the root of your app.
+
+```svelte
+<script lang="ts">
+  import { useDocent } from '@docentjs/svelte'
+  import { onDestroy } from 'svelte'
+  import Card from './Card.svelte'
+  import { invoices, welcome } from './tours'
+
+  const docent = useDocent({ tours: [welcome, invoices], popover: Card })
+  docent.identify(user.id, { plan: user.plan })
+  onDestroy(docent.destroy)
+</script>
+```
+
+Leave out `popover` to use the built-in popover.
+
+## Devtools
+
+```svelte
+<script lang="ts">
+  import { DocentDevtools } from '@docentjs/devtools/svelte'
+</script>
+
+<DocentDevtools {docent} />
+```
+
+It renders nothing in production builds. See [Devtools](/guides/devtools/).

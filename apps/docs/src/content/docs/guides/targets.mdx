@@ -1,66 +1,101 @@
 ---
 title: Targets
-description: Point steps at elements that survive refactors and lazy rendering.
+description: Tell each step which element to spotlight, in a way that survives redesigns and elements that appear late.
 ---
 
+import { Aside } from '@astrojs/starlight/components'
 import Demo from '../../../components/Demo.astro'
 
-## Logical names
+A step's `target` says which element it points at. Tours break most often because an element was renamed, moved or not rendered yet. This page covers the ways to avoid that.
 
-Mark elements with `data-docent` and reference them by name. This is the most robust anchor and the one the visual builder prefers.
+## Name your elements
+
+Add a `data-docent` attribute to the element and refer to it by name.
 
 ```html
 <button data-docent="save">Save</button>
 ```
 
 ```ts
-{ id: 'save', target: { name: 'save' } }
+{ id: 'save', target: { name: 'save' }, title: 'Save your work' }
 ```
 
-## Selectors and fallbacks
+This is the most reliable option. Class names change when styles change, and structure changes when layouts change, but an attribute that exists only for the tour stays put. It also tells anyone reading the markup that a tour depends on this element.
 
-A string target is a CSS selector. For self-healing tours, list several candidates; the first one that matches wins.
+## CSS selectors
+
+A plain string is a CSS selector. It is handy for elements you cannot add attributes to, such as third-party widgets.
 
 ```ts
-{ target: { name: 'save', selectors: ['[data-testid="save"]', 'form button[type=submit]'] } }
+{ id: 'save', target: '#save-button' }
 ```
 
-Invalid selectors are skipped rather than thrown. Open shadow roots are searched as a fallback when nothing matches in the light DOM.
+## Fallbacks
 
-## Scoping and multiple matches
+List several selectors and the first one that matches wins. This keeps a tour working while markup is in flux.
 
 ```ts
-{ target: { selectors: ['.row'], within: '#invoices', nth: 2 } }
+{
+  target: {
+    name: 'save',
+    selectors: ['[data-testid="save"]', 'form button[type=submit]'],
+  },
+}
 ```
 
-## Lazy targets
+The `name` is tried first, then each selector in order. An invalid selector is skipped rather than throwing. If nothing matches in the page, open shadow roots are searched as well.
 
-By default a missing target is skipped. Ask the step to wait:
+## Narrowing the search
+
+When a selector matches many elements, `within` limits the search to a container and `nth` picks one of the matches, counting from 0.
+
+```ts
+{ target: { selectors: ['.invoice-row'], within: '#invoices', nth: 2 } }
+```
+
+## Elements that appear late
+
+Menus, modals and data-driven lists often render after the step starts. By default, a step whose target is missing is skipped. Ask it to wait instead:
 
 ```ts
 { id: 'menu-item', target: '#menu-item', onMissing: 'wait', waitFor: 5000 }
 ```
 
-The renderer watches the DOM and shows the step the moment the element appears. Use `onMissing: 'abort'` when a missing target means the tour makes no sense.
+The renderer watches the page and shows the step the moment the element appears. If it has not appeared after `waitFor` milliseconds (3000 by default), the step is skipped.
+
+| `onMissing` | When the target is not there |
+| --- | --- |
+| `'skip'` | move on to the next step (default) |
+| `'wait'` | wait up to `waitFor` ms, then skip |
+| `'abort'` | end the tour, for steps the tour cannot do without |
+
+Try it: the first step asks you to click, and the second waits for an element that appears 600 ms later.
 
 <Demo
+  caption="A step that waits for its element"
   tour={{
     schemaVersion: 1,
     id: 'lazy',
     steps: [
-      { id: 'reveal', target: { name: 'lazy-reveal' }, title: 'Reveal it', body: 'Click the button, the next step waits for the element.', advance: { on: 'click' } },
+      { id: 'reveal', target: { name: 'lazy-reveal' }, title: 'Reveal it', body: 'Click the button. The next step waits for an element that does not exist yet.', advance: { on: 'click' } },
       { id: 'lazy', target: { name: 'lazy-item' }, title: 'Here it is', body: 'This element did not exist a moment ago.', onMissing: 'wait', waitFor: 5000 },
     ],
   }}
 >
   <div class="row">
-    <button type="button" data-docent="lazy-reveal" onclick="const s=this.nextElementSibling; setTimeout(()=>{s.hidden=false},600)">Reveal after 600ms</button>
-    <span data-docent="lazy-item" hidden style="padding: 0.4rem 0.8rem; border-radius: 8px; background: var(--sl-color-accent-low);">Lazy element</span>
+    <button type="button" data-docent="lazy-reveal" onclick="const s=this.nextElementSibling; setTimeout(()=>{s.hidden=false},600)">Reveal after 600 ms</button>
+    <span class="chip soft" data-docent="lazy-item" hidden>Lazy element</span>
   </div>
 </Demo>
 
-Note: an element with `hidden` still matches the selector; the demo above works because a hidden element has no box, so the wait resolves as soon as it is shown.
+<Aside type="tip">
+If an element only appears after the user does something, such as opening a menu, a `beforeShow` [hook](/guides/events-and-hooks/#hooks) can do that for them before the step looks for its target.
+</Aside>
 
 ## Steps without a target
 
-Omit `target` for a centred modal step, useful for welcome and finish screens.
+Leave `target` out and the step shows as a centred card with the page dimmed behind it. Use it to welcome people at the start and to say what comes next at the end.
+
+## Finding good targets
+
+The [devtools](/guides/devtools/) have a target picker: click any element on the page and it suggests selectors ranked by how likely they are to survive changes, and warns about fragile ones such as generated class names.

@@ -3,7 +3,9 @@ title: Tour schema
 description: Every field of the tour JSON document.
 ---
 
-All fields are optional unless marked. Types are exported from `@docentjs/core`.
+A tour is one JSON document. This page lists every field. All fields are optional unless marked required, and every type is exported from `@docentjs/core` and re-exported by the other packages.
+
+The guides explain each area with examples: [steps](/guides/steps/), [targets](/guides/targets/), [triggers and conditions](/guides/triggers-and-conditions/), [theming](/customize/theming/), and [arrows, spotlight and overlay](/customize/arrows-and-spotlight/).
 
 ## Tour
 
@@ -102,7 +104,7 @@ A string is a CSS selector. An object is the portable form:
 { type: 'tour', id, state }               // not-started | in-progress | completed | skipped
 { type: 'all' | 'any', conditions }
 { type: 'not', condition }
-{ type: 'custom', name, args? }           // registered on the controller
+{ type: 'custom', name, args? }           // registered with the `custom` option
 ```
 
 ## Theme

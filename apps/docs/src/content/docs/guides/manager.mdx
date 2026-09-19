@@ -1,0 +1,136 @@
+---
+title: Tour manager
+description: Give Docent all your tours and let it decide which one to show, to whom, and when.
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components'
+
+`createTour` runs one tour when you tell it to. Real products have several tours: a welcome for new users, a walkthrough of a feature the first time someone opens it, an announcement for people on a certain plan. The **manager** holds all of them and applies each tour's rules for you.
+
+```ts
+import { createDocent } from '@docentjs/dom'
+import { invoices, welcome, whatsNew } from './tours'
+
+const docent = createDocent({ tours: [welcome, invoices, whatsNew] })
+docent.identify(user.id, { plan: user.plan, role: user.role })
+```
+
+That is the whole integration. The rules live in each tour's JSON, not in your app code.
+
+## What happens behind the scenes
+
+<Steps>
+
+1. The manager loads your tours, from an array or from a [`TourSource`](#loading-tours-from-an-api), and each user's saved progress.
+
+2. It watches each tour's **trigger**: a route, an element appearing, an event your app reports, or the page loading.
+
+3. When a trigger fires, it checks the tour's **conditions** against the user's traits and the page.
+
+4. It checks the tour's **frequency** against that user's history. A tour set to show once will not show again after it was completed or skipped.
+
+5. If everything passes and no other tour is running, the tour starts. If another tour is running, it waits in a queue and is tried again when that one ends.
+
+</Steps>
+
+## Writing the rules
+
+```ts
+defineTour({
+  id: 'invoices',
+  trigger: { type: 'route', pattern: '/invoices/**', delay: 800 },
+  conditions: [{ type: 'trait', key: 'plan', op: 'eq', value: 'trial' }],
+  options: { frequency: 'until-completed', persist: true },
+  steps: [ … ],
+})
+```
+
+In words: when a trial user opens any invoices page, wait 800 ms, then show this tour. Keep offering it until they finish it, and let them pick up where they left off.
+
+| Trigger | The tour starts when |
+| --- | --- |
+| `{ type: 'auto', delay? }` | the page loads, at most once per page load |
+| `{ type: 'route', pattern, delay? }` | the user is on, or navigates to, a matching path |
+| `{ type: 'element', target, delay? }` | the element appears on the page |
+| `{ type: 'event', name }` | your code calls `docent.track(name)` |
+| `{ type: 'manual' }` or none | only when you call `docent.start(id)` |
+
+Every condition type and frequency option is in [Triggers and conditions](/guides/triggers-and-conditions/).
+
+## Telling it who the user is
+
+```ts
+docent.identify(user.id, { plan: 'trial', seats: 5, beta: true })
+```
+
+Traits are what `trait` conditions compare against. Progress is stored per user id, so two people sharing a browser, or you switching between test accounts, each get their own history. Anonymous visitors share one unscoped history.
+
+Call `identify` again whenever the user or their traits change, for example after an upgrade. Triggers are checked again straight away.
+
+## Reporting what users do
+
+```ts
+docent.track('invoice-saved')
+```
+
+This starts tours whose trigger is `{ type: 'event', name: 'invoice-saved' }`, and moves on a running step that is waiting for `{ on: 'event', name: 'invoice-saved' }`.
+
+## Starting a tour yourself
+
+```ts
+docent.start('welcome')   // for "Take the tour again" buttons
+docent.start('welcome', { at: 'billing' })   // from a specific step
+```
+
+A manual start ignores the trigger, conditions and frequency, and replaces any tour already running. The result, completed or skipped, is still recorded.
+
+## Tours that follow each other
+
+Triggers are checked again whenever a tour ends. A tour with this condition starts right after `welcome` is completed, if its own trigger still holds:
+
+```ts
+conditions: [{ type: 'tour', id: 'welcome', state: 'completed' }]
+```
+
+## Client-side routers
+
+The manager notices navigation through `popstate`, `hashchange` and the Navigation API, which covers React Router, Vue Router, SvelteKit, Next.js and most others. If your router changes the URL without any of those, call `docent.refresh()` after each navigation.
+
+## Loading tours from an API
+
+`tours` also accepts a `TourSource`: an object with `load()`, and optionally `subscribe()` for live updates. Fetch tours from your backend, and changes reach users without a deploy.
+
+```ts
+createDocent({
+  tours: {
+    load: () => fetch('/api/tours').then((r) => r.json()),
+  },
+})
+```
+
+## Frameworks
+
+In React, Vue and Svelte, use `useDocent` from the adapter instead of `createDocent`. It creates the manager for the component's lifetime and lets you render your own popover. See [React](/frameworks/react/), [Vue](/frameworks/vue/) and [Svelte](/frameworks/svelte/).
+
+## Reference
+
+| Member | What it does |
+| --- | --- |
+| `ready` | a promise that resolves once tours and progress are loaded |
+| `identify(id, traits)` | set the current user |
+| `track(name)` | report an event |
+| `start(id, { at? })`, `stop()` | start a tour by hand, or end the running one (recorded as skipped) |
+| `reset(id?)` | forget progress, so a tour shows again |
+| `refresh()` | check triggers again, after a navigation the manager could not see |
+| `isEligible(id)` | whether conditions and frequency would allow the tour right now |
+| `tourState(id)` | `not-started`, `in-progress`, `completed` or `skipped` for this user |
+| `getState()`, `subscribe(fn)` | `{ active, tours }`, now or whenever it changes |
+| `updateTour(tour)` | replace a tour's definition, even while it runs |
+| `activeController` | the running tour's controller, for fine control |
+| `destroy()` | stop watching and remove everything |
+
+`createDocent` also takes `storage`, `sink`, `custom` condition predicates, `hooks` keyed by tour id, and `renderer` options that apply to every tour.
+
+<Aside type="tip">
+To see why a tour is or is not showing for the current user, open the [devtools](/guides/devtools/). Each tour gets a verdict and the exact reason, such as a failed condition with the user's real value.
+</Aside>
