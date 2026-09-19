@@ -29,7 +29,8 @@
     "check:publish": "pnpm -r --filter './packages/*' exec publint --strict && pnpm -r --filter './packages/*' exec attw --pack . --profile node16",
     "changeset": "changeset",
     "changeset:version": "changeset version && pnpm install --lockfile-only",
-    "changeset:publish": "pnpm build:packages && pnpm check:publish && changeset publish",
+    "release:stage": "node scripts/stage-release.mjs",
+    "release:approve": "node scripts/approve-release.mjs",
     "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {

@@ -1,68 +1,56 @@
 # Releasing
 
-Docent uses [Changesets](https://github.com/changesets/changesets). All `@docentjs/*` packages
-share one version (fixed group). Versions stay on 0.x until the tour schema and renderer
-options stabilise: **minor may break, patch is safe.**
+Docent uses [Changesets](https://github.com/changesets/changesets) with npm **staged
+publishing**. All `@docentjs/*` packages share one version. Versions stay on 0.x until the
+tour schema and renderer options stabilise: **minor may break, patch is safe.**
 
-## Every change
+## The flow
 
-1. Make the change.
-2. `pnpm changeset` — pick the packages and a bump (patch / minor), write one or two lines
-   for the changelog. Commit the generated `.changeset/*.md` with the code.
+1. **Make a change, add a changeset.** Run `pnpm changeset`, pick a bump (patch or minor)
+   and write a one-line summary. Commit the generated `.changeset/*.md` with the code.
+   Docs, tests and examples need no changeset.
+2. **Push to `main`.** CI opens or updates a **"chore: version packages"** PR that bumps the
+   versions and writes the changelogs. Several changesets collect into one release.
+3. **Merge the version PR.** CI builds, runs the publish checks, and **stages** every
+   package on npm. Nothing is installable yet. The run summary lists what was staged.
+4. **Approve on your machine.** `git pull`, then `pnpm release:approve`. It lists the staged
+   versions, asks for confirmation, and approves each one (npm asks for your 2FA code).
+   It then creates git tags and pushes them, which creates the GitHub releases.
 
-Docs-only, test-only or example-only changes need no changeset.
+Only step 4 makes anything public, and it needs your 2FA. A compromised CI run can at most
+stage a version, which you can reject on npmjs.com → package → Staged Packages.
 
-## Releasing
+## Why staged
 
-Merging to `main` runs `.github/workflows/release.yml`:
+Docent runs inside other people's websites. A malicious release would run on every site
+using it, so no release goes live without a human and a second factor.
 
-- With pending changesets it opens or updates a **"chore: version packages"** PR that bumps
-  versions, writes `CHANGELOG.md` files and removes the consumed changesets.
-- Merging that PR runs the workflow again, which builds, runs `publint` and
-  `@arethetypeswrong/cli`, publishes every changed package to npm, tags the commit
-  (`@docentjs/core@x.y.z`) and creates GitHub releases from the changelog.
+## Setup (done once)
 
-Nothing ships until the version PR is merged.
+Each package on npmjs.com → Settings → Trusted publishing: repository
+`FgrReloaded/docentjs`, workflow `release.yml`, **Allow npm publish unchecked** (stage only).
+CI authenticates with a short-lived OIDC token; there is no npm token in the repo secrets.
 
-## Authentication
+## If something goes wrong
 
-Publishing uses npm **trusted publishing** (OIDC), so there is no token in secrets and every
-package gets a provenance attestation. Configure once per package on npmjs.com →
-package → Settings → Trusted publishing: repository `FgrReloaded/docentjs`, workflow
-`release.yml`. Trusted publishing can only be set up for packages that already exist, so:
-
-### First release (manual, once)
-
-```sh
-npm login
-pnpm changeset:version        # applies .changeset/initial-release.md → 0.1.0
-git add -A && git commit -m "chore: version packages"
-pnpm changeset:publish        # builds, checks, publishes all five packages
-git push --follow-tags
-```
-
-Then enable trusted publishing for each package on npm. Every later release goes through
-the workflow.
+- **A staged version is bad:** reject it on npmjs.com, fix, add a patch changeset, release again.
+  A rejected version number is not reused automatically; bump it.
+- **Approval failed halfway:** rerun `pnpm release:approve`; already-live versions are skipped.
+- **Tags missing:** `pnpm exec changeset git-tag && git push --tags`.
 
 ## Prereleases
 
 ```sh
-pnpm changeset pre enter beta   # version PRs now produce 0.2.0-beta.N under the `beta` tag
+pnpm changeset pre enter beta   # version PRs now produce 0.2.0-beta.N, staged under the `beta` tag
 pnpm changeset pre exit         # back to normal releases
 ```
 
-## Snapshots (try a branch build without releasing)
+## Scripts
 
-```sh
-pnpm changeset version --snapshot canary
-pnpm changeset:publish --tag canary   # publishes 0.0.0-canary-<timestamp>
-```
-
-Do not commit the snapshot version bumps.
-
-## Checks that run before publishing
-
-- `pnpm build:packages` — packages only, not examples or docs.
-- `pnpm check:publish` — `publint --strict` (exports, files, types fields) and
-  `attw --pack` (type resolution under every module mode).
-- `pnpm size` runs in CI on every PR and enforces the bundle budget.
+| Script | What it does |
+| --- | --- |
+| `pnpm changeset` | record a change for the next release |
+| `pnpm changeset:version` | apply changesets (CI does this in the version PR) |
+| `pnpm release:stage` | stage unpublished versions (CI); add `--dry-run` to preview |
+| `pnpm release:approve` | approve staged versions with 2FA, tag and push |
+| `pnpm check:publish` | `publint --strict` and `attw --pack --profile node16` |

@@ -1,0 +1,41 @@
+name: GitHub release
+
+# Runs when `pnpm release:approve` pushes tags such as `@docentjs/core@0.2.0`.
+on:
+  push:
+    tags: ['@docentjs/*@*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract changelog section
+        run: |
+          node --input-type=module -e '
+            import { readFileSync, writeFileSync } from "node:fs"
+            const tag = process.env.GITHUB_REF_NAME
+            const at = tag.lastIndexOf("@")
+            const pkg = tag.slice(0, at).split("/")[1]
+            const version = tag.slice(at + 1)
+            const log = readFileSync(`packages/${pkg}/CHANGELOG.md`, "utf8")
+            const start = log.indexOf(`## ${version}`)
+            let body = "See CHANGELOG.md."
+            if (start !== -1) {
+              const rest = log.slice(start + `## ${version}`.length)
+              const end = rest.search(/\n## /)
+              body = (end === -1 ? rest : rest.slice(0, end)).trim()
+            }
+            writeFileSync("notes.md", body + "\n")
+            writeFileSync(process.env.GITHUB_ENV, `PRERELEASE=${version.includes("-")}\n`, { flag: "a" })
+          '
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          args=(--title "$GITHUB_REF_NAME" --notes-file notes.md)
+          if [ "$PRERELEASE" = "true" ]; then args+=(--prerelease); fi
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" "${args[@]}"
