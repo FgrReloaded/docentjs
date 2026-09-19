@@ -27,9 +27,14 @@ using it, so no release goes live without a human and a second factor.
 
 ## Setup (done once)
 
-Each package on npmjs.com → Settings → Trusted publishing: repository
-`FgrReloaded/docentjs`, workflow `release.yml`, **Allow npm publish unchecked** (stage only).
-CI authenticates with a short-lived OIDC token; there is no npm token in the repo secrets.
+Run `scripts/setup-trust.sh` (2FA prompt per package). It adds, for each package, a GitHub
+trusted publisher for repository `FgrReloaded/docentjs`, workflow `release.yml`, stage publish
+only. Fields are case-sensitive: the owner is `FgrReloaded`. CI authenticates with a
+short-lived OIDC token; there is no npm token in the repo secrets.
+
+If staging fails with `OIDC token exchange error - package not found`, the trusted publisher
+entry does not match the workflow; rerun the script. Provenance is added automatically only
+while the repository is public.
 
 ## If something goes wrong
 

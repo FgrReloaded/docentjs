@@ -39,7 +39,9 @@ for (const pkg of packages()) {
   ]
   // Verbose logging surfaces npm's OIDC messages, which explain a refused
   // trusted-publishing login; they are hidden at the default log level.
-  if (process.env.CI) args.push('--provenance', '--loglevel', 'verbose')
+  // No `--provenance`: with trusted publishing npm adds provenance on its own for
+  // public repositories, and forcing it fails for private ones.
+  if (process.env.CI) args.push('--loglevel', 'verbose')
   if (dryRun) args.push('--dry-run')
   console.log(`stage ${spec} (tag ${distTag(pkg.version)})`)
   try {
