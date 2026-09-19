@@ -1,25 +1,27 @@
-import { DocentProvider, useTour } from '@docentjs/react'
+import { DocentDevtools } from '@docentjs/devtools/react'
+import { DocentProvider, useDocent, useTour } from '@docentjs/react'
 import { minimal } from '@docentjs/react/themes'
 import { TourCard } from './TourCard'
 import { customTour, themedTour, welcomeTour } from './tours'
 
 function Page() {
-  const welcome = useTour(welcomeTour)
+  // The manager runs tours from their rules: the welcome tour starts itself on page load.
+  const docent = useDocent({ tours: [welcomeTour, themedTour] })
+  // A single tour on demand, drawn with our own React component.
   const custom = useTour(customTour, { popover: (ctx) => <TourCard ctx={ctx} /> })
-  const themed = useTour(themedTour)
 
   return (
     <>
       <header>
         <span className="brand">Acme</span>
         <span className="spacer" />
-        <button type="button" onClick={() => welcome.start()}>
+        <button type="button" onClick={() => docent.start(welcomeTour.id)}>
           Built-in tour
         </button>
         <button type="button" onClick={() => custom.start()}>
           Custom popover
         </button>
-        <button type="button" onClick={() => themed.start()}>
+        <button type="button" onClick={() => docent.start(themedTour.id)}>
           Themed
         </button>
       </header>
@@ -44,8 +46,8 @@ function Page() {
           <div className="card">
             <h2 style={{ marginTop: 0 }}>Welcome back</h2>
             <p>
-              Tour status: <b>{welcome.state.status}</b> / <b>{custom.state.status}</b> /{' '}
-              <b>{themed.state.status}</b>
+              Manager: <b>{docent.state.active ?? 'idle'}</b> · Custom tour:{' '}
+              <b>{custom.state.status}</b>
             </p>
           </div>
           <div className="card far">
@@ -58,6 +60,8 @@ function Page() {
         </main>
       </div>
       {custom.portal}
+      {/* Development only: renders nothing and is removed from production builds. */}
+      <DocentDevtools docent={docent} />
     </>
   )
 }
@@ -65,9 +69,7 @@ function Page() {
 export function App() {
   return (
     <DocentProvider
-      renderer={{
-        templates: { minimal: { theme: minimal } },
-      }}
+      renderer={{ templates: { minimal: { theme: minimal } } }}
       sink={{ emit: (e) => console.log('[docent]', e.type, e.stepId ?? '') }}
     >
       <Page />

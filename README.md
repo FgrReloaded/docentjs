@@ -13,6 +13,7 @@ Guided product tours for the web. Spotlight an element, explain it, move on.
 | `@docentjs/react` | React bindings. |
 | `@docentjs/vue` | Vue bindings. |
 | `@docentjs/svelte` | Svelte bindings. |
+| `@docentjs/devtools` | Development panel: why a tour is not showing, replay, simulate, target checks. |
 
 ## Development
 

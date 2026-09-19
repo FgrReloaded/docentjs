@@ -127,6 +127,29 @@ describe('DomRenderer', () => {
     expect(shadow().querySelector('style')?.textContent).toContain('color: purple')
   })
 
+  it('ignores keys typed in fields inside shadow roots and in opted-out elements', () => {
+    const c = ctx({ isLast: false, canGoBack: true })
+    const r = new DomRenderer()
+    r.show(c)
+    const widget = document.createElement('div')
+    document.body.appendChild(widget)
+    const input = document.createElement('input')
+    widget.attachShadow({ mode: 'open' }).appendChild(input)
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, composed: true }),
+    )
+    expect(c.actions.next).not.toHaveBeenCalled()
+
+    const panel = document.createElement('div')
+    panel.setAttribute('data-docent-ignore-keys', '')
+    document.body.appendChild(panel)
+    panel.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true }),
+    )
+    expect(c.actions.skip).not.toHaveBeenCalled()
+    r.hide()
+  })
+
   it('Escape skips and arrow keys navigate', () => {
     const c = ctx({ isLast: false, canGoBack: true })
     const r = new DomRenderer()

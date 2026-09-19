@@ -72,10 +72,15 @@ export function useDocent(options: UseDocentOptions = {}): DocentHandle {
         },
       }
     }
-    return createDocent(merged)
+    // Created without side effects; it starts watching only once mounted.
+    // StrictMode may build this twice and run cleanup once: both are harmless.
+    return createDocent({ ...merged, connect: false })
   }, [defaults])
 
-  useEffect(() => () => void docent.destroy(), [docent])
+  useEffect(() => {
+    docent.connect()
+    return () => void docent.disconnect()
+  }, [docent])
 
   const state = useSyncExternalStore(
     useCallback((cb: () => void) => docent.subscribe(cb), [docent]),

@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { createMemoryStorage, defineTour, type RenderContext } from '@docentjs/core'
 import { act, render, renderHook, screen } from '@testing-library/react'
+import { StrictMode } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { DocentProvider } from './components'
 import { useDocent } from './useDocent'
@@ -34,6 +35,26 @@ describe('useDocent', () => {
     expect(result.current.state.active).toBe('help')
     unmount()
     expect(host()).toBeNull()
+  })
+
+  it('works under StrictMode: one manager, one tour, state in sync', async () => {
+    const seen: Array<string | null> = []
+    function App() {
+      const d = useDocent({ tours, storage: createMemoryStorage() })
+      seen.push(d.state.active)
+      return <span data-testid="active">{d.state.active ?? 'none'}</span>
+    }
+    const { unmount } = render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    )
+    await act(settle)
+    expect(document.querySelectorAll('[data-docent-host]')).toHaveLength(1)
+    expect(screen.getByTestId('active').textContent).toBe('welcome')
+    unmount()
+    await act(settle)
+    expect(document.querySelectorAll('[data-docent-host]')).toHaveLength(0)
   })
 
   it('renders a custom popover and inherits provider defaults', async () => {

@@ -1,35 +1,33 @@
 <script lang="ts">
-import { minimal } from '@docentjs/svelte/themes'
-import { useTour } from '@docentjs/svelte'
-import { onDestroy } from 'svelte'
-import TourCard from './TourCard.svelte'
-import { customTour, themedTour, welcomeTour } from './tours'
+  import { DocentDevtools } from '@docentjs/devtools/svelte'
+  import { useDocent, useTour } from '@docentjs/svelte'
+  import { minimal } from '@docentjs/svelte/themes'
+  import { onDestroy } from 'svelte'
+  import TourCard from './TourCard.svelte'
+  import { customTour, themedTour, welcomeTour } from './tours'
 
-const shared = {
-  renderer: { templates: { minimal: { theme: minimal } } },
-  sink: {
-    emit: (e: { type: string; stepId?: string }) => console.log('[docent]', e.type, e.stepId ?? ''),
-  },
-}
-const welcome = useTour(welcomeTour, shared)
-const custom = useTour(customTour, { ...shared, popover: TourCard })
-const themed = useTour(themedTour, shared)
-onDestroy(() => {
-  welcome.destroy()
-  custom.destroy()
-  themed.destroy()
-})
-const welcomeState = welcome.state
-const customState = custom.state
-const themedState = themed.state
+  const shared = {
+    renderer: { templates: { minimal: { theme: minimal } } },
+    sink: { emit: (e: { type: string; stepId?: string }) => console.log('[docent]', e.type, e.stepId ?? '') },
+  }
+  // The manager runs tours from their rules: the welcome tour starts itself on page load.
+  const docent = useDocent({ ...shared, tours: [welcomeTour, themedTour] })
+  // A single tour on demand, drawn with our own Svelte component.
+  const custom = useTour(customTour, { ...shared, popover: TourCard })
+  onDestroy(() => {
+    docent.destroy()
+    custom.destroy()
+  })
+  const managerState = docent.state
+  const customState = custom.state
 </script>
 
 <header>
   <span class="brand">Acme</span>
   <span class="spacer"></span>
-  <button type="button" onclick={() => welcome.start()}>Built-in tour</button>
+  <button type="button" onclick={() => docent.start(welcomeTour.id)}>Built-in tour</button>
   <button type="button" onclick={() => custom.start()}>Custom popover</button>
-  <button type="button" onclick={() => themed.start()}>Themed</button>
+  <button type="button" onclick={() => docent.start(themedTour.id)}>Themed</button>
 </header>
 <div class="layout">
   <aside data-docent="sidebar">
@@ -45,7 +43,7 @@ const themedState = themed.state
     </div>
     <div class="card">
       <h2 style="margin-top: 0">Welcome back</h2>
-      <p>Tour status: <b>{$welcomeState.status}</b> / <b>{$customState.status}</b> / <b>{$themedState.status}</b></p>
+      <p>Manager: <b>{$managerState.active ?? 'idle'}</b> · Custom tour: <b>{$customState.status}</b></p>
     </div>
     <div class="card far">
       <label>
@@ -56,3 +54,6 @@ const themedState = themed.state
     </div>
   </main>
 </div>
+
+<!-- Development only: renders nothing and is removed from production builds. -->
+<DocentDevtools {docent} />

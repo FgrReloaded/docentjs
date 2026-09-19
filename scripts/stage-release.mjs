@@ -9,16 +9,30 @@
 import { appendFileSync, mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { distTag, isPublished, packages, run, stagedVersions } from './release-lib.mjs'
+import {
+  distTag,
+  isPublished,
+  packageExists,
+  packages,
+  run,
+  stagedVersions,
+} from './release-lib.mjs'
 
 const dryRun = process.argv.includes('--dry-run')
 const out = mkdtempSync(join(tmpdir(), 'docent-stage-'))
 const staged = []
+const firstPublish = []
 
 for (const pkg of packages()) {
   const spec = `${pkg.name}@${pkg.version}`
   if (isPublished(pkg.name, pkg.version)) {
     console.log(`skip ${spec}: already published`)
+    continue
+  }
+  if (!packageExists(pkg.name)) {
+    // npm cannot stage (or trust-publish) a package that does not exist yet.
+    console.log(`skip ${spec}: new package, needs a one-time manual publish`)
+    firstPublish.push(spec)
     continue
   }
   if (stagedVersions(pkg.name).some((s) => s.version === pkg.version)) {
@@ -75,7 +89,20 @@ const summary = staged.length
     ].join('\n')
   : 'Nothing to stage: every package version is already published or staged.'
 
-console.log(`\n${summary}`)
+const newPackages = firstPublish.length
+  ? [
+      '',
+      '### New packages: publish once by hand',
+      '',
+      ...firstPublish.map((s) => `- \`${s}\``),
+      '',
+      'After approving the staged versions, from the repo root run',
+      '`pnpm --filter <name> publish --access public`, then add its trusted publisher',
+      '(`scripts/setup-trust.sh`). Later releases stage it like the others.',
+    ].join('\n')
+  : ''
+const report = `${summary}${newPackages ? `\n${newPackages}` : ''}`
+console.log(`\n${report}`)
 // biome-ignore lint/suspicious/noUndeclaredEnvVars: set by GitHub Actions, not a Turborepo task input
 const stepSummary = process.env.GITHUB_STEP_SUMMARY
-if (stepSummary) appendFileSync(stepSummary, `${summary}\n`)
+if (stepSummary) appendFileSync(stepSummary, `${report}\n`)

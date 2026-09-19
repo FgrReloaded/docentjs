@@ -425,6 +425,16 @@ describe('persistence and resume', () => {
     expect(renderer.last()?.step.id).toBe('intro')
   })
 
+  it('can start again right after destroy without the reset clobbering it', async () => {
+    const { controller, renderer } = setup(threeSteps)
+    await controller.start()
+    const destroyed = controller.destroy()
+    await controller.start()
+    await destroyed
+    expect(controller.getState()).toMatchObject({ status: 'running', index: 0 })
+    expect(renderer.shown).toHaveLength(2)
+  })
+
   it('notifies subscribers and destroy clears the screen', async () => {
     const { controller, renderer } = setup(threeSteps)
     const seen: string[] = []

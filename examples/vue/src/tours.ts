@@ -3,6 +3,8 @@ import { defineTour } from '@docentjs/vue'
 export const welcomeTour = defineTour({
   id: 'vue-welcome',
   version: 1,
+  // Started by the tour manager on page load, once per browser.
+  trigger: { type: 'auto', delay: 600 },
   options: { showProgress: true, spotlight: { padding: 8, radius: 8 } },
   steps: [
     { id: 'intro', title: 'Welcome', body: 'A tour rendered by the built-in popover.' },

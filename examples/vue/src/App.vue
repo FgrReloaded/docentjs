@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { DocentDevtools } from '@docentjs/devtools/vue'
+import { provideDocentDefaults, TourPopover, useDocent, useTour } from '@docentjs/vue'
 import { minimal } from '@docentjs/vue/themes'
-import { provideDocentDefaults, TourPopover, useTour } from '@docentjs/vue'
 import TourCard from './TourCard.vue'
 import { customTour, themedTour, welcomeTour } from './tours'
 
@@ -9,18 +10,19 @@ provideDocentDefaults({
   sink: { emit: (e) => console.log('[docent]', e.type, e.stepId ?? '') },
 })
 
-const welcome = useTour(welcomeTour)
+// The manager runs tours from their rules: the welcome tour starts itself on page load.
+const docent = useDocent({ tours: [welcomeTour, themedTour] })
+// A single tour on demand, drawn with our own Vue component.
 const custom = useTour(customTour, { popover: true })
-const themed = useTour(themedTour)
 </script>
 
 <template>
   <header>
     <span class="brand">Acme</span>
     <span class="spacer" />
-    <button type="button" @click="welcome.start()">Built-in tour</button>
+    <button type="button" @click="docent.start(welcomeTour.id)">Built-in tour</button>
     <button type="button" @click="custom.start()">Custom popover</button>
-    <button type="button" @click="themed.start()">Themed</button>
+    <button type="button" @click="docent.start(themedTour.id)">Themed</button>
   </header>
   <div class="layout">
     <aside data-docent="sidebar">
@@ -37,8 +39,8 @@ const themed = useTour(themedTour)
       <div class="card">
         <h2 style="margin-top: 0">Welcome back</h2>
         <p>
-          Tour status: <b>{{ welcome.state.value.status }}</b> / <b>{{ custom.state.value.status }}</b> /
-          <b>{{ themed.state.value.status }}</b>
+          Manager: <b>{{ docent.state.value.active ?? 'idle' }}</b> · Custom tour:
+          <b>{{ custom.state.value.status }}</b>
         </p>
       </div>
       <div class="card far">
@@ -53,4 +55,6 @@ const themed = useTour(themedTour)
   <TourPopover :tour="custom" v-slot="{ ctx }">
     <TourCard :ctx="ctx" />
   </TourPopover>
+  <!-- Development only: renders nothing and is removed from production builds. -->
+  <DocentDevtools :docent="docent" />
 </template>

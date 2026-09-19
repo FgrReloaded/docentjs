@@ -37,6 +37,17 @@ If staging fails with `OIDC token exchange error - package not found`, the trust
 entry does not match the workflow; rerun the script. Provenance is added automatically only
 while the repository is public.
 
+## Adding a new package
+
+npm can only stage or trust-publish packages that already exist. For a new package (the
+release workflow lists it under "New packages" and skips it):
+
+1. Approve the staged versions as usual with `pnpm release:approve`.
+2. Publish the new one once from your machine: `pnpm --filter @docentjs/<name> publish --access public`.
+3. Add its trusted publisher: add it to `scripts/setup-trust.sh` and run it.
+
+From the next release on it is staged like the others.
+
 ## If something goes wrong
 
 - **A staged version is bad:** reject it on npmjs.com, fix, add a patch changeset, release again.

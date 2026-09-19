@@ -124,7 +124,7 @@ export class DomRenderer implements Renderer {
       const smooth = this.scrollIntoView(this.target, ctx.step)
       if (this.options.avoidOcclusion !== false) {
         const target = this.target
-        this.afterScroll(smooth, () => {
+        this.afterScroll(smooth, target, () => {
           if (this.target === target && uncover(target, host, this.viewport())) this.update()
         })
       }
@@ -257,28 +257,41 @@ export class DomRenderer implements Renderer {
     win.scrollBy({ top: overlap + 16, behavior: 'auto' })
   }
 
-  /** Run after a smooth scroll settles (scrollend, or a short fallback), or right away. */
-  private afterScroll(smooth: boolean, fn: () => void): void {
+  /**
+   * Run once a smooth scroll has settled, or right away for instant scrolls.
+   * Settled means the target stopped moving for two frames' worth of samples,
+   * not a fixed delay: smooth scrolls take longer on slow or busy devices.
+   * `scrollend` finishes early where supported; a cap keeps it bounded.
+   */
+  private afterScroll(smooth: boolean, target: Element, fn: () => void): void {
     const win = this.doc.defaultView
     if (!smooth || !win) {
       fn()
       return
     }
     let done = false
+    let lastTop = Number.NaN
+    let stableSamples = 0
+    const stop = () => {
+      done = true
+      win.removeEventListener('scrollend', finish)
+      clearInterval(poll)
+      clearTimeout(cap)
+    }
     const finish = () => {
       if (done) return
-      done = true
-      win.removeEventListener('scrollend', finish)
-      clearTimeout(timer)
+      stop()
       fn()
     }
-    const timer = setTimeout(finish, 600)
+    const poll = setInterval(() => {
+      const top = target.getBoundingClientRect().top
+      stableSamples = Math.abs(top - lastTop) < 0.5 ? stableSamples + 1 : 0
+      lastTop = top
+      if (stableSamples >= 2) finish()
+    }, 80)
+    const cap = setTimeout(finish, 3000)
     win.addEventListener('scrollend', finish, { once: true })
-    this.cleanups.push(() => {
-      done = true
-      win.removeEventListener('scrollend', finish)
-      clearTimeout(timer)
-    })
+    this.cleanups.push(stop)
   }
 
   // -------------------------------------------------------------------------
@@ -469,6 +482,11 @@ export class DomRenderer implements Renderer {
 
   private onKeydown(e: KeyboardEvent, ctx: RenderContext): void {
     const options = ctx.tour.options ?? {}
+    // The real origin, even inside shadow roots (where `e.target` is retargeted to the host).
+    const path = typeof e.composedPath === 'function' ? e.composedPath() : []
+    const origin = (path[0] ?? e.target) as Element | null
+    // Elements marked `data-docent-ignore-keys` (e.g. the devtools panel) keep their keys.
+    if (path.some((n) => n instanceof Element && n.hasAttribute('data-docent-ignore-keys'))) return
     if (e.key === 'Escape' && options.allowClose !== false) {
       e.preventDefault()
       ctx.actions.skip()
@@ -480,7 +498,8 @@ export class DomRenderer implements Renderer {
     }
     if (options.keyboard === false) return
     const inField =
-      e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)
+      origin instanceof HTMLElement &&
+      (/^(INPUT|TEXTAREA|SELECT)$/.test(origin.tagName) || origin.isContentEditable)
     if (inField) return
     if (e.key === 'ArrowRight' && ctx.step.buttons?.next !== false) {
       e.preventDefault()

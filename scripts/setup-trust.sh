@@ -7,7 +7,7 @@ set -euo pipefail
 REPO="FgrReloaded/docentjs"
 WORKFLOW="release.yml"
 
-for pkg in core dom react vue svelte; do
+for pkg in core dom react vue svelte devtools; do
   echo
   echo "== @docentjs/$pkg"
   npm trust github "@docentjs/$pkg" --repo "$REPO" --file "$WORKFLOW" --allow-stage-publish -y

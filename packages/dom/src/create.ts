@@ -14,30 +14,40 @@ export interface CreateTourOptions extends Omit<ControllerOptions, 'tour' | 'ren
  */
 export class DomTourController extends TourController {
   private readonly cleanups: Array<() => void> = []
+  private readonly followRoutes: boolean
 
   constructor(tour: Tour, options: CreateTourOptions = {}) {
     const { renderer: rendererOptions, followRoutes, ...rest } = options
     const renderer = new DomRenderer(rendererOptions)
     super({ ...rest, tour, renderer, storage: rest.storage ?? createLocalStorage() })
+    // Listeners attach on start, not here, so constructing has no side effects
+    // and a destroyed controller can start again (React StrictMode).
+    this.followRoutes = followRoutes !== false
+  }
 
-    if (followRoutes !== false && typeof window !== 'undefined') {
-      const onChange = () => void this.routeChanged()
-      for (const type of ['popstate', 'hashchange']) {
-        window.addEventListener(type, onChange)
-        this.cleanups.push(() => window.removeEventListener(type, onChange))
-      }
-      const nav = (window as { navigation?: EventTarget }).navigation
-      if (nav) {
-        nav.addEventListener('navigatesuccess', onChange)
-        this.cleanups.push(() => nav.removeEventListener('navigatesuccess', onChange))
-      }
-    }
+  override async start(at?: number | string): Promise<void> {
+    this.listenToRoutes()
+    return super.start(at)
   }
 
   override async destroy(): Promise<void> {
     for (const c of this.cleanups) c()
     this.cleanups.length = 0
     await super.destroy()
+  }
+
+  private listenToRoutes(): void {
+    if (!this.followRoutes || this.cleanups.length > 0 || typeof window === 'undefined') return
+    const onChange = () => void this.routeChanged()
+    for (const type of ['popstate', 'hashchange']) {
+      window.addEventListener(type, onChange)
+      this.cleanups.push(() => window.removeEventListener(type, onChange))
+    }
+    const nav = (window as { navigation?: EventTarget }).navigation
+    if (nav) {
+      nav.addEventListener('navigatesuccess', onChange)
+      this.cleanups.push(() => nav.removeEventListener('navigatesuccess', onChange))
+    }
   }
 }
 

@@ -33,6 +33,16 @@ export function isPublished(name, version) {
   }
 }
 
+/** True when the package has ever been published. Staging only works for existing packages. */
+export function packageExists(name) {
+  try {
+    run('npm', ['view', name, 'name'])
+    return true
+  } catch {
+    return false
+  }
+}
+
 /**
  * Staged entries for a package. The JSON shape is not formally documented, so read
  * the version and id defensively.

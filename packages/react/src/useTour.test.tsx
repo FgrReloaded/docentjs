@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { defineTour, type RenderContext } from '@docentjs/core'
 import { act, render, renderHook, screen } from '@testing-library/react'
+import { StrictMode } from 'react'
 import { afterEach, describe, expect, it } from 'vitest'
 import { DocentProvider, Tour } from './components'
 import { useTour } from './useTour'
@@ -88,6 +89,39 @@ describe('useTour', () => {
       screen.getByText('go').click()
     })
     expect(screen.getByTestId('card').textContent).toContain('Second (2/2)')
+  })
+})
+
+describe('useTour under StrictMode', () => {
+  it('still follows routes after the simulated remount', async () => {
+    const routed = defineTour({
+      id: 'routed',
+      steps: [
+        { id: 'a', route: '/', title: 'Home' },
+        { id: 'b', route: '/next', title: 'Next page' },
+      ],
+    })
+    let handle: ReturnType<typeof useTour> | undefined
+    function App() {
+      handle = useTour(routed)
+      return null
+    }
+    history.pushState({}, '', '/')
+    render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    )
+    await act(() => handle?.start() ?? Promise.resolve())
+    await act(() => handle?.next() ?? Promise.resolve())
+    expect(handle?.state.status).toBe('paused')
+    await act(async () => {
+      history.pushState({}, '', '/next')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+      await new Promise((r) => setTimeout(r, 0))
+    })
+    expect(handle?.state).toMatchObject({ status: 'running', index: 1 })
+    history.pushState({}, '', '/')
   })
 })
 

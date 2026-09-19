@@ -103,3 +103,5 @@ createDocent({
 | `destroy()` | stop watching and remove everything |
 
 Shared options: `storage`, `sink`, `custom` predicates, `hooks` keyed by tour id, and `renderer` for theme, templates, slots, and headless mode across every tour.
+
+To see why a tour is or isn't showing while you build, use the [devtools](/guides/devtools/).

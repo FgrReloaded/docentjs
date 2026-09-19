@@ -18,6 +18,7 @@ import type { TourHooks } from '../hooks'
 import type { Tour, TourProgressState, TraitValue, Trigger } from '../schema/tour'
 import {
   ANONYMOUS_IDENTITY,
+  type DocentEvent,
   type EventSink,
   type Identity,
   type StorageAdapter,
@@ -43,6 +44,12 @@ export interface DocentOptions {
   /** Builds a platform controller for a tour. The DOM package supplies this. */
   createController: (tour: Tour, options: SharedControllerOptions) => TourController
   now?: () => number
+  /**
+   * Start watching triggers right away. Default true. Framework bindings pass
+   * `false` and call `connect()` / `disconnect()` from their mount lifecycle,
+   * which keeps construction free of side effects (React StrictMode).
+   */
+  connect?: boolean
 }
 
 export interface DocentState {
@@ -66,9 +73,6 @@ function isTourSource(value: Tour[] | TourSource | undefined): value is TourSour
 }
 
 export class Docent {
-  /** Resolves once tours and progress are loaded and triggers are armed. */
-  readonly ready: Promise<void>
-
   private readonly options: DocentOptions
   private readonly env: DocentEnvironment
   private readonly baseStorage: StorageAdapter
@@ -86,7 +90,13 @@ export class Docent {
   private readonly cleanups: Cleanup[] = []
   private readonly timers = new Set<ReturnType<typeof setTimeout>>()
   private readonly listeners = new Set<DocentListener>()
+  private readonly eventListeners = new Set<(event: DocentEvent) => void>()
   private destroyed = false
+  private loading: Promise<void> | undefined
+  /** Wanted by the owner (between connect and disconnect). */
+  private connected = false
+  /** Listening to routes, the source and triggers. */
+  private attached = false
 
   constructor(options: DocentOptions) {
     this.options = options
@@ -94,12 +104,58 @@ export class Docent {
     this.identity = options.identity ?? ANONYMOUS_IDENTITY
     this.baseStorage = options.storage ?? createMemoryStorage()
     this.store = new ProgressStore(scopeStorage(this.baseStorage, this.identity.id))
-    this.ready = this.init()
+    if (options.connect !== false) this.connect()
+  }
+
+  /** Resolves once tours and progress are loaded. Loading starts on first use. */
+  get ready(): Promise<void> {
+    this.loading ??= this.load()
+    return this.loading
+  }
+
+  /** Start watching routes, the tour source and triggers. Idempotent. */
+  connect(): void {
+    if (this.destroyed || this.connected) return
+    this.connected = true
+    void this.ready.then(() => {
+      if (this.connected && !this.attached && !this.destroyed) this.attach()
+    })
+  }
+
+  /**
+   * Stop watching and remove any running tour without recording an outcome.
+   * `connect()` resumes. Unlike `destroy()`, the manager stays usable.
+   */
+  async disconnect(): Promise<void> {
+    this.connected = false
+    if (this.attached) {
+      this.attached = false
+      this.disarmTriggers()
+      for (const c of this.cleanups) c()
+      this.cleanups.length = 0
+    }
+    this.queue = []
+    await this.stopActive()
+    this.emitState()
   }
 
   // -------------------------------------------------------------------------
   // Public API
   // -------------------------------------------------------------------------
+
+  /** The tours currently managed. */
+  getTours(): Tour[] {
+    return [...this.tours.values()]
+  }
+
+  /**
+   * Observe every lifecycle event from every tour, in addition to the `sink`
+   * option. Returns an unsubscribe function. Used by devtools.
+   */
+  onEvent(listener: (event: DocentEvent) => void): () => void {
+    this.eventListeners.add(listener)
+    return () => this.eventListeners.delete(listener)
+  }
 
   getState(): DocentState {
     return { active: this.activeId, tours: [...this.tours.keys()] }
@@ -162,7 +218,7 @@ export class Docent {
     if (!tour) return false
     return (
       shouldShow(tour, this.records.get(tourId) ?? null) &&
-      evaluateAll(tour.conditions, this.conditionEnv())
+      evaluateAll(tour.conditions, this.getConditionEnv())
     )
   }
 
@@ -203,28 +259,26 @@ export class Docent {
   }
 
   async destroy(): Promise<void> {
+    await this.disconnect()
     this.destroyed = true
-    this.disarmTriggers()
-    for (const c of this.cleanups) c()
-    this.cleanups.length = 0
-    const controller = this.controller
-    this.controller = undefined
-    this.activeId = null
-    await controller?.destroy()
     this.listeners.clear()
+    this.eventListeners.clear()
   }
 
   // -------------------------------------------------------------------------
   // Loading
   // -------------------------------------------------------------------------
 
-  private async init(): Promise<void> {
+  private async load(): Promise<void> {
     const source = this.options.tours
     const initial = isTourSource(source) ? await source.load() : (source ?? [])
     this.setTours(initial)
     await this.loadRecords()
-    if (this.destroyed) return
+  }
 
+  private attach(): void {
+    this.attached = true
+    const source = this.options.tours
     if (isTourSource(source) && source.subscribe) {
       this.cleanups.push(
         source.subscribe((tours) => {
@@ -269,7 +323,7 @@ export class Docent {
    * `except` skips one tour, used for the tour that just finished.
    */
   private armTriggers(except?: string): void {
-    if (this.destroyed) return
+    if (this.destroyed || !this.attached) return
     this.disarmTriggers()
     for (const tour of this.tours.values()) {
       const trigger = tour.trigger
@@ -321,7 +375,7 @@ export class Docent {
 
   /** A trigger fired: start the tour if eligible, or queue it behind the running one. */
   private fire(tourId: string): void {
-    if (this.destroyed || tourId === this.activeId) return
+    if (this.destroyed || !this.attached || tourId === this.activeId) return
     if (!this.isEligible(tourId) || !this.triggerStillHolds(tourId)) return
     if (this.tours.get(tourId)?.trigger?.type === 'auto') this.autoFired.add(tourId)
     if (this.activeId) {
@@ -344,7 +398,8 @@ export class Docent {
   // Running
   // -------------------------------------------------------------------------
 
-  private conditionEnv(): ConditionEnv {
+  /** What conditions are evaluated against right now. Used by `isEligible` and devtools. */
+  getConditionEnv(): ConditionEnv {
     const env: ConditionEnv = {
       identity: this.identity,
       elementExists: (t) => this.env.hasTarget(t),
@@ -362,7 +417,12 @@ export class Docent {
       storage: scopeStorage(this.baseStorage, this.identity.id),
       tourState: (id) => this.tourState(id),
     }
-    if (this.options.sink) shared.sink = this.options.sink
+    shared.sink = {
+      emit: (event) => {
+        this.options.sink?.emit(event)
+        for (const l of this.eventListeners) l(event)
+      },
+    }
     const hooks = this.options.hooks?.[tour.id]
     if (hooks) shared.hooks = hooks
     if (this.options.custom) shared.custom = this.options.custom
@@ -375,6 +435,13 @@ export class Docent {
     const controller = this.options.createController(tour, this.sharedOptions(tour))
     this.controller = controller
     this.activeId = tour.id
+    // Mirror what the controller persists, so tourState() is right while it runs.
+    this.records.set(tour.id, {
+      tourId: tour.id,
+      version: tourVersion(tour),
+      state: 'in-progress',
+      updatedAt: (this.options.now ?? Date.now)(),
+    })
     this.emitState()
 
     const off = controller.subscribe((state) => {

@@ -2,10 +2,23 @@
   "extends": "./tsconfig.base.json",
   "files": [],
   "references": [
-    { "path": "packages/core" },
-    { "path": "packages/dom" },
-    { "path": "packages/react" },
-    { "path": "packages/vue" },
-    { "path": "packages/svelte" }
+    {
+      "path": "packages/core"
+    },
+    {
+      "path": "packages/dom"
+    },
+    {
+      "path": "packages/react"
+    },
+    {
+      "path": "packages/vue"
+    },
+    {
+      "path": "packages/svelte"
+    },
+    {
+      "path": "packages/devtools"
+    }
   ]
 }

@@ -347,6 +347,68 @@ describe('Docent one tour at a time', () => {
   })
 })
 
+describe('Docent lifecycle', () => {
+  it('does nothing until connected when connect is false', async () => {
+    let loads = 0
+    const source: TourSource = {
+      load: async () => {
+        loads++
+        return [oneStep('w', { trigger: { type: 'auto' } })]
+      },
+    }
+    const { docent, shown } = setup(source, { connect: false })
+    await settle()
+    expect(loads).toBe(0)
+    expect(shown).toEqual([])
+    docent.connect()
+    await settle()
+    expect(loads).toBe(1)
+    expect(shown).toEqual(['w:only'])
+  })
+
+  it('survives connect, disconnect, connect (React StrictMode) without duplicates', async () => {
+    const { docent, shown, f } = setup(
+      [
+        oneStep('r', {
+          trigger: { type: 'route', pattern: '/x' },
+          options: { frequency: 'always' },
+        }),
+      ],
+      { connect: false },
+    )
+    docent.connect()
+    void docent.disconnect()
+    docent.connect()
+    await settle()
+    f.navigate('/x')
+    await settle()
+    expect(shown).toEqual(['r:only'])
+    expect(docent.getState().active).toBe('r')
+
+    await docent.disconnect()
+    expect(docent.getState().active).toBeNull()
+    expect(docent.tourState('r')).toBe('in-progress') // not recorded as skipped
+    f.navigate('/y')
+    f.navigate('/x')
+    await settle()
+    expect(shown).toEqual(['r:only'])
+
+    docent.connect()
+    await settle()
+    expect(shown).toEqual(['r:only', 'r:only'])
+  })
+
+  it('manual start works before connecting, and destroy is final', async () => {
+    const { docent, shown } = setup([oneStep('m')], { connect: false })
+    expect(await docent.start('m')).toBe(true)
+    expect(shown).toEqual(['m:only'])
+    await docent.destroy()
+    docent.connect()
+    await settle()
+    expect(docent.getState().active).toBeNull()
+  })
+})
+
 describe('Docent sources and state', () => {
   it('loads from a TourSource and reacts to live updates', async () => {
     let push: ((tours: Tour[]) => void) | undefined
@@ -367,6 +429,25 @@ describe('Docent sources and state', () => {
     expect(docent.getState().tours).toEqual(['a', 'b'])
     expect(shown).toEqual(['b:only'])
     expect(states.at(-1)).toEqual(['a', 'b'])
+  })
+
+  it('exposes tours, the condition environment and a live event stream', async () => {
+    const { docent, finish } = setup([oneStep('w', { trigger: { type: 'auto' } })], {
+      identity: { id: 'u', traits: { plan: 'pro' } },
+    })
+    const events: string[] = []
+    docent.onEvent((e) => events.push(`${e.type}:${e.tourId}`))
+    await docent.ready
+    await settle()
+    expect(docent.getTours().map((t) => t.id)).toEqual(['w'])
+    expect(docent.getConditionEnv().identity.traits).toEqual({ plan: 'pro' })
+    await finish()
+    expect(events).toEqual([
+      'tour:started:w',
+      'step:shown:w',
+      'step:completed:w',
+      'tour:completed:w',
+    ])
   })
 
   it('destroy stops everything', async () => {

@@ -22,6 +22,7 @@ export default defineConfig({
             { slug: 'guides/triggers-and-conditions' },
             { slug: 'guides/routes-and-persistence' },
             { slug: 'guides/events-and-hooks' },
+            { slug: 'guides/devtools' },
           ],
         },
         {

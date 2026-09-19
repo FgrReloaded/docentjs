@@ -180,8 +180,11 @@ export class TourController {
   async destroy(): Promise<void> {
     this.cancelPending()
     this.listeners.clear()
-    await this.renderer.hide()
+    // Reset before awaiting: a start() that runs while hide() settles must not
+    // be overwritten afterwards (React StrictMode destroys, then reuses).
+    const hidden = this.renderer.hide()
     this.state = IDLE_STATE
+    await hidden
   }
 
   // -------------------------------------------------------------------------

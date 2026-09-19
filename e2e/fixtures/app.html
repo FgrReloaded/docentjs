@@ -9,7 +9,8 @@
     {
       "imports": {
         "@docentjs/core": "/packages/core/dist/index.js",
-        "@docentjs/dom": "/packages/dom/dist/index.js"
+        "@docentjs/dom": "/packages/dom/dist/index.js",
+        "@docentjs/devtools": "/packages/devtools/dist/index.js"
       }
     }
   </script>
@@ -194,6 +195,7 @@
       ]
       const docent = createDocent({ tours: managed, sink })
       window.docent = docent
+      if (params.has('devtools')) import('@docentjs/devtools').then((d) => d.mount(docent, { open: true }))
       docent.identify(params.get('user') ?? 'u1', { plan: params.get('plan') ?? 'trial' })
     } else {
       const tour = tours[params.get('tour') ?? 'basic']
