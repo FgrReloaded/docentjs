@@ -1,4 +1,5 @@
 import { defineConfig } from 'tsdown'
+import { minifyStylesPlugin } from './css-minify.ts'
 
 export default defineConfig({
   entry: ['src/index.ts', 'src/themes.ts'],
@@ -7,4 +8,5 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
+  plugins: [minifyStylesPlugin()],
 })

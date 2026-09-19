@@ -58,28 +58,53 @@ for (const pkg of packages()) {
   if (process.env.CI) args.push('--loglevel', 'verbose')
   if (dryRun) args.push('--dry-run')
   console.log(`stage ${spec} (tag ${distTag(pkg.version)})`)
-  try {
-    const output = run('npm', args)
-    if (output) console.log(output)
-    staged.push(spec)
-  } catch (error) {
-    const text = `${error.stdout ?? ''}${error.stderr ?? ''}`
-    const useful = text
-      .split('\n')
-      .filter((line) => !/^npm (verbose|timing|silly|http)\b/.test(line) || /oidc/i.test(line))
-    console.log(useful.join('\n'))
-    // CI cannot list staged versions (OIDC tokens only cover publishing), so a
-    // version staged by an earlier run is only detected here.
-    if (/already (been )?staged|E409|conflict/i.test(text)) {
-      console.log(`skip ${spec}: already staged, waiting for approval`)
-      continue
+  const outcome = await stageWithRetry(args, spec)
+  if (outcome === 'staged') staged.push(spec)
+}
+
+/**
+ * Stage one package. Retries temporary npm failures (5xx, dropped connections,
+ * including a failed OIDC login exchange during an outage) with backoff.
+ * Returns 'skipped' for versions that are already staged or live.
+ */
+async function stageWithRetry(args, spec) {
+  const attempts = 4
+  for (let attempt = 1; ; attempt++) {
+    try {
+      const output = run('npm', args)
+      if (output) console.log(output)
+      return 'staged'
+    } catch (error) {
+      const text = `${error.stdout ?? ''}${error.stderr ?? ''}`
+      const useful = text
+        .split('\n')
+        .filter(
+          (line) =>
+            !/^npm (verbose|timing|silly|http)\b/.test(line) || /oidc|\b5\d\d\b/i.test(line),
+        )
+      console.log(useful.join('\n'))
+      // CI cannot list staged versions (OIDC tokens only cover publishing), so a
+      // version staged by an earlier run is only detected here.
+      if (/already (been )?staged|E409|conflict/i.test(text)) {
+        console.log(`skip ${spec}: already staged, waiting for approval`)
+        return 'skipped'
+      }
+      // Approved between our "is it published?" check and staging (a push during approval).
+      if (/cannot publish over the previously published versions/i.test(text)) {
+        console.log(`skip ${spec}: went live while this run was checking`)
+        return 'skipped'
+      }
+      const transient =
+        /\b(GET|POST|PUT) 5\d\d\b|\bE5\d\d\b|ECONNRESET|ETIMEDOUT|EAI_AGAIN|socket hang up/i.test(
+          text,
+        )
+      if (!transient || attempt === attempts) throw error
+      const wait = 15 * 2 ** (attempt - 1)
+      console.log(
+        `npm had a temporary failure (attempt ${attempt}/${attempts}); retrying in ${wait}s`,
+      )
+      await new Promise((resolve) => setTimeout(resolve, wait * 1000))
     }
-    // Approved between our "is it published?" check and staging (a push during approval).
-    if (/cannot publish over the previously published versions/i.test(text)) {
-      console.log(`skip ${spec}: went live while this run was checking`)
-      continue
-    }
-    throw error
   }
 }
 

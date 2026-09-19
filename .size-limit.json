@@ -3,13 +3,13 @@
     "name": "createTour (core + dom, single tour)",
     "path": "packages/dom/dist/index.js",
     "import": "{ createTour }",
-    "limit": "11 kB"
+    "limit": "12 kB"
   },
   {
     "name": "createDocent (core + dom + manager)",
     "path": "packages/dom/dist/index.js",
     "import": "{ createDocent }",
-    "limit": "12.5 kB"
+    "limit": "13.5 kB"
   },
   {
     "name": "@docentjs/core (everything)",

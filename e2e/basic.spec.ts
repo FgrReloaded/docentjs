@@ -96,6 +96,7 @@ test.describe('basic flow', () => {
   test('popover follows the target while the page scrolls', async ({ page, isMobile }) => {
     test.skip(isMobile, 'the bottom sheet stays docked')
     await open(page, 'basic', '=save')
+    await settled(page)
     const before = await box(popover(page))
     // Scroll a little so the target stays on screen and the popover keeps its placement.
     await page.evaluate(() => window.scrollTo(0, 40))

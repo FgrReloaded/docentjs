@@ -27,6 +27,8 @@ export interface OverlayUpdate {
 export class Overlay {
   readonly el: HTMLDivElement
   readonly blocker: HTMLDivElement
+  /** Hairline of light around the cutout. */
+  readonly ring: HTMLDivElement
   private lastHole: Rect | null = null
 
   constructor(doc: Document) {
@@ -36,6 +38,21 @@ export class Overlay {
     this.blocker = doc.createElement('div')
     this.blocker.className = 'blocker'
     this.blocker.hidden = true
+    this.ring = doc.createElement('div')
+    this.ring.className = 'ring'
+    this.ring.setAttribute('part', 'ring')
+    this.ring.style.opacity = '0'
+  }
+
+  /** Move the ring to a rect; a zero-size rect collapses it (modal steps). */
+  private placeRing(rect: Rect, radius: number, visible: boolean): void {
+    Object.assign(this.ring.style, {
+      transform: `translate(${rect.x}px, ${rect.y}px)`,
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
+      borderRadius: `${radius}px`,
+      opacity: visible ? '1' : '0',
+    })
   }
 
   /** Current hole, padded, in viewport coordinates. */
@@ -53,11 +70,13 @@ export class Overlay {
       const cy = c ? c.y + c.height / 2 : viewport.height / 2
       this.lastHole = null
       this.el.style.clipPath = holePath(viewport, { x: cx, y: cy, width: 0, height: 0 }, 0)
+      this.placeRing({ x: cx, y: cy, width: 0, height: 0 }, 0, false)
       this.blocker.hidden = true
       return
     }
     const hole = this.lastHole
     this.el.style.clipPath = holePath(viewport, hole, radius)
+    this.placeRing(hole, Math.max(0, Math.min(radius, hole.width / 2, hole.height / 2)), true)
     this.blocker.hidden = !block
     if (block) {
       this.blocker.style.transform = `translate(${hole.x}px, ${hole.y}px)`

@@ -1,37 +1,57 @@
-/** Styles injected into the shadow root. Theme through the custom properties. */
+/**
+ * Styles injected into the shadow root. Theme through the custom properties.
+ *
+ * Design: quiet precision (see .impeccable.md). The popover inherits the host
+ * site's font; hierarchy comes from size, weight, tracking and color. Colors
+ * are ink tinted toward the Docent hue (OKLCH 285). Light is the default;
+ * dark is opt-in through tokens or the `dark` preset.
+ */
 export const STYLES = `
 :host {
-  --docent-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --docent-bg: #ffffff;
-  --docent-fg: #111827;
-  --docent-muted: #6b7280;
-  --docent-accent: #2563eb;
-  --docent-accent-fg: #ffffff;
-  --docent-radius: 12px;
-  --docent-shadow: 0 10px 30px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
-  --docent-width: 320px;
-  --docent-overlay: #000;
-  --docent-overlay-opacity: 0.55;
+  /* Public tokens (see Theme). --docent-font is unset so the host font is inherited. */
+  --docent-bg: oklch(99.4% 0.003 285);
+  --docent-fg: oklch(23% 0.018 285);
+  --docent-muted: oklch(52% 0.014 285);
+  --docent-accent: oklch(26% 0.02 285);
+  --docent-accent-fg: oklch(98.5% 0.004 285);
+  --docent-radius: 14px;
+  --docent-shadow:
+    0 1px 2px oklch(23% 0.02 285 / 0.06),
+    0 8px 24px -6px oklch(23% 0.02 285 / 0.16),
+    0 28px 56px -16px oklch(23% 0.02 285 / 0.24);
+  --docent-width: 344px;
+  --docent-overlay: oklch(20% 0.02 285);
+  --docent-overlay-opacity: 0.52;
   --docent-duration: 220ms;
   /* Fast start, gentle stop: movement begins the moment you click. */
   --docent-easing: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  /* Derived, internal: follow whatever the tokens are set to. */
+  --_line: color-mix(in oklch, var(--docent-fg) 11%, transparent);
+  --_soft: color-mix(in oklch, var(--docent-fg) 6%, transparent);
+  --_body: color-mix(in oklch, var(--docent-fg) 80%, var(--docent-bg));
+
   position: fixed;
   inset: 0;
   z-index: var(--docent-z, 2147483000);
   pointer-events: none;
-  font: 14px/1.5 var(--docent-font);
   color: var(--docent-fg);
-}
-@media (prefers-color-scheme: dark) {
-  :host {
-    --docent-bg: #1f2937;
-    --docent-fg: #f9fafb;
-    --docent-muted: #9ca3af;
-    --docent-accent: #60a5fa;
-    --docent-accent-fg: #0b1220;
-  }
+  /* Invalid (unset) when the token is absent, which inherits the host font. */
+  font-family: var(--docent-font);
+  font-size: 14px;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1.55;
+  letter-spacing: normal;
+  text-transform: none;
+  text-align: start;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 * { box-sizing: border-box; }
+
+/* ------------------------------------------------------------------ overlay */
+
 .overlay {
   position: absolute;
   inset: 0;
@@ -46,21 +66,50 @@ export const STYLES = `
   top: 0;
   pointer-events: auto;
 }
+/* A hairline of light around the cutout keeps the target crisp against the scrim. */
+.ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  /* Always light: it sits on the scrim, not on the popover, in every theme. */
+  box-shadow:
+    0 0 0 1px oklch(98% 0.004 285 / 0.58),
+    0 0 0 6px oklch(98% 0.004 285 / 0.08);
+  transition:
+    transform var(--docent-duration) var(--docent-easing),
+    width var(--docent-duration) var(--docent-easing),
+    height var(--docent-duration) var(--docent-easing),
+    border-radius var(--docent-duration) var(--docent-easing),
+    opacity var(--docent-duration) var(--docent-easing);
+}
+
+/* ------------------------------------------------------------------ popover */
+
 .popover {
   position: absolute;
   left: 0;
   top: 0;
+  display: flex;
+  flex-direction: column;
   width: var(--docent-width);
   max-width: calc(100vw - 32px);
+  padding: 20px 20px 16px;
   background: var(--docent-bg);
   border-radius: var(--docent-radius);
-  box-shadow: var(--docent-shadow);
-  padding: 16px;
+  box-shadow: 0 0 0 1px var(--_line), var(--docent-shadow);
   pointer-events: auto;
   outline: none;
-  transition: transform var(--docent-duration) var(--docent-easing), opacity var(--docent-duration) var(--docent-easing);
+  transition:
+    transform var(--docent-duration) var(--docent-easing),
+    opacity var(--docent-duration) var(--docent-easing),
+    scale var(--docent-duration) var(--docent-easing);
 }
-.popover[data-entering] { opacity: 0; transition: none; }
+.popover[data-side="bottom"] { transform-origin: 50% 0; }
+.popover[data-side="top"] { transform-origin: 50% 100%; }
+.popover[data-side="right"] { transform-origin: 0 50%; }
+.popover[data-side="left"] { transform-origin: 100% 50%; }
+.popover[data-entering] { opacity: 0; scale: 0.97; transition: none; }
 /* Between steps the popover slides; only its content cross-fades, briefly. */
 .popover[data-moving] > * { animation: docent-swap 160ms ease-out; }
 @keyframes docent-swap { from { opacity: 0; } to { opacity: 1; } }
@@ -72,6 +121,8 @@ export const STYLES = `
   box-shadow: none;
   border-radius: 0;
 }
+
+/* The arrow carries the same hairline on its two outward edges. */
 .arrow {
   position: absolute;
   width: 12px;
@@ -79,62 +130,188 @@ export const STYLES = `
   background: var(--docent-bg);
   transform: rotate(45deg);
 }
-.popover[data-side="top"] .arrow { bottom: -6px; }
-.popover[data-side="bottom"] .arrow { top: -6px; }
-.popover[data-side="left"] .arrow { right: -6px; }
-.popover[data-side="right"] .arrow { left: -6px; }
-.popover[data-side="center"] .arrow, .popover[data-side="sheet"] .arrow { display: none; }
-.popover.sheet {
-  max-width: none;
-  border-radius: var(--docent-radius) var(--docent-radius) 0 0;
-  padding-bottom: max(16px, env(safe-area-inset-bottom));
+.popover[data-side="bottom"] .arrow {
+  top: -6px;
+  border-top: 1px solid var(--_line);
+  border-left: 1px solid var(--_line);
+  border-top-left-radius: 2px;
 }
-.header { display: flex; align-items: flex-start; gap: 8px; }
-.title { flex: 1; margin: 0; font-size: 16px; font-weight: 600; }
-.close {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  color: var(--docent-muted);
+.popover[data-side="top"] .arrow {
+  bottom: -6px;
+  border-bottom: 1px solid var(--_line);
+  border-right: 1px solid var(--_line);
+  border-bottom-right-radius: 2px;
+}
+.popover[data-side="right"] .arrow {
+  left: -6px;
+  border-bottom: 1px solid var(--_line);
+  border-left: 1px solid var(--_line);
+  border-bottom-left-radius: 2px;
+}
+.popover[data-side="left"] .arrow {
+  right: -6px;
+  border-top: 1px solid var(--_line);
+  border-right: 1px solid var(--_line);
+  border-top-right-radius: 2px;
+}
+.popover[data-side="center"] .arrow,
+.popover[data-side="sheet"] .arrow { display: none; }
+
+/* ------------------------------------------------------------------ content */
+
+.header { display: flex; align-items: flex-start; gap: 12px; }
+.title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
   font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 2px 4px;
-  margin: -4px -6px 0 0;
-  border-radius: 6px;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.012em;
+  color: var(--docent-fg);
+  text-wrap: balance;
 }
-.close:hover, .close:focus-visible { color: var(--docent-fg); background: rgba(127, 127, 127, 0.15); }
-.body { margin-top: 6px; }
-.body p { margin: 0 0 8px; }
-.body p:last-child { margin-bottom: 0; }
-.body code {
-  font-family: ui-monospace, monospace;
-  font-size: 0.9em;
-  padding: 1px 4px;
-  border-radius: 4px;
-  background: rgba(127, 127, 127, 0.15);
-}
-.body a { color: var(--docent-accent); }
-.media { margin: 10px 0 0; }
-.media img, .media video { display: block; max-width: 100%; border-radius: 8px; }
-.footer { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
-.progress { flex: 1; color: var(--docent-muted); font-size: 12px; }
-.buttons { display: flex; gap: 8px; }
-.button {
-  appearance: none;
+.close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: -3px -8px -3px 0;
+  padding: 0;
   border: 0;
   border-radius: 8px;
-  padding: 7px 12px;
-  font: inherit;
-  font-weight: 500;
+  background: transparent;
+  color: var(--docent-muted);
   cursor: pointer;
-  background: rgba(127, 127, 127, 0.15);
+  transition: background-color 120ms ease-out, color 120ms ease-out;
+}
+.close svg { width: 14px; height: 14px; }
+.close:hover { background: var(--_soft); color: var(--docent-fg); }
+
+.body { margin-top: 6px; color: var(--_body); text-wrap: pretty; }
+.body p { margin: 0; }
+.body p + p { margin-top: 8px; }
+.body strong { font-weight: 600; color: var(--docent-fg); }
+.body a {
+  color: var(--docent-fg);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--docent-fg) 32%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 120ms ease-out;
+}
+.body a:hover { text-decoration-color: currentColor; }
+.body code {
+  font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.88em;
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--_soft);
   color: var(--docent-fg);
 }
-.button.primary { background: var(--docent-accent); color: var(--docent-accent-fg); }
-.button:focus-visible, .close:focus-visible { outline: 2px solid var(--docent-accent); outline-offset: 2px; }
+
+.media { margin-top: 14px; }
+.media img, .media video {
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px var(--_line);
+}
+
+/* ------------------------------------------------------------------- footer */
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.progress {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--docent-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.meter {
+  flex: none;
+  width: 28px;
+  height: 3px;
+  border-radius: 999px;
+  background:
+    linear-gradient(var(--docent-fg), var(--docent-fg)) 0 0 / calc(var(--docent-step) / var(--docent-steps) * 100%) 100% no-repeat,
+    var(--_line);
+}
+.buttons { display: flex; align-items: center; gap: 6px; }
+.button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--docent-fg);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.003em;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease-out,
+    color 120ms ease-out,
+    scale 80ms ease-out;
+}
+.button:hover { background: var(--_soft); }
+.button:active { scale: 0.97; }
+[part~="button-skip"] { color: var(--docent-muted); padding: 0 8px; }
+[part~="button-skip"]:hover { color: var(--docent-fg); background: transparent; }
+.button.primary {
+  padding: 0 14px;
+  background: var(--docent-accent);
+  color: var(--docent-accent-fg);
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 color-mix(in oklch, var(--docent-accent-fg) 14%, transparent);
+}
+.button.primary .icon { width: 12px; height: 12px; margin: 0 -2px 0 6px; transition: translate 160ms var(--docent-easing); }
+.button.primary:hover .icon { translate: 2px 0; }
+.button.primary:hover {
+  background: color-mix(in oklch, var(--docent-accent) 86%, var(--docent-accent-fg));
+}
+.button:focus-visible,
+.close:focus-visible {
+  outline: 2px solid var(--docent-accent);
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------------------ mobile sheet */
+
+.popover.sheet {
+  max-width: none;
+  padding: 20px 20px max(16px, env(safe-area-inset-bottom));
+  border-radius: var(--docent-radius) var(--docent-radius) 0 0;
+  box-shadow:
+    0 0 0 1px var(--_line),
+    0 -12px 40px -12px oklch(23% 0.02 285 / 0.28);
+}
+@media (pointer: coarse) {
+  :host { font-size: 15px; }
+  .button { min-height: 44px; padding: 0 16px; font-size: 14px; }
+  .close { width: 40px; height: 40px; margin: -9px -12px -9px 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .overlay, .popover { transition: none; }
+  .overlay, .popover, .ring { transition: none; }
   .popover[data-moving] > * { animation: none; }
 }
 `

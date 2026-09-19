@@ -22,6 +22,9 @@ test.describe('keyboard and focus', () => {
     await expect(popover(page).locator('.close')).toBeFocused()
     await page.keyboard.press('Shift+Tab')
     await expect(button(page, 'Next')).toBeFocused()
+    // Reading order is Skip, Back, Next, so Back sits just before Next.
+    await page.keyboard.press('Shift+Tab')
+    await expect(button(page, 'Back')).toBeFocused()
     await page.keyboard.press('Shift+Tab')
     await expect(button(page, 'Skip')).toBeFocused()
   })

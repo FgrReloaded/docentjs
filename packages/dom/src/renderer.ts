@@ -181,8 +181,8 @@ export class DomRenderer implements Renderer {
       ...ctx.tour.options?.spotlight,
       ...ctx.step.spotlight,
     }
-    const padding = spotlight.padding ?? 6
-    const radius = spotlight.radius ?? 6
+    const padding = spotlight.padding ?? 8
+    const radius = spotlight.radius ?? 10
     const external = this.headlessContainer
     const sheet = this.isSheet(viewport)
     popover.classList.toggle('sheet', sheet)
@@ -387,6 +387,7 @@ export class DomRenderer implements Renderer {
     shadow.appendChild(style)
     const overlay = new Overlay(this.doc)
     shadow.appendChild(overlay.el)
+    shadow.appendChild(overlay.ring)
     shadow.appendChild(overlay.blocker)
     this.doc.body.appendChild(host)
     this.host = host

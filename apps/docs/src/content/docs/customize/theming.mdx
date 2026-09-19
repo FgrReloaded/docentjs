@@ -17,6 +17,18 @@ options: {
 
 Each token becomes a `--docent-*` custom property on the shadow host: `background`, `foreground`, `muted`, `accent`, `accentForeground`, `radius`, `shadow`, `font`, `width`, `overlay`, `overlayOpacity`, `duration`, `zIndex`.
 
+## The default look
+
+Ink on paper: a near-white surface, near-black text and an ink primary button, all tinted very slightly toward Docent's violet, with hairline edges. It is designed to look finished on any product without competing with its brand, so the usual first customization is just `accent`.
+
+**Fonts are inherited.** The popover uses your site's own font, so tours feel native. Set the `font` token only if you want something different:
+
+```ts
+options: { theme: { font: '"Söhne", system-ui, sans-serif' } }
+```
+
+**Light is the default.** Dark mode never switches on automatically from the operating system, because a dark popover on a light site looks broken. Use the `dark` preset, or your own tokens, on dark products.
+
 Layers apply lowest to highest: renderer `theme`, then the template's theme, then the tour's `options.theme`.
 
 ## Presets
@@ -26,7 +38,7 @@ import { dark, minimal, contrast } from '@docentjs/dom/themes'
 createTour(tour, { renderer: { theme: minimal } })
 ```
 
-The presets ship from a separate entry so they cost nothing unless imported. The default theme follows `prefers-color-scheme`.
+The presets ship from a separate entry so they cost nothing unless imported. `light` spells out the default, `dark` is for dark products, `minimal` is flatter and tighter, and `contrast` maximises legibility.
 
 <Demo label="Tour theme tokens"
   tour={{
@@ -51,7 +63,7 @@ The presets ship from a separate entry so they cost nothing unless imported. The
 
 ## CSS parts
 
-For anything tokens do not cover, style parts from your own stylesheet. Parts: `overlay`, `popover`, `arrow`, `header`, `title`, `close`, `body`, `media`, `footer`, `progress`, `buttons`, `button`, `button-next`, `button-back`, `button-skip`.
+For anything tokens do not cover, style parts from your own stylesheet. Parts: `overlay`, `ring` (the hairline around the spotlight), `popover`, `arrow`, `header`, `title`, `close`, `body`, `media`, `footer`, `progress`, `meter`, `count`, `buttons`, `button`, `button-next`, `button-back`, `button-skip`.
 
 ```css
 [data-docent-host]::part(title) { text-transform: uppercase; letter-spacing: 0.04em; }

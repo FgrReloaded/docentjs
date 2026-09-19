@@ -27,8 +27,8 @@ describe('<DocentDevtools /> for React', () => {
   it('mounts the panel for a manager or a useDocent handle and removes it on unmount', async () => {
     const d = docent()
     const { unmount } = render(<ReactDevtools docent={{ docent: d }} />)
-    await act(settle)
-    expect(panel()).not.toBeNull()
+    // The panel loads through a dynamic import, which can be slow on a cold cache.
+    await act(() => vi.waitFor(() => expect(panel()).not.toBeNull()))
     unmount()
     expect(panel()).toBeNull()
   })
@@ -45,8 +45,7 @@ describe('<DocentDevtools /> for Vue', () => {
   it('mounts the panel and removes it on unmount', async () => {
     const d = docent()
     const wrapper = mountVue({ render: () => h(VueDevtools, { docent: d, open: true }) })
-    await settle()
-    expect(panel()).not.toBeNull()
+    await vi.waitFor(() => expect(panel()).not.toBeNull())
     expect(panel()?.shadowRoot?.querySelector<HTMLElement>('.panel')?.hidden).toBe(false)
     wrapper.unmount()
     expect(panel()).toBeNull()

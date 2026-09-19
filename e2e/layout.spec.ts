@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { box, button, open, popover, viewport } from './helpers'
+import { box, button, open, popover, settled, viewport } from './helpers'
 
 test.describe('sticky headers', () => {
   test('scrolls a target out from under a sticky header', async ({ page }) => {
@@ -30,6 +30,7 @@ test.describe('bottom sheet', () => {
     await open(page, 'basic', '=save')
     const p = popover(page)
     await expect(p).toHaveAttribute('data-side', 'sheet')
+    await settled(page) // the entrance scales in from 97%
     const vp = viewport(page)
     const b = await box(p)
     expect(Math.round(b.x)).toBe(0)

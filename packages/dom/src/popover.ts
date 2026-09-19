@@ -45,6 +45,40 @@ function slot(doc: Document, name: SlotName, fallback?: Node): HTMLSlotElement {
   return s
 }
 
+const SVG_NS = 'http://www.w3.org/2000/svg'
+
+/** A 14px stroked X, drawn rather than typed so it centers optically in any font. */
+function closeIcon(doc: Document): SVGSVGElement {
+  const svg = doc.createElementNS(SVG_NS, 'svg')
+  svg.setAttribute('viewBox', '0 0 14 14')
+  svg.setAttribute('aria-hidden', 'true')
+  svg.setAttribute('fill', 'none')
+  const path = doc.createElementNS(SVG_NS, 'path')
+  path.setAttribute('d', 'M3.5 3.5l7 7m0-7l-7 7')
+  path.setAttribute('stroke', 'currentColor')
+  path.setAttribute('stroke-width', '1.6')
+  path.setAttribute('stroke-linecap', 'round')
+  svg.appendChild(path)
+  return svg
+}
+
+/** A small forward arrow for the primary action, so direction reads at a glance. */
+function arrowIcon(doc: Document): SVGSVGElement {
+  const svg = doc.createElementNS(SVG_NS, 'svg')
+  svg.setAttribute('viewBox', '0 0 12 12')
+  svg.setAttribute('aria-hidden', 'true')
+  svg.setAttribute('fill', 'none')
+  svg.setAttribute('class', 'icon')
+  const path = doc.createElementNS(SVG_NS, 'path')
+  path.setAttribute('d', 'M2.5 6h7m-3-3l3 3-3 3')
+  path.setAttribute('stroke', 'currentColor')
+  path.setAttribute('stroke-width', '1.5')
+  path.setAttribute('stroke-linecap', 'round')
+  path.setAttribute('stroke-linejoin', 'round')
+  svg.appendChild(path)
+  return svg
+}
+
 export function formatProgress(template: string, current: number, total: number): string {
   return template.replace('{current}', String(current)).replace('{total}', String(total))
 }
@@ -109,7 +143,7 @@ export function buildPopover(
     const close = h(doc, 'button', 'close', 'close')
     close.type = 'button'
     close.setAttribute('aria-label', text.close)
-    close.textContent = '×'
+    close.appendChild(closeIcon(doc))
     close.addEventListener('click', () => actions.skip())
     closeNode = close
   }
@@ -143,7 +177,14 @@ export function buildPopover(
   const footer = h(doc, 'div', 'footer', 'footer')
   const progress = h(doc, 'div', 'progress', 'progress')
   if (options.showProgress !== false) {
-    progress.textContent = formatProgress(text.progress, ctx.progress.current, ctx.progress.total)
+    // A slim meter plus the count; the meter is decorative, the text is read out.
+    const meter = h(doc, 'span', 'meter', 'meter')
+    meter.setAttribute('aria-hidden', 'true')
+    progress.style.setProperty('--docent-step', String(ctx.progress.current))
+    progress.style.setProperty('--docent-steps', String(Math.max(1, ctx.progress.total)))
+    const count = h(doc, 'span', 'count', 'count')
+    count.textContent = formatProgress(text.progress, ctx.progress.current, ctx.progress.total)
+    progress.append(meter, count)
   }
   footer.appendChild(slot(doc, 'progress', progress))
 
@@ -157,10 +198,12 @@ export function buildPopover(
     group.appendChild(b)
     return b
   }
-  if (buttons.back !== false && ctx.canGoBack) button(text.back, 'button-back', false, actions.back)
+  // Reading order matches visual order: quiet Skip, then Back, then the primary action.
   if (buttons.skip !== false && !ctx.isLast) button(text.skip, 'button-skip', false, actions.skip)
+  if (buttons.back !== false && ctx.canGoBack) button(text.back, 'button-back', false, actions.back)
   if (buttons.next !== false) {
     initialFocus = button(ctx.isLast ? text.done : text.next, 'button-next', true, actions.next)
+    if (!ctx.isLast) initialFocus.appendChild(arrowIcon(doc))
   }
   footer.appendChild(slot(doc, 'buttons', group))
   el.appendChild(slot(doc, 'footer', footer))

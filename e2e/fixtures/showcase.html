@@ -1,0 +1,66 @@
+<!doctype html>
+<!-- Design review page for the default popover. Serve with `node e2e/server.mjs`, open
+     /e2e/fixtures/showcase.html?step=new (params: step, font=serif, theme=dark). Not used by tests. -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:," />
+  <title>Showcase</title>
+  <script type="importmap">{ "imports": { "@docentjs/core": "/packages/core/dist/index.js", "@docentjs/dom": "/packages/dom/dist/index.js", "@docentjs/dom/themes": "/packages/dom/dist/themes.js" } }</script>
+  <style>
+    :root { --ink: #1c1d24; }
+    body { margin: 0; background: #f6f6f4; color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+    body.serif { font-family: Georgia, "Times New Roman", serif; }
+    body.dark { background: #16161b; color: #e8e8ec; }
+    header { display: flex; align-items: center; gap: 20px; padding: 14px 28px; border-bottom: 1px solid #e3e3df; background: #fff; }
+    body.dark header, body.dark aside, body.dark .panel { background: #1e1e25; border-color: #2c2c35; }
+    .logo { font-weight: 700; letter-spacing: -0.02em; }
+    nav a { color: #6b6b72; text-decoration: none; margin-right: 16px; font-size: 14px; }
+    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 53px); }
+    aside { background: #fff; border-right: 1px solid #e3e3df; padding: 20px 14px; }
+    aside div { padding: 8px 12px; border-radius: 8px; font-size: 14px; color: #55555c; }
+    aside div.on { background: #efefec; color: var(--ink); font-weight: 600; }
+    main { padding: 28px 36px; }
+    h1 { margin: 0 0 18px; font-size: 24px; letter-spacing: -0.02em; }
+    .row { display: flex; gap: 10px; margin-bottom: 22px; }
+    button.app { font: inherit; font-size: 14px; padding: 8px 14px; border-radius: 8px; border: 1px solid #d9d9d4; background: #fff; }
+    button.app.primary { background: #3b5bdb; border-color: #3b5bdb; color: #fff; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .panel { background: #fff; border: 1px solid #e3e3df; border-radius: 12px; padding: 18px; min-height: 120px; }
+    .panel b { display: block; font-size: 28px; margin-top: 6px; }
+    @media (max-width: 600px) { .layout { grid-template-columns: 1fr; } aside { display: none; } .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header><span class="logo">Northwind</span><nav><a href="#">Overview</a><a href="#">Invoices</a><a href="#">Customers</a></nav></header>
+  <div class="layout">
+    <aside data-docent="nav"><div class="on">Overview</div><div>Invoices</div><div>Customers</div><div>Reports</div><div>Settings</div></aside>
+    <main>
+      <h1>Overview</h1>
+      <div class="row"><button class="app primary" data-docent="new">New invoice</button><button class="app">Import</button><button class="app" data-docent="export">Export</button></div>
+      <div class="grid"><div class="panel" data-docent="revenue">Revenue<b>$48,210</b></div><div class="panel">Outstanding<b>$6,940</b></div><div class="panel">Customers<b>312</b></div></div>
+    </main>
+  </div>
+  <script type="module">
+    import { createTour, defineTour } from '@docentjs/dom'
+    import * as themes from '@docentjs/dom/themes'
+    const p = new URLSearchParams(location.search)
+    if (p.get('font') === 'serif') document.body.classList.add('serif')
+    if (p.get('theme') === 'dark') document.body.classList.add('dark')
+    const tour = defineTour({
+      id: 'showcase-' + Math.random(),
+      options: { showProgress: true },
+      steps: [
+        { id: 'welcome', title: 'Welcome to Northwind', body: 'A two-minute tour of the places you will use every day. You can leave at any time and pick it up later from Help.' },
+        { id: 'new', target: { name: 'new' }, title: 'Create your first invoice', body: 'Start here. Drafts save automatically, so you can come back to finish them.', placement: 'bottom-start' },
+        { id: 'revenue', target: { name: 'revenue' }, title: 'Revenue at a glance', body: 'Totals update as payments arrive. Press **R** to refresh, or see the [reporting guide](https://example.com).', format: 'markdown', placement: 'bottom' },
+        { id: 'nav', target: { name: 'nav' }, title: 'Everything else lives here', body: 'Invoices, customers and reports, one click away.', placement: 'right' },
+        { id: 'export', target: { name: 'export' }, title: "You're all set", body: 'Export to CSV whenever your accountant asks.', placement: 'bottom' },
+      ],
+    })
+    const opts = p.get('theme') === 'dark' ? { renderer: { theme: themes.dark } } : {}
+    createTour(tour, { ...opts, storage: { get: () => null, set() {}, remove() {} } }).start(p.get('step') ?? undefined)
+  </script>
+</body>
+</html>
