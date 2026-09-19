@@ -1,5 +1,12 @@
 # @docentjs/vue
 
+## 0.5.2
+
+### Patch Changes
+
+- @docentjs/core@0.5.2
+  - @docentjs/dom@0.5.2
+
 ## 0.5.1
 
 ### Patch Changes
