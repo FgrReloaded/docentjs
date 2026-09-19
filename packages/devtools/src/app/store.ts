@@ -23,9 +23,19 @@ export interface LoggedEvent {
 interface Prefs {
   open: boolean
   dock: Dock
-  size: number
+  /** Panel width when docked left or right. */
+  sideSize: number
+  /** Panel height when docked at the bottom. */
+  bottomSize: number
   tab: Tab
+  /** Older single size, read once for migration. */
+  size?: number
 }
+
+/** Below this width a side panel would cover the whole page, so the panel docks at the bottom. */
+export const NARROW_WIDTH = 640
+
+const isNarrow = () => typeof window !== 'undefined' && window.innerWidth < NARROW_WIDTH
 
 const PREFS_KEY = 'docent-devtools'
 const MAX_EVENTS = 300
@@ -56,7 +66,16 @@ export function createStore(docent: Docent, options: StoreOptions) {
   const prefs = loadPrefs()
   const open = signal(options.open ?? prefs.open ?? false)
   const dock = signal<Dock>(prefs.dock ?? 'right')
-  const size = signal(prefs.size ?? 420)
+  const sideSize = signal(
+    prefs.sideSize ?? (prefs.dock !== 'bottom' ? prefs.size : undefined) ?? 420,
+  )
+  const bottomSize = signal(
+    prefs.bottomSize ?? (prefs.dock === 'bottom' ? prefs.size : undefined) ?? 340,
+  )
+  const narrow = signal(isNarrow())
+  /** Where the panel actually sits: the chosen dock, or the bottom on narrow screens. */
+  const layout = computed<Dock>(() => (narrow.value ? 'bottom' : dock.value))
+  const size = computed(() => (layout.value === 'bottom' ? bottomSize.value : sideSize.value))
   const tab = signal<Tab>(prefs.tab ?? 'tours')
   const state = signal<DocentState>(docent.getState())
   const managerTours = signal<Tour[]>(docent.getTours())
@@ -113,7 +132,13 @@ export function createStore(docent: Docent, options: StoreOptions) {
 
   cleanups.push(
     effect(() => {
-      savePrefs({ open: open.value, dock: dock.value, size: size.value, tab: tab.value })
+      savePrefs({
+        open: open.value,
+        dock: dock.value,
+        sideSize: sideSize.value,
+        bottomSize: bottomSize.value,
+        tab: tab.value,
+      })
     }),
   )
   cleanups.push(
@@ -155,6 +180,11 @@ export function createStore(docent: Docent, options: StoreOptions) {
     if (open.value) tick.value++
   }, 1000)
   cleanups.push(() => clearInterval(timer))
+  const onResize = () => {
+    narrow.value = isNarrow()
+  }
+  window.addEventListener('resize', onResize)
+  cleanups.push(() => window.removeEventListener('resize', onResize))
   const onRoute = () => tick.value++
   window.addEventListener('popstate', onRoute)
   cleanups.push(() => window.removeEventListener('popstate', onRoute))
@@ -201,6 +231,12 @@ export function createStore(docent: Docent, options: StoreOptions) {
     void docent.updateTour(original)
   }
 
+  /** Resize the panel along its current axis. */
+  function resize(px: number): void {
+    if (layout.value === 'bottom') bottomSize.value = px
+    else sideSize.value = px
+  }
+
   function select(tourId: string | undefined, stepId?: string, goTo?: Tab): void {
     selection.value = stepId === undefined ? { tourId } : { tourId, stepId }
     if (goTo) tab.value = goTo
@@ -210,7 +246,10 @@ export function createStore(docent: Docent, options: StoreOptions) {
     docent,
     open,
     dock,
+    layout,
+    narrow,
     size,
+    resize,
     tab,
     state,
     tours,

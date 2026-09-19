@@ -7,7 +7,7 @@ import { EventsTab } from './tabs/Events'
 import { PerfTab } from './tabs/Perf'
 import { SimulateTab } from './tabs/Simulate'
 import { ToursTab } from './tabs/Tours'
-import { IconButton } from './ui'
+import { Icon, IconButton } from './ui'
 
 const TABS: ReadonlyArray<readonly [Tab, string]> = [
   ['tours', 'Tours'],
@@ -18,12 +18,15 @@ const TABS: ReadonlyArray<readonly [Tab, string]> = [
   ['perf', 'Perf'],
 ]
 
-const NEXT_DOCK: Record<Dock, Dock> = { right: 'bottom', bottom: 'left', left: 'right' }
-const DOCK_ICON = { right: 'dockRight', bottom: 'dockBottom', left: 'dockLeft' } as const
+const LAYOUTS: ReadonlyArray<readonly [Dock, 'dockLeft' | 'dockBottom' | 'dockRight', string]> = [
+  ['left', 'dockLeft', 'Dock left'],
+  ['bottom', 'dockBottom', 'Dock bottom'],
+  ['right', 'dockRight', 'Dock right'],
+]
 
 export function App({ store }: { store: Store }) {
   const open = store.open.value
-  const dock = store.dock.value
+  const dock = store.layout.value
   const active = store.state.value.active
   if (!open) {
     return (
@@ -42,7 +45,7 @@ export function App({ store }: { store: Store }) {
   const style = vertical ? { width: `${store.size.value}px` } : { height: `${store.size.value}px` }
   return (
     <div
-      class={`panel dock-${dock} ${store.picking.value ? 'picking' : ''}`}
+      class={`panel dock-${dock} ${store.narrow.value ? 'narrow' : ''} ${store.picking.value ? 'picking' : ''}`}
       role="dialog"
       aria-label="Docent devtools"
       style={style}
@@ -53,14 +56,7 @@ export function App({ store }: { store: Store }) {
         <span class="title">Docent</span>
         <span class="muted small">{store.tours.value.length} tours</span>
         <span class="grow" />
-        <IconButton
-          icon={DOCK_ICON[NEXT_DOCK[dock]]}
-          label={`Dock ${NEXT_DOCK[dock]}`}
-          onClick={() => {
-            store.dock.value = NEXT_DOCK[dock]
-            store.size.value = NEXT_DOCK[dock] === 'bottom' ? 340 : 420
-          }}
-        />
+        <LayoutPicker store={store} />
         <IconButton icon="close" label="Close" onClick={() => (store.open.value = false)} />
       </header>
       <NowBar store={store} />
@@ -87,6 +83,33 @@ export function App({ store }: { store: Store }) {
         {store.tab.value === 'perf' && <PerfTab store={store} />}
       </div>
     </div>
+  )
+}
+
+/** Three buttons for where the panel sits. Side docks need a wider screen. */
+function LayoutPicker({ store }: { store: Store }) {
+  const current = store.layout.value
+  const narrow = store.narrow.value
+  return (
+    <fieldset class="seg" aria-label="Panel position">
+      {LAYOUTS.map(([id, icon, label]) => {
+        const disabled = narrow && id !== 'bottom'
+        return (
+          <button
+            type="button"
+            key={id}
+            class="seg-btn"
+            aria-label={label}
+            aria-pressed={current === id}
+            title={disabled ? `${label} (needs a wider window)` : label}
+            disabled={disabled}
+            onClick={() => (store.dock.value = id)}
+          >
+            <Icon name={icon} />
+          </button>
+        )
+      })}
+    </fieldset>
   )
 }
 
@@ -135,7 +158,7 @@ function NowBar({ store }: { store: Store }) {
 
 function Resizer({ store }: { store: Store }) {
   const start = useRef<{ pos: number; size: number } | null>(null)
-  const dock = store.dock.value
+  const dock = store.layout.value
   const onDown = (e: PointerEvent) => {
     const el = e.currentTarget as HTMLElement
     el.setPointerCapture(e.pointerId)
@@ -147,9 +170,7 @@ function Resizer({ store }: { store: Store }) {
     const pos = dock === 'bottom' ? e.clientY : e.clientX
     const delta = dock === 'right' || dock === 'bottom' ? s.pos - pos : pos - s.pos
     const max = dock === 'bottom' ? window.innerHeight - 80 : window.innerWidth - 80
-    store.size.value = Math.round(
-      Math.min(max, Math.max(dock === 'bottom' ? 200 : 320, s.size + delta)),
-    )
+    store.resize(Math.round(Math.min(max, Math.max(dock === 'bottom' ? 200 : 320, s.size + delta))))
   }
   return (
     <div

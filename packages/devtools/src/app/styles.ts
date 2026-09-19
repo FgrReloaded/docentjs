@@ -53,7 +53,8 @@ export const STYLES = `
 }
 .panel.dock-right { top: 0; right: 0; bottom: 0; max-width: 100vw; }
 .panel.dock-left { top: 0; left: 0; bottom: 0; max-width: 100vw; }
-.panel.dock-bottom { left: 0; right: 0; bottom: 0; max-height: 100vh; }
+.panel.dock-bottom { left: 0; right: 0; bottom: 0; max-height: calc(100vh - 48px); }
+.panel.narrow.dock-bottom { max-height: 60vh; max-height: 60dvh; }
 .panel.picking { opacity: .35; pointer-events: none; }
 .resizer { position: absolute; z-index: 1; background: transparent; touch-action: none; }
 .dock-right .resizer { left: -3px; top: 0; bottom: 0; width: 6px; cursor: ew-resize; }
@@ -61,6 +62,15 @@ export const STYLES = `
 .dock-bottom .resizer { top: -3px; left: 0; right: 0; height: 6px; cursor: ns-resize; }
 .resizer:hover { background: var(--accent-soft); }
 
+.seg { display: inline-flex; gap: 2px; margin: 0; min-inline-size: 0; padding: 2px; border: 1px solid var(--line-soft); border-radius: 8px; }
+.seg-btn {
+  display: grid; place-items: center; width: 26px; height: 22px; padding: 0;
+  border: 0; border-radius: 6px; background: none; color: var(--faint); cursor: pointer;
+}
+.seg-btn:hover:not(:disabled) { color: var(--fg); background: var(--raised); }
+.seg-btn[aria-pressed="true"] { color: var(--fg); background: var(--raised); box-shadow: 0 0 0 1px var(--line); }
+.seg-btn:disabled { opacity: .35; cursor: not-allowed; }
+.seg-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .bar { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 8px 0 14px; border-bottom: 1px solid var(--line-soft); }
 .logo {
   width: 14px; height: 14px; border-radius: 50%;

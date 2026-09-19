@@ -224,6 +224,40 @@ describe('devtools panel', () => {
     await docent.destroy()
   })
 
+  it('picks a layout, keeps a size per layout, and docks at the bottom on narrow screens', async () => {
+    localStorage.setItem(
+      'docent-devtools',
+      JSON.stringify({ open: true, dock: 'right', sideSize: 500 }),
+    )
+    const docent = createDocent({ storage: createMemoryStorage(), tours: [] })
+    const unmount = mount(docent)
+    const panel = () => shadow().querySelector('.panel') as HTMLElement
+    await vi.waitFor(() => expect(panel()?.style.width).toBe('500px'))
+    expect(button('Dock right').getAttribute('aria-pressed')).toBe('true')
+
+    button('Dock left').click()
+    await vi.waitFor(() => expect(panel().classList.contains('dock-left')).toBe(true))
+    expect(panel().style.width).toBe('500px')
+    button('Dock bottom').click()
+    await vi.waitFor(() => expect(panel().style.height).toBe('340px'))
+    expect(button('Dock bottom').getAttribute('aria-pressed')).toBe('true')
+
+    const width = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 400 })
+    button('Dock right').click()
+    window.dispatchEvent(new Event('resize'))
+    await vi.waitFor(() => expect(panel().classList.contains('narrow')).toBe(true))
+    expect(panel().classList.contains('dock-bottom')).toBe(true)
+    expect(button('Dock right').disabled).toBe(true)
+    // The preference survives: a wide window goes back to the right.
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: width })
+    window.dispatchEvent(new Event('resize'))
+    await vi.waitFor(() => expect(panel().classList.contains('dock-right')).toBe(true))
+
+    unmount()
+    await docent.destroy()
+  })
+
   it('toggles, docks, remembers preferences, and unmounts cleanly', async () => {
     const docent = createDocent({ storage: createMemoryStorage(), tours: [] })
     const unmount = mount(docent)
