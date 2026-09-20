@@ -1,5 +1,14 @@
 # @docentjs/vue
 
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [c1a247c]
+- Updated dependencies [c1a247c]
+  - @docentjs/core@0.6.0
+  - @docentjs/dom@0.6.0
+
 ## 0.5.2
 
 ### Patch Changes

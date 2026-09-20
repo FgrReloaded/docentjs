@@ -1,5 +1,29 @@
 # @docentjs/dom
 
+## 0.6.0
+
+### Minor Changes
+
+- c1a247c: Customization is more consistent and harder to get wrong.
+  
+  - **Numbers where numbers make sense.** Size and time tokens take a plain number as well as a CSS string: `radius: 12` is `12px`, `duration: 180` is `180ms`.
+  - **Presets by name in the tour JSON.** `options.theme: 'dark'`, or `{ preset: 'dark', accent: '#7c3aed' }` to start from one and change it. Preset tokens load on demand, so tours that name none download nothing extra.
+  - **Readable button text, automatically.** Set `accent` alone and Docent picks light or dark text for it, so a bright brand color no longer produces an unreadable Next button. Setting `accentForeground` still wins.
+  - **`appearance: 'light' | 'dark' | 'auto'`.** With `auto` the popover follows the reader's system setting and switches with it mid-tour, while your own tokens stay on top.
+  - **One home for overlay settings.** `options.overlay.color` and `.opacity` are the place to set the backdrop; the `overlay` and `overlayOpacity` theme tokens still work and are marked as preferring the options.
+- c1a247c: Mistakes in a tour now say so instead of failing quietly.
+  
+  - **`validateTour(tour)`** reports unknown values, misspelled or missing fields, wrong types, out-of-range numbers and duplicate step ids, each with a path such as `steps[2].arrow` and the value that was probably meant: `"curvy" is not one of: caret, none, line, … Did you mean "curve"?`. Also `isValidTour` and `formatIssues`. It ships as `@docentjs/core/validate`, re-exported from `@docentjs/dom/validate`, so runtime bundles never carry it.
+  - **Development warnings.** `createTour` and `createDocent` check each tour once and warn in the console. Production builds contain neither the call nor the checker.
+  - **A published JSON Schema** at `https://docentjs.dev/schema/tour-v1.json`, generated from the same description the checker uses. Point a `.tour.json` file at it with `$schema` for completion and checking in your editor.
+  - **Devtools**: the Audit tab now lists schema problems alongside its page checks.
+
+### Patch Changes
+
+- Updated dependencies [c1a247c]
+- Updated dependencies [c1a247c]
+  - @docentjs/core@0.6.0
+
 ## 0.5.2
 
 ### Patch Changes

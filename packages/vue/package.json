@@ -1,6 +1,6 @@
 {
   "name": "@docentjs/vue",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "Vue bindings for Docent.",
   "license": "MIT",
   "repository": {

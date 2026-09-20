@@ -1,6 +1,6 @@
 {
   "name": "@docentjs/svelte",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "Svelte bindings for Docent.",
   "license": "MIT",
   "repository": {
