@@ -41,6 +41,11 @@ module.exports = [
     limit: '4.75 kB',
   },
   {
+    name: 'theme presets (loaded when a tour names one)',
+    path: 'packages/dom/dist/themes.js',
+    limit: '1 kB',
+  },
+  {
     name: 'connector arrows (loaded on first use)',
     path: 'packages/dom/dist/connector-*.js',
     limit: '2.5 kB',

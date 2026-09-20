@@ -1,11 +1,42 @@
 import starlight from '@astrojs/starlight'
 import { defineConfig } from 'astro/config'
+import starlightLlmsTxt from 'starlight-llms-txt'
 
 export default defineConfig({
   site: 'https://docentjs.dev',
   devToolbar: { enabled: false },
   integrations: [
     starlight({
+      plugins: [
+        starlightLlmsTxt({
+          projectName: 'Docent',
+          description:
+            'Docent is a guided product tour library for the web: it dims the page, spotlights one element, and explains it in a small popover. A tour is a JSON document, so tours can be written by hand, generated, stored in a repo or served from an API. The engine (@docentjs/core) has no DOM code; the web renderer (@docentjs/dom) draws, positions and handles keyboard and focus; thin adapters exist for React, Vue and Svelte. Everything visual is data: arrows, spotlight shape and ring, overlay style, theme tokens and presets.',
+          details: [
+            '## Working with tours',
+            '',
+            '- A tour is `{ id, steps }` plus optional `trigger`, `conditions` and `options`. Every field is documented at https://docentjs.dev/reference/schema/.',
+            '- Point a `.tour.json` file at https://docentjs.dev/schema/tour-v1.json with `$schema` for completion and checking.',
+            "- Check a tour before shipping it: `import { validateTour } from '@docentjs/dom/validate'`. It reports unknown values, misspelled fields, wrong types and duplicate step ids, each with a path such as `steps[2].arrow` and the value that was probably meant. `createTour` and `createDocent` run the same check automatically in development.",
+            '- Prefer `target: { name: "save" }` with `data-docent="save"` in the markup over CSS selectors: names survive redesigns.',
+            '- Visual changes belong in the tour JSON (`options.theme`, `options.arrow`, `options.spotlight`, `options.overlay`, `options.appearance`), not in CSS, so they travel with the tour.',
+          ].join('\n'),
+          optionalLinks: [
+            {
+              label: 'Tour JSON Schema',
+              url: 'https://docentjs.dev/schema/tour-v1.json',
+              description: 'Machine-readable schema for a tour document.',
+            },
+            {
+              label: 'Source',
+              url: 'https://github.com/FgrReloaded/docentjs',
+              description: 'Repository, issues and changelogs.',
+            },
+          ],
+          promote: ['index', 'getting-started', 'concepts', 'reference/**'],
+          demote: ['frameworks/**'],
+        }),
+      ],
       title: 'Docent',
       description: 'Guided product tours for the web. Spotlight an element, explain it, move on.',
       logo: { light: './src/assets/logo-light.svg', dark: './src/assets/logo-dark.svg' },
