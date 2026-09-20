@@ -45,6 +45,7 @@ export {
 export {
   applyTheme,
   type HeadlessPopover,
+  mergeThemeSpecs,
   mergeThemes,
   type PopoverSlots,
   type PopoverTemplate,
@@ -52,4 +53,5 @@ export {
   type SlotName,
   type SlotRenderer,
   THEME_VARS,
+  themeOption,
 } from './theme'

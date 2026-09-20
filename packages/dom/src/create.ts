@@ -1,4 +1,5 @@
 import { type ControllerOptions, type Tour, TourController } from '@docentjs/core'
+import { warnIfInvalid } from './dev'
 import { DomRenderer, type DomRendererOptions } from './renderer'
 import { createLocalStorage } from './storage'
 
@@ -18,6 +19,7 @@ export class DomTourController extends TourController {
 
   constructor(tour: Tour, options: CreateTourOptions = {}) {
     const { renderer: rendererOptions, followRoutes, ...rest } = options
+    warnIfInvalid(tour)
     const renderer = new DomRenderer(rendererOptions)
     super({ ...rest, tour, renderer, storage: rest.storage ?? createLocalStorage() })
     // Listeners attach on start, not here, so constructing has no side effects

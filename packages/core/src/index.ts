@@ -12,6 +12,7 @@ export * from './manager'
 export {
   type Advance,
   type Alignment,
+  type Appearance,
   type ArrowStyle,
   type Condition,
   type Frequency,
@@ -34,6 +35,9 @@ export {
   type Target,
   type TargetSpec,
   type Theme,
+  type ThemeName,
+  type ThemeSpec,
+  type ThemeValue,
   type Tour,
   type TourOptions,
   type TourProgressState,

@@ -5,6 +5,16 @@ description: Every field of the tour JSON document.
 
 A tour is one JSON document. This page lists every field. All fields are optional unless marked required, and every type is exported from `@docentjs/core` and re-exported by the other packages.
 
+Tours written as `.json` files can point at the published schema, which gives most editors completion and checking as you type:
+
+```json
+{
+  "$schema": "https://docentjs.dev/schema/tour-v1.json",
+  "id": "welcome",
+  "steps": [{ "id": "intro", "title": "Welcome" }]
+}
+```
+
 The guides explain each area with examples: [steps](/guides/steps/), [targets](/guides/targets/), [triggers and conditions](/guides/triggers-and-conditions/), [theming](/customize/theming/), and [arrows, spotlight and overlay](/customize/arrows-and-spotlight/).
 
 ## Tour
@@ -36,7 +46,8 @@ The guides explain each area with examples: [steps](/guides/steps/), [targets](/
 | `overlay` | `{ style?, color?, opacity?, blur? }` | `'dim'`, tinted ink, `0.52`, `4` |
 | `scroll` | `{ enabled?, behavior?, block? }` | `true`, `'auto'`, `'center'` |
 | `labels` | `Labels` | English defaults; `progress` supports `{current}` and `{total}` |
-| `theme` | `Theme` | tokens applied on top of the renderer's theme |
+| `theme` | `ThemeSpec` | a preset name, tokens, or `{ preset, ...tokens }` |
+| `appearance` | `'light' \| 'dark' \| 'auto'` | `'light'`; `auto` follows the system setting |
 | `template` | `string` | name of a template registered on the renderer |
 
 ## Step
@@ -109,7 +120,7 @@ A string is a CSS selector. An object is the portable form:
 
 ## Theme
 
-Tokens map to `--docent-*` custom properties: `background`, `foreground`, `muted`, `accent`, `accentForeground`, `radius`, `shadow`, `font`, `width`, `overlay`, `overlayOpacity`, `duration`, `zIndex`, `connector`, `ring`. All are CSS strings.
+Sizes and times accept a CSS string or a number (`radius: 12` is `12px`, `duration: 180` is `180ms`). Tokens map to `--docent-*` custom properties: `background`, `foreground`, `muted`, `accent`, `accentForeground`, `radius`, `shadow`, `font`, `width`, `overlay`, `overlayOpacity`, `duration`, `zIndex`, `connector`, `ring`. All are CSS strings.
 
 ## Looks
 
@@ -120,3 +131,22 @@ type SpotlightShape = 'rounded' | 'rect' | 'pill' | 'circle'
 type SpotlightRing = 'hairline' | 'none' | 'glow' | 'pulse' | 'dashed' | 'solid'
 type OverlayStyle = 'dim' | 'blur' | 'vignette' | 'none'
 ```
+
+## Checking a tour
+
+`validateTour` reports anything that does not match this page, in plain words, with the value that was probably meant:
+
+```ts
+import { formatIssues, validateTour } from '@docentjs/dom/validate'
+
+const issues = validateTour(tour)
+// [{ level: 'error', path: 'steps[0].arrow',
+//    message: '"curvy" is not one of: caret, none, line, …', suggestion: 'curve' }]
+console.log(formatIssues(issues))
+```
+
+It catches unknown values, missing and misspelled fields, wrong types, out-of-range numbers and duplicate step ids. It says nothing about whether a step's target is on the page, which the [devtools](/guides/devtools/#audit) Audit tab checks.
+
+**This already runs for you in development.** `createTour` and `createDocent` check each tour once and warn in the console. Production builds contain neither the check nor the code behind it, as long as your bundler sets `process.env.NODE_ENV`, which Vite, webpack, Next.js, Rollup and esbuild setups do.
+
+The same function is exported from `@docentjs/core/validate` and re-exported from `@docentjs/dom/validate`. `isValidTour(tour)` returns a boolean, and `tourJsonSchema()` returns the JSON Schema published at [docentjs.dev/schema/tour-v1.json](https://docentjs.dev/schema/tour-v1.json).

@@ -109,6 +109,58 @@ describe('DomRenderer', () => {
     r.hide()
   })
 
+  it('gives number tokens their unit and picks readable text for a light accent', () => {
+    const r = new DomRenderer({ theme: { radius: 12, width: 300, duration: 180 } })
+    r.show(ctx({ tour: { ...ctx().tour, options: { theme: { accent: 'rgb(250, 204, 21)' } } } }))
+    const style = host()?.style
+    expect(style?.getPropertyValue('--docent-radius')).toBe('12px')
+    expect(style?.getPropertyValue('--docent-width')).toBe('300px')
+    expect(style?.getPropertyValue('--docent-duration')).toBe('180ms')
+    // Yellow needs dark text, taken from the theme's own foreground token.
+    expect(style?.getPropertyValue('--docent-accent-fg')).toBe('var(--docent-fg)')
+    r.show(ctx({ tour: { ...ctx().tour, options: { theme: { accent: 'rgb(20, 20, 30)' } } } }))
+    expect(host()?.style.getPropertyValue('--docent-accent-fg')).toBe('var(--docent-bg)')
+    r.hide()
+  })
+
+  it('resolves a preset named in the tour, and layers tokens on top of it', async () => {
+    const r = new DomRenderer()
+    const base = ctx().tour
+    await r.show(ctx({ tour: { ...base, options: { theme: 'dark' as const } } }))
+    const dark = host()?.style.getPropertyValue('--docent-bg')
+    expect(dark).toMatch(/oklch/)
+    await r.show(
+      ctx({ tour: { ...base, options: { theme: { preset: 'dark' as const, accent: 'tomato' } } } }),
+    )
+    expect(host()?.style.getPropertyValue('--docent-bg')).toBe(dark)
+    expect(host()?.style.getPropertyValue('--docent-accent')).toBe('tomato')
+    r.hide()
+  })
+
+  it('follows the system setting with appearance auto, and changes with it', async () => {
+    const listeners: Array<() => void> = []
+    let dark = true
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({
+        get matches() {
+          return dark
+        },
+        addEventListener: (_: string, fn: () => void) => listeners.push(fn),
+        removeEventListener: vi.fn(),
+      })),
+    )
+    const r = new DomRenderer({ appearance: 'auto' })
+    await r.show(ctx({ tour: { ...ctx().tour, options: {} } }))
+    const night = host()?.style.getPropertyValue('--docent-bg')
+    expect(night).toMatch(/oklch/)
+    dark = false
+    for (const fn of listeners) fn()
+    expect(host()?.style.getPropertyValue('--docent-bg')).not.toBe(night)
+    r.hide()
+    vi.unstubAllGlobals()
+  })
+
   it('applies renderer, template and tour themes in order', () => {
     const r = new DomRenderer({
       theme: { accent: 'base', radius: '1px', width: '10px' },

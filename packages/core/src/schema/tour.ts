@@ -224,6 +224,28 @@ export type Frequency = 'once' | 'until-completed' | 'always'
  * Each maps to a CSS custom property in the renderer (`--docent-*`).
  * Values are CSS strings, e.g. `'#111'`, `'12px'`, `'0 4px 12px rgba(0,0,0,.2)'`.
  */
+/**
+ * A length, time or number token. Numbers are given the unit the token needs
+ * (px for sizes, ms for durations), so `radius: 12` and `radius: '12px'` are
+ * the same thing.
+ */
+export type ThemeValue = string | number
+
+/** Built-in presets, usable by name from the tour JSON. */
+export type ThemeName = 'light' | 'dark' | 'minimal' | 'contrast'
+
+/**
+ * A theme: a preset's name, or tokens, or a preset with tokens on top:
+ * `'dark'`, `{ accent: '#7c3aed' }`, `{ preset: 'dark', accent: '#7c3aed' }`.
+ */
+export type ThemeSpec = ThemeName | (Theme & { preset?: ThemeName })
+
+/**
+ * Which surface to use. `light` (the default) and `dark` are fixed; `auto`
+ * follows the reader's system setting and changes with it mid-tour.
+ */
+export type Appearance = 'light' | 'dark' | 'auto'
+
 export interface Theme {
   /** Color of drawn connectors (arrow styles other than caret). */
   connector?: string
@@ -234,14 +256,22 @@ export interface Theme {
   muted?: string
   accent?: string
   accentForeground?: string
-  radius?: string
+  /** Corner radius of the popover. Number means px. */
+  radius?: ThemeValue
   shadow?: string
   font?: string
-  width?: string
+  /** Popover width. Number means px. */
+  width?: ThemeValue
+  /**
+   * Backdrop colour. `options.overlay.color` wins when both are set; prefer
+   * that one, which keeps every overlay setting together.
+   */
   overlay?: string
-  overlayOpacity?: string
-  duration?: string
-  zIndex?: string
+  /** Backdrop opacity, 0–1. `options.overlay.opacity` wins when both are set. */
+  overlayOpacity?: ThemeValue
+  /** Transition duration. Number means ms. */
+  duration?: ThemeValue
+  zIndex?: ThemeValue
 }
 
 // ---------------------------------------------------------------------------
@@ -312,8 +342,10 @@ export interface TourOptions {
   overlay?: OverlayOptions
   scroll?: ScrollOptions
   labels?: Labels
-  /** Visual tokens applied on top of the renderer's theme. */
-  theme?: Theme
+  /** A preset name, tokens, or both, applied on top of the renderer's theme. */
+  theme?: ThemeSpec
+  /** Light, dark, or follow the reader's system setting. Default: `light`. */
+  appearance?: Appearance
   /** Name of a template registered on the renderer (slots, css, theme). */
   template?: string
 }

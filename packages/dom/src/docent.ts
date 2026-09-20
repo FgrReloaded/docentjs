@@ -1,5 +1,6 @@
 import { Docent, type DocentOptions } from '@docentjs/core'
 import { DomTourController } from './create'
+import { warnAboutTours } from './dev'
 import { createDomEnvironment } from './environment'
 import type { DomRendererOptions } from './renderer'
 import { createLocalStorage } from './storage'
@@ -26,11 +27,13 @@ export interface CreateDocentOptions
 export function createDocent(options: CreateDocentOptions = {}): Docent {
   const { renderer, document: doc, ...rest } = options
   const rendererOptions: DomRendererOptions = doc ? { ...renderer, document: doc } : { ...renderer }
-  return new Docent({
+  const docent = new Docent({
     ...rest,
     storage: rest.storage ?? createLocalStorage(),
     environment: createDomEnvironment(doc),
     createController: (tour, shared) =>
       new DomTourController(tour, { ...shared, renderer: rendererOptions }),
   })
+  warnAboutTours(docent)
+  return docent
 }

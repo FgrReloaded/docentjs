@@ -9,6 +9,7 @@
  */
 
 import type {
+  Appearance,
   ArrowStyle,
   Labels,
   OverlayOptions,
@@ -18,6 +19,7 @@ import type {
   Step,
   Target,
   Theme,
+  ThemeSpec,
 } from '@docentjs/core'
 import { arrowGap, isConnector } from './arrows'
 import type { Connector, Point } from './connector'
@@ -37,8 +39,11 @@ import {
   applyTheme,
   type HeadlessPopover,
   mergeThemes,
+  needsPresets,
   type PopoverSlots,
   type PopoverTemplate,
+  resolveTheme,
+  type ThemePresets,
 } from './theme'
 
 export interface DomRendererOptions {
@@ -54,8 +59,10 @@ export interface DomRendererOptions {
   arrow?: ArrowStyle
   /** Overlay defaults when a tour sets none: style, color, opacity, blur. */
   overlay?: OverlayOptions
-  /** Base theme tokens. Tours and templates layer on top. */
-  theme?: Theme
+  /** Base theme: a preset name, tokens, or both. Tours and templates layer on top. */
+  theme?: ThemeSpec
+  /** Light (default), dark, or follow the reader's system setting. */
+  appearance?: Appearance
   /** Replace regions of the built-in popover. */
   slots?: PopoverSlots
   /** Named templates that tours select with `options.template`. */
@@ -111,6 +118,11 @@ export class DomRenderer implements Renderer {
   private connectorLoading: Promise<void> | undefined
   /** Arrow, spotlight and overlay settings for the current step. */
   private look: Look = DEFAULT_LOOK
+  /** Preset tokens, once loaded. */
+  private presets: ThemePresets | undefined
+  private presetLoad: Promise<void> | undefined
+  /** Set while `appearance: 'auto'` is following the system setting. */
+  private schemeQuery: MediaQueryList | undefined
   /** Until then the step's own transition runs; scroll updates may animate. */
   private settleUntil = 0
   /** Play the connector draw-in on its next render. */
@@ -139,7 +151,18 @@ export class DomRenderer implements Renderer {
     return `${pathname}${search}`
   }
 
-  show(ctx: RenderContext): void {
+  show(ctx: RenderContext): void | Promise<void> {
+    // Preset tokens live in a separate chunk, so tours that name one (or ask
+    // for dark) wait for it rather than flashing the default look first.
+    if (this.presets === undefined && this.usesPresets(ctx)) {
+      return this.loadPresets().then(() => {
+        this.showNow(ctx)
+      })
+    }
+    this.showNow(ctx)
+  }
+
+  private showNow(ctx: RenderContext): void {
     const firstStep = !this.host
     const host = this.mount()
     // Where the previous step's popover sat, so the new one glides from there
@@ -150,7 +173,8 @@ export class DomRenderer implements Renderer {
     this.target = ctx.step.target === undefined ? null : resolveTarget(ctx.step.target, this.doc)
 
     const template = this.template(ctx)
-    applyTheme(host, mergeThemes(this.options.theme, template?.theme, ctx.tour.options?.theme))
+    this.watchAppearance(ctx)
+    applyTheme(host, this.themeFor(ctx, template))
     this.setTemplateCss(template?.css)
     this.applyLook(host, this.resolveLook(ctx, template))
     this.settleUntil = performance.now() + this.duration(host) * 1.5
@@ -188,6 +212,8 @@ export class DomRenderer implements Renderer {
 
   hide(): void {
     this.teardownStep()
+    this.schemeQuery?.removeEventListener('change', this.onSchemeChange)
+    this.schemeQuery = undefined
     if (this.host) {
       this.host.remove()
       this.host = undefined
@@ -364,6 +390,73 @@ export class DomRenderer implements Renderer {
     const before = this.popover ?? null
     shadow.insertBefore(style, before)
     shadow.insertBefore(this.connector.el, before)
+  }
+
+  /** Does anything here need the built-in presets? */
+  private usesPresets(ctx: RenderContext): boolean {
+    return (
+      this.appearance(ctx) !== 'light' ||
+      needsPresets(this.options.theme) ||
+      needsPresets(ctx.tour.options?.theme) ||
+      needsPresets(this.template(ctx)?.theme)
+    )
+  }
+
+  private loadPresets(): Promise<void> {
+    this.presetLoad ??= import('./themes').then((mod) => {
+      this.presets = {
+        light: mod.light,
+        dark: mod.dark,
+        minimal: mod.minimal,
+        contrast: mod.contrast,
+      }
+    })
+    return this.presetLoad
+  }
+
+  private appearance(ctx: RenderContext): Appearance {
+    return ctx.tour.options?.appearance ?? this.options.appearance ?? 'light'
+  }
+
+  /** The surface tokens for the current appearance: dark, or nothing for light. */
+  private appearanceTheme(ctx: RenderContext): Theme | undefined {
+    const appearance = this.appearance(ctx)
+    if (appearance === 'dark') return this.presets?.dark
+    if (appearance !== 'auto') return undefined
+    return this.prefersDark() ? this.presets?.dark : this.presets?.light
+  }
+
+  private prefersDark(): boolean {
+    return this.doc.defaultView?.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
+  }
+
+  /** Renderer, then the appearance surface, then template, then tour. */
+  private themeFor(ctx: RenderContext, template: PopoverTemplate | undefined): Theme {
+    const presets = this.presets
+    return mergeThemes(
+      resolveTheme(this.options.theme, presets),
+      this.appearanceTheme(ctx),
+      resolveTheme(template?.theme, presets),
+      resolveTheme(ctx.tour.options?.theme, presets),
+    )
+  }
+
+  /** With `appearance: 'auto'`, follow the system setting while the tour runs. */
+  private watchAppearance(ctx: RenderContext): void {
+    const wanted = this.appearance(ctx) === 'auto'
+    if (wanted === (this.schemeQuery !== undefined)) return
+    if (!wanted) {
+      this.schemeQuery?.removeEventListener('change', this.onSchemeChange)
+      this.schemeQuery = undefined
+      return
+    }
+    this.schemeQuery = this.doc.defaultView?.matchMedia?.('(prefers-color-scheme: dark)')
+    this.schemeQuery?.addEventListener('change', this.onSchemeChange)
+  }
+
+  private onSchemeChange = (): void => {
+    const ctx = this.ctx
+    if (ctx && this.host) applyTheme(this.host, this.themeFor(ctx, this.template(ctx)))
   }
 
   private resolveLook(ctx: RenderContext, template: PopoverTemplate | undefined): Look {

@@ -43,7 +43,7 @@ describe('auditTours', () => {
     )
     expect(issues).toEqual(
       expect.arrayContaining([
-        'error|a|Duplicate step id "a".',
+        'error|a|id: Duplicate step id "a". Ids must be unique within a tour.',
         'error|d|Advances on click, but interaction is blocked.',
         'error|-|Custom condition "nope" is not registered.',
         'warning|-|Condition refers to unknown tour "ghost".',

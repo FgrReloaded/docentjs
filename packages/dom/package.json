@@ -47,6 +47,16 @@
         "default": "./dist/themes.cjs"
       }
     },
+    "./validate": {
+      "import": {
+        "types": "./dist/validate.d.ts",
+        "default": "./dist/validate.js"
+      },
+      "require": {
+        "types": "./dist/validate.d.cts",
+        "default": "./dist/validate.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "files": [

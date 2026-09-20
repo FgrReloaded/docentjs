@@ -35,12 +35,16 @@ defineTour({
 | `background`, `foreground`, `muted` | the card, its main text, and secondary text |
 | `radius`, `width`, `shadow` | the card's corners, width and shadow |
 | `font` | the font family, if not your site's |
-| `overlay`, `overlayOpacity` | the dimmed backdrop's color and strength |
+| `overlay`, `overlayOpacity` | the backdrop, but prefer the [overlay options](/customize/arrows-and-spotlight/#overlay), which win when both are set |
 | `ring`, `connector` | the spotlight ring and drawn arrows |
 | `duration` | how long transitions take |
 | `zIndex` | the stacking order, if something of yours sits above tours |
 
-Each token becomes a `--docent-*` CSS custom property, for example `--docent-accent`. Values are CSS strings, so any CSS color or length works.
+Each token becomes a `--docent-*` CSS custom property, for example `--docent-accent`. Colors take any CSS color. Sizes and times take a CSS string or a plain number, so `radius: 12` and `radius: '12px'` are the same thing, and `duration: 180` means 180 ms.
+
+<Aside type="tip" title="The button text looks after itself">
+Set `accent` alone and Docent picks the readable text color for it. A dark accent gets light text, a light one such as yellow gets dark text. Set `accentForeground` when you want a specific color.
+</Aside>
 
 <Demo
   caption="Tokens set in the tour JSON"
@@ -58,11 +62,22 @@ Each token becomes a `--docent-*` CSS custom property, for example `--docent-acc
 
 Four ready-made themes ship in a separate entry point, so they add nothing to your bundle unless you import one.
 
+Name one in the tour itself, which keeps the JSON self-contained:
+
+```ts
+options: { theme: 'dark' }                            // a preset
+options: { theme: { preset: 'dark', accent: '#7c3aed' } }   // a preset, then your changes
+```
+
+Or import it in code, for every tour in the app:
+
 ```ts
 import { dark } from '@docentjs/dom/themes'
 
 createTour(tour, { renderer: { theme: dark } })
 ```
+
+Presets named in JSON load on demand, so tours that don't name one never download them.
 
 | Preset | For |
 | --- | --- |
@@ -85,13 +100,28 @@ In React, Vue and Svelte, import presets from `@docentjs/react/themes`, `@docent
   <button type="button" data-docent="theme-target-2">Target</button>
 </Demo>
 
+## Light, dark, or the reader's choice
+
+```ts
+options: { appearance: 'auto' }
+```
+
+| Value | Effect |
+| --- | --- |
+| `light` | the default surface |
+| `dark` | the dark surface |
+| `auto` | follows the reader's system setting, and switches with it mid-tour |
+
+Your own tokens still apply on top, so `{ appearance: 'auto', theme: { accent: '#7c3aed' } }` keeps your brand color on both surfaces.
+
 ## Where themes can be set
 
 Themes stack. Each layer overrides only the tokens it sets, from lowest to highest:
 
 1. the renderer's `theme`, for every tour in your app,
-2. the template's theme, when the tour names a [template](/customize/slots-and-templates/#templates),
-3. the tour's `options.theme`.
+2. the surface chosen by `appearance`,
+3. the template's theme, when the tour names a [template](/customize/slots-and-templates/#templates),
+4. the tour's `options.theme`.
 
 A common setup is a preset on the renderer, your brand accent on top, and occasional per-tour tweaks in the JSON.
 

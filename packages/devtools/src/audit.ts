@@ -9,10 +9,12 @@ import {
   matchRoute,
   type Step,
   type Theme,
+  type ThemeSpec,
   type Tour,
 } from '@docentjs/core'
+import { validateTour } from '@docentjs/core/validate'
 import { resolveTarget, toSpec } from '@docentjs/dom'
-import { light } from '@docentjs/dom/themes'
+import { contrast, dark, light, minimal } from '@docentjs/dom/themes'
 import { contrastRatio } from './contrast'
 
 export type Severity = 'error' | 'warning' | 'info'
@@ -104,8 +106,18 @@ const COLOR_TOKENS: Array<keyof Theme> = [
   'accentForeground',
 ]
 
+const PRESETS = { light, dark, minimal, contrast }
+
+/** A theme as plain tokens, whether it names a preset, sets tokens, or both. */
+function tokensOf(spec: ThemeSpec | undefined): Theme | undefined {
+  if (spec === undefined) return undefined
+  if (typeof spec === 'string') return PRESETS[spec]
+  const { preset, ...tokens } = spec
+  return preset ? { ...PRESETS[preset], ...tokens } : tokens
+}
+
 function themeIssues(tour: Tour, out: Issue[]): void {
-  const own = tour.options?.theme
+  const own = tokensOf(tour.options?.theme)
   // The defaults are known to pass; only check tours that change colors.
   if (!own || !COLOR_TOKENS.some((k) => own[k] !== undefined)) return
   const t: Theme = { ...light, ...own }
@@ -127,22 +139,29 @@ function themeIssues(tour: Tour, out: Issue[]): void {
   }
 }
 
+/** Schema problems: unknown values, missing fields, typos. */
+function schemaIssues(tour: Tour, out: Issue[]): void {
+  for (const issue of validateTour(tour)) {
+    const index = issue.path.match(/^steps\[(\d+)\]/)?.[1]
+    const step = index === undefined ? undefined : tour.steps[Number(index)]
+    const field = issue.path.replace(/^steps\[\d+\]\.?/, '')
+    out.push({
+      tourId: tour.id,
+      ...(step ? { stepId: step.id } : {}),
+      severity: issue.level,
+      message: field ? `${field}: ${issue.message}` : issue.message,
+      ...(issue.suggestion ? { hint: `Did you mean "${issue.suggestion}"?` } : {}),
+    })
+  }
+}
+
 export function auditTours(docent: Docent, tours: Tour[]): Issue[] {
   const out: Issue[] = []
   const env = docent.getConditionEnv()
   const ids = new Set(tours.map((t) => t.id))
   for (const tour of tours) {
-    const seen = new Set<string>()
+    schemaIssues(tour, out)
     for (const step of tour.steps) {
-      if (seen.has(step.id)) {
-        out.push({
-          tourId: tour.id,
-          stepId: step.id,
-          severity: 'error',
-          message: `Duplicate step id "${step.id}".`,
-        })
-      }
-      seen.add(step.id)
       stepIssues(tour, step, env.route, out)
     }
     if (tour.steps.length === 0)

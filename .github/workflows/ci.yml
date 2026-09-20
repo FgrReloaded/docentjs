@@ -19,6 +19,7 @@ jobs:
       - run: pnpm lint
       - run: pnpm build
       - run: pnpm typecheck
+      - run: pnpm gen:schema --check
       - run: pnpm test
       - run: pnpm size
       - run: pnpm check:publish

@@ -14,6 +14,8 @@ import type {
   Step,
   Target,
   Theme,
+  ThemeName,
+  ThemeSpec,
   Tour,
   Trigger,
 } from '@docentjs/core'
@@ -141,6 +143,12 @@ function DraftNotice({ store, tourId }: { store: Store; tourId: string }) {
       Copy or download the JSON into your code to keep them for good.
     </p>
   )
+}
+
+/** Tokens of a theme that may be a preset's name, keeping the preset. */
+function asTokens(spec: ThemeSpec | undefined): Theme & { preset?: ThemeName } {
+  if (spec === undefined) return {}
+  return typeof spec === 'string' ? { preset: spec } : spec
 }
 
 /** Defaults of the built-in look (styles.ts in @docentjs/dom). */
@@ -773,7 +781,10 @@ function TourForm({ store, tour }: { store: Store; tour: Tour }) {
 // -------------------------------------------------------------- theme form
 
 function ThemeForm({ store, tour }: { store: Store; tour: Tour }) {
-  const theme = tour.options?.theme ?? {}
+  // A theme can be a preset's name; the form edits tokens, so normalise first.
+  const spec = tour.options?.theme
+  const preset = typeof spec === 'string' ? spec : spec?.preset
+  const theme: Theme = typeof spec === 'string' ? {} : (spec ?? {})
   // The built-in defaults (styles.ts); the light preset spells out all but the scrim.
   const base: Theme = { ...presets.light, overlay: 'oklch(20% 0.02 285)' }
   const live = (key: keyof Theme, value: string) => {
@@ -790,13 +801,15 @@ function ThemeForm({ store, tour }: { store: Store; tour: Tour }) {
         with_(
           t,
           'options',
-          with_(t.options ?? {}, 'theme', with_(t.options?.theme ?? {}, key, value)),
+          with_(t.options ?? {}, 'theme', with_(asTokens(t.options?.theme), key, value)),
         ),
       immediate,
     )
   }
-  const color = (key: keyof Theme) => toHex(theme[key] ?? base[key] ?? '#000000') ?? '#000000'
-  const px = (v: string | undefined, fallback: number) => (v ? Number.parseFloat(v) : fallback)
+  const color = (key: keyof Theme) =>
+    toHex(String(theme[key] ?? base[key] ?? '#000000')) ?? '#000000'
+  const px = (v: string | number | undefined, fallback: number) =>
+    v === undefined ? fallback : typeof v === 'number' ? v : Number.parseFloat(v)
 
   return (
     <Section
@@ -817,14 +830,16 @@ function ThemeForm({ store, tour }: { store: Store; tour: Tour }) {
       }
     >
       <div class="inline wrap">
-        {Object.entries(presets).map(([name, preset]) => (
+        {Object.keys(presets).map((name) => (
           <Button
             key={name}
-            class="chip"
+            class={`chip ${preset === name ? 'on' : ''}`}
             onClick={() =>
               store.editTour(
                 tour.id,
-                (t) => with_(t, 'options', with_(t.options ?? {}, 'theme', { ...preset })),
+                // Name the preset rather than copying its tokens, so the JSON
+                // stays short and keeps working when a preset improves.
+                (t) => with_(t, 'options', with_(t.options ?? {}, 'theme', name as ThemeName)),
                 true,
               )
             }

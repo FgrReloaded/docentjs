@@ -107,6 +107,7 @@ A live timeline of every lifecycle event: tours started, steps shown and complet
 
 Checks every tour against the current page, sorted by severity. The tab shows a count of errors and warnings.
 
+- **Schema**: unknown values, misspelled fields, missing required fields and wrong types, each with the value that was probably meant. The same checks as [`validateTour`](/reference/schema/#checking-a-tour).
 - **Errors**: duplicate step ids, a tour with no steps, a step that advances on a click the tour blocks, an unregistered custom condition, and text contrast below 3:1 when a tour overrides colors.
 - **Warnings**: targets missing from this page, structural selectors likely to break, steps with no text, conditions pointing at unknown tours, and contrast below the WCAG AA ratio.
 - **Info**: long bodies, tours with no trigger, and tours that show on every page load.

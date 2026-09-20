@@ -1,5 +1,5 @@
 import type { Docent, DocentState, RenderContext } from '@docentjs/core'
-import { type CreateDocentOptions, createDocent } from '@docentjs/dom'
+import { type CreateDocentOptions, createDocent, mergeThemeSpecs, themeOption } from '@docentjs/dom'
 import {
   type ReactNode,
   useCallback,
@@ -61,7 +61,7 @@ export function useDocent(options: UseDocentOptions = {}): DocentHandle {
         ...own.renderer,
         templates: { ...defaults.renderer?.templates, ...own.renderer?.templates },
         slots: { ...defaults.renderer?.slots, ...own.renderer?.slots },
-        theme: { ...defaults.renderer?.theme, ...own.renderer?.theme },
+        ...themeOption(mergeThemeSpecs(defaults.renderer?.theme, own.renderer?.theme)),
       },
     }
     if (popover && merged.renderer) {

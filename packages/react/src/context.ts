@@ -1,4 +1,5 @@
 import type { CreateTourOptions, DomRendererOptions } from '@docentjs/dom'
+import { mergeThemeSpecs, themeOption } from '@docentjs/dom'
 import { createContext, useContext } from 'react'
 
 /** Defaults every `useTour` in the subtree inherits: theme, templates, identity, sink, storage. */
@@ -19,7 +20,7 @@ export function mergeOptions(base: DocentDefaults, own: CreateTourOptions): Crea
           ...own.renderer,
           templates: { ...base.renderer?.templates, ...own.renderer?.templates },
           slots: { ...base.renderer?.slots, ...own.renderer?.slots },
-          theme: { ...base.renderer?.theme, ...own.renderer?.theme },
+          ...themeOption(mergeThemeSpecs(base.renderer?.theme, own.renderer?.theme)),
         }
       : undefined
   const merged: CreateTourOptions = { ...base, ...own }

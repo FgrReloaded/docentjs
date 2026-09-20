@@ -1,5 +1,11 @@
 import type { EngineState, RenderContext, Tour } from '@docentjs/core'
-import { type CreateTourOptions, createTour, type DomTourController } from '@docentjs/dom'
+import {
+  type CreateTourOptions,
+  createTour,
+  type DomTourController,
+  mergeThemeSpecs,
+  themeOption,
+} from '@docentjs/dom'
 import {
   getCurrentInstance,
   type InjectionKey,
@@ -28,7 +34,7 @@ export function mergeOptions(base: DocentDefaults, own: CreateTourOptions): Crea
       ...own.renderer,
       templates: { ...base.renderer?.templates, ...own.renderer?.templates },
       slots: { ...base.renderer?.slots, ...own.renderer?.slots },
-      theme: { ...base.renderer?.theme, ...own.renderer?.theme },
+      ...themeOption(mergeThemeSpecs(base.renderer?.theme, own.renderer?.theme)),
     }
   }
   return merged

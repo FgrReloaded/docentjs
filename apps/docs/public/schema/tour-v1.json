@@ -1,0 +1,1229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://docentjs.dev/schema/tour-v1.json",
+  "title": "Docent tour",
+  "description": "A guided tour: what to show, to whom, and when.",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 1,
+      "description": "`defineTour` sets this for you."
+    },
+    "id": {
+      "type": "string",
+      "description": "Stable identifier, used for progress and analytics."
+    },
+    "version": {
+      "type": "number",
+      "description": "Bump to show the tour again to people who saw an older one."
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    },
+    "trigger": {
+      "$ref": "#/$defs/trigger",
+      "description": "What starts the tour. Without one, only code can."
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/condition"
+      },
+      "description": "All must hold."
+    },
+    "options": {
+      "type": "object",
+      "properties": {
+        "persist": {
+          "type": "boolean",
+          "description": "Remember the current step so `resume()` can continue."
+        },
+        "frequency": {
+          "enum": [
+            "once",
+            "until-completed",
+            "always"
+          ]
+        },
+        "showProgress": {
+          "type": "boolean"
+        },
+        "allowClose": {
+          "type": "boolean",
+          "description": "Allow Escape and the close button."
+        },
+        "closeOnOverlayClick": {
+          "type": "boolean"
+        },
+        "keyboard": {
+          "type": "boolean",
+          "description": "Arrow-key navigation."
+        },
+        "arrow": {
+          "enum": [
+            "caret",
+            "none",
+            "line",
+            "dashed",
+            "dotted",
+            "curve",
+            "curve-dashed",
+            "squiggle",
+            "loop",
+            "elbow",
+            "sketch",
+            "pin"
+          ]
+        },
+        "spotlight": {
+          "type": "object",
+          "properties": {
+            "padding": {
+              "type": "number",
+              "description": "Space around the target, in px."
+            },
+            "radius": {
+              "type": "number",
+              "description": "Corner radius of the cutout, in px."
+            },
+            "shape": {
+              "enum": [
+                "rounded",
+                "rect",
+                "pill",
+                "circle"
+              ]
+            },
+            "ring": {
+              "enum": [
+                "hairline",
+                "none",
+                "glow",
+                "pulse",
+                "dashed",
+                "solid"
+              ]
+            },
+            "animate": {
+              "type": "boolean",
+              "description": "Animate the cutout as it moves between steps."
+            }
+          }
+        },
+        "overlay": {
+          "type": "object",
+          "properties": {
+            "style": {
+              "enum": [
+                "dim",
+                "blur",
+                "vignette",
+                "none"
+              ]
+            },
+            "color": {
+              "type": "string"
+            },
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "blur": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Blur radius for the `blur` style, in px."
+            }
+          }
+        },
+        "scroll": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "behavior": {
+              "enum": [
+                "auto",
+                "smooth"
+              ]
+            },
+            "block": {
+              "enum": [
+                "start",
+                "center",
+                "end",
+                "nearest"
+              ]
+            }
+          }
+        },
+        "labels": {
+          "type": "object",
+          "properties": {
+            "next": {
+              "type": "string"
+            },
+            "back": {
+              "type": "string"
+            },
+            "skip": {
+              "type": "string"
+            },
+            "done": {
+              "type": "string"
+            },
+            "close": {
+              "type": "string"
+            },
+            "progress": {
+              "type": "string",
+              "description": "Supports `{current}` and `{total}`."
+            }
+          }
+        },
+        "theme": {
+          "anyOf": [
+            {
+              "enum": [
+                "light",
+                "dark",
+                "minimal",
+                "contrast"
+              ],
+              "description": "A built-in preset by name."
+            },
+            {
+              "type": "object",
+              "properties": {
+                "preset": {
+                  "enum": [
+                    "light",
+                    "dark",
+                    "minimal",
+                    "contrast"
+                  ],
+                  "description": "Start from a built-in preset, then override tokens below."
+                },
+                "background": {
+                  "type": "string"
+                },
+                "foreground": {
+                  "type": "string"
+                },
+                "muted": {
+                  "type": "string",
+                  "description": "Secondary text."
+                },
+                "accent": {
+                  "type": "string",
+                  "description": "The Next button. Its text colour is chosen for you unless you set one."
+                },
+                "accentForeground": {
+                  "type": "string"
+                },
+                "connector": {
+                  "type": "string",
+                  "description": "Colour of drawn arrows."
+                },
+                "ring": {
+                  "type": "string",
+                  "description": "Colour of the spotlight ring."
+                },
+                "radius": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "description": "Popover corners. A number means px."
+                },
+                "shadow": {
+                  "type": "string"
+                },
+                "font": {
+                  "type": "string",
+                  "description": "Defaults to the page's own font."
+                },
+                "width": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "description": "Popover width. A number means px."
+                },
+                "overlay": {
+                  "type": "string",
+                  "description": "Backdrop colour. Prefer `options.overlay.color`.",
+                  "deprecated": true
+                },
+                "overlayOpacity": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "description": "Backdrop opacity, 0 to 1. Prefer `options.overlay.opacity`.",
+                  "deprecated": true
+                },
+                "duration": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "description": "Transition time. A number means ms."
+                },
+                "zIndex": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ]
+                }
+              },
+              "description": "Visual tokens. Each becomes a `--docent-*` custom property."
+            }
+          ]
+        },
+        "appearance": {
+          "enum": [
+            "light",
+            "dark",
+            "auto"
+          ],
+          "description": "`auto` follows the reader's system setting."
+        },
+        "template": {
+          "type": "string",
+          "description": "Name of a template registered on the renderer."
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": {}
+    }
+  },
+  "required": [
+    "id",
+    "steps"
+  ],
+  "$defs": {
+    "step": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique within the tour. Keep it stable once shipped."
+        },
+        "target": {
+          "$ref": "#/$defs/target",
+          "description": "Leave out for a centred card."
+        },
+        "title": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "format": {
+          "enum": [
+            "text",
+            "markdown"
+          ],
+          "description": "Markdown is a safe subset; HTML is never injected."
+        },
+        "media": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "image",
+                "video"
+              ]
+            },
+            "src": {
+              "type": "string"
+            },
+            "alt": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "src"
+          ]
+        },
+        "placement": {
+          "enum": [
+            "auto",
+            "top",
+            "right",
+            "bottom",
+            "left",
+            "top-start",
+            "top-end",
+            "right-start",
+            "right-end",
+            "bottom-start",
+            "bottom-end",
+            "left-start",
+            "left-end"
+          ]
+        },
+        "arrow": {
+          "enum": [
+            "caret",
+            "none",
+            "line",
+            "dashed",
+            "dotted",
+            "curve",
+            "curve-dashed",
+            "squiggle",
+            "loop",
+            "elbow",
+            "sketch",
+            "pin"
+          ]
+        },
+        "spotlight": {
+          "type": "object",
+          "properties": {
+            "padding": {
+              "type": "number",
+              "description": "Space around the target, in px."
+            },
+            "radius": {
+              "type": "number",
+              "description": "Corner radius of the cutout, in px."
+            },
+            "shape": {
+              "enum": [
+                "rounded",
+                "rect",
+                "pill",
+                "circle"
+              ]
+            },
+            "ring": {
+              "enum": [
+                "hairline",
+                "none",
+                "glow",
+                "pulse",
+                "dashed",
+                "solid"
+              ]
+            },
+            "animate": {
+              "type": "boolean",
+              "description": "Animate the cutout as it moves between steps."
+            }
+          }
+        },
+        "overlay": {
+          "type": "object",
+          "properties": {
+            "style": {
+              "enum": [
+                "dim",
+                "blur",
+                "vignette",
+                "none"
+              ]
+            },
+            "color": {
+              "type": "string"
+            },
+            "opacity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "blur": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Blur radius for the `blur` style, in px."
+            }
+          }
+        },
+        "advance": {
+          "anyOf": [
+            {
+              "enum": [
+                "button"
+              ],
+              "description": "The reader presses Next (the default)."
+            },
+            {
+              "type": "object",
+              "properties": {
+                "on": {
+                  "enum": [
+                    "click"
+                  ]
+                },
+                "target": {
+                  "$ref": "#/$defs/target"
+                }
+              },
+              "required": [
+                "on"
+              ],
+              "description": "The reader clicks the target."
+            },
+            {
+              "type": "object",
+              "properties": {
+                "on": {
+                  "enum": [
+                    "input"
+                  ]
+                },
+                "target": {
+                  "$ref": "#/$defs/target"
+                },
+                "match": {
+                  "type": "string",
+                  "description": "Regular expression the value must match."
+                }
+              },
+              "required": [
+                "on"
+              ],
+              "description": "What the reader types matches a regular expression."
+            },
+            {
+              "type": "object",
+              "properties": {
+                "on": {
+                  "enum": [
+                    "event"
+                  ]
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "on",
+                "name"
+              ],
+              "description": "Your code reports a named event."
+            },
+            {
+              "type": "object",
+              "properties": {
+                "on": {
+                  "enum": [
+                    "element"
+                  ]
+                },
+                "target": {
+                  "$ref": "#/$defs/target"
+                }
+              },
+              "required": [
+                "on",
+                "target"
+              ],
+              "description": "An element appears on the page."
+            },
+            {
+              "type": "object",
+              "properties": {
+                "on": {
+                  "enum": [
+                    "delay"
+                  ]
+                },
+                "ms": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "on",
+                "ms"
+              ],
+              "description": "After a delay."
+            }
+          ],
+          "description": "How the step finishes."
+        },
+        "interaction": {
+          "enum": [
+            "block",
+            "allow"
+          ],
+          "description": "Whether the target can be used during the step."
+        },
+        "condition": {
+          "$ref": "#/$defs/condition",
+          "description": "Skip this step when the condition is false."
+        },
+        "onMissing": {
+          "enum": [
+            "skip",
+            "wait",
+            "abort"
+          ],
+          "description": "When the target is not on the page."
+        },
+        "waitFor": {
+          "type": "number",
+          "minimum": 0,
+          "description": "How long to wait for the target, in ms."
+        },
+        "route": {
+          "type": "string",
+          "description": "Path pattern this step belongs to."
+        },
+        "buttons": {
+          "type": "object",
+          "properties": {
+            "back": {
+              "type": "boolean"
+            },
+            "next": {
+              "type": "boolean"
+            },
+            "skip": {
+              "type": "boolean"
+            },
+            "close": {
+              "type": "boolean"
+            }
+          }
+        },
+        "scroll": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "behavior": {
+              "enum": [
+                "auto",
+                "smooth"
+              ]
+            },
+            "block": {
+              "enum": [
+                "start",
+                "center",
+                "end",
+                "nearest"
+              ]
+            }
+          }
+        },
+        "meta": {
+          "type": "object",
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "id"
+      ]
+    },
+    "target": {
+      "anyOf": [
+        {
+          "type": "string",
+          "description": "A CSS selector."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Logical name, matching `data-docent=\"<name>\"`. The sturdiest anchor."
+            },
+            "selectors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "CSS fallbacks, tried in order."
+            },
+            "native": {
+              "type": "string",
+              "description": "Native identifier, when it differs from the name."
+            },
+            "within": {
+              "type": "string",
+              "description": "Selector of a container to search inside."
+            },
+            "nth": {
+              "type": "number",
+              "description": "Which match to use, counting from 0."
+            }
+          }
+        }
+      ]
+    },
+    "advance": {
+      "anyOf": [
+        {
+          "enum": [
+            "button"
+          ],
+          "description": "The reader presses Next (the default)."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "on": {
+              "enum": [
+                "click"
+              ]
+            },
+            "target": {
+              "$ref": "#/$defs/target"
+            }
+          },
+          "required": [
+            "on"
+          ],
+          "description": "The reader clicks the target."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "on": {
+              "enum": [
+                "input"
+              ]
+            },
+            "target": {
+              "$ref": "#/$defs/target"
+            },
+            "match": {
+              "type": "string",
+              "description": "Regular expression the value must match."
+            }
+          },
+          "required": [
+            "on"
+          ],
+          "description": "What the reader types matches a regular expression."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "on": {
+              "enum": [
+                "event"
+              ]
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "on",
+            "name"
+          ],
+          "description": "Your code reports a named event."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "on": {
+              "enum": [
+                "element"
+              ]
+            },
+            "target": {
+              "$ref": "#/$defs/target"
+            }
+          },
+          "required": [
+            "on",
+            "target"
+          ],
+          "description": "An element appears on the page."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "on": {
+              "enum": [
+                "delay"
+              ]
+            },
+            "ms": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "on",
+            "ms"
+          ],
+          "description": "After a delay."
+        }
+      ]
+    },
+    "trigger": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "manual"
+              ]
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "description": "Only starts from code."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "auto"
+              ]
+            },
+            "delay": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "description": "When the page loads."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "route"
+              ]
+            },
+            "pattern": {
+              "type": "string",
+              "description": "Path pattern, such as `/invoices/**`."
+            },
+            "delay": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "type",
+            "pattern"
+          ],
+          "description": "On a matching path."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "element"
+              ]
+            },
+            "target": {
+              "$ref": "#/$defs/target"
+            },
+            "delay": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "type",
+            "target"
+          ],
+          "description": "When an element appears."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "event"
+              ]
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "name"
+          ],
+          "description": "When your code reports an event."
+        }
+      ]
+    },
+    "condition": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "trait"
+              ]
+            },
+            "key": {
+              "type": "string"
+            },
+            "op": {
+              "enum": [
+                "eq",
+                "neq",
+                "gt",
+                "gte",
+                "lt",
+                "lte",
+                "in",
+                "nin",
+                "contains",
+                "exists",
+                "missing"
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "key",
+            "op"
+          ],
+          "description": "Compare one of the user's traits."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "route"
+              ]
+            },
+            "pattern": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "pattern"
+          ],
+          "description": "The current path matches."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "element"
+              ]
+            },
+            "target": {
+              "$ref": "#/$defs/target"
+            },
+            "exists": {
+              "type": "boolean",
+              "description": "Set false to require the element to be absent."
+            }
+          },
+          "required": [
+            "type",
+            "target"
+          ],
+          "description": "An element is, or is not, on the page."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "tour"
+              ]
+            },
+            "id": {
+              "type": "string"
+            },
+            "state": {
+              "enum": [
+                "not-started",
+                "in-progress",
+                "completed",
+                "skipped"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "id",
+            "state"
+          ],
+          "description": "Another tour's progress for this user."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "all"
+              ]
+            },
+            "conditions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/condition"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "conditions"
+          ],
+          "description": "Every condition holds."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "any"
+              ]
+            },
+            "conditions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/condition"
+              }
+            }
+          },
+          "required": [
+            "type",
+            "conditions"
+          ],
+          "description": "At least one condition holds."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "not"
+              ]
+            },
+            "condition": {
+              "$ref": "#/$defs/condition"
+            }
+          },
+          "required": [
+            "type",
+            "condition"
+          ],
+          "description": "The inner condition does not hold."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "custom"
+              ]
+            },
+            "name": {
+              "type": "string"
+            },
+            "args": {
+              "type": "object",
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  },
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "type",
+            "name"
+          ],
+          "description": "A predicate your app registered by name."
+        }
+      ]
+    },
+    "theme": {
+      "type": "object",
+      "properties": {
+        "preset": {
+          "enum": [
+            "light",
+            "dark",
+            "minimal",
+            "contrast"
+          ],
+          "description": "Start from a built-in preset, then override tokens below."
+        },
+        "background": {
+          "type": "string"
+        },
+        "foreground": {
+          "type": "string"
+        },
+        "muted": {
+          "type": "string",
+          "description": "Secondary text."
+        },
+        "accent": {
+          "type": "string",
+          "description": "The Next button. Its text colour is chosen for you unless you set one."
+        },
+        "accentForeground": {
+          "type": "string"
+        },
+        "connector": {
+          "type": "string",
+          "description": "Colour of drawn arrows."
+        },
+        "ring": {
+          "type": "string",
+          "description": "Colour of the spotlight ring."
+        },
+        "radius": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "description": "Popover corners. A number means px."
+        },
+        "shadow": {
+          "type": "string"
+        },
+        "font": {
+          "type": "string",
+          "description": "Defaults to the page's own font."
+        },
+        "width": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "description": "Popover width. A number means px."
+        },
+        "overlay": {
+          "type": "string",
+          "description": "Backdrop colour. Prefer `options.overlay.color`.",
+          "deprecated": true
+        },
+        "overlayOpacity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "description": "Backdrop opacity, 0 to 1. Prefer `options.overlay.opacity`.",
+          "deprecated": true
+        },
+        "duration": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "description": "Transition time. A number means ms."
+        },
+        "zIndex": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            }
+          ]
+        }
+      },
+      "description": "Visual tokens. Each becomes a `--docent-*` custom property."
+    }
+  }
+}

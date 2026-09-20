@@ -26,6 +26,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "size": "size-limit",
+    "gen:schema": "node scripts/gen-schema.mjs",
     "check:publish": "pnpm -r --filter './packages/*' exec publint --strict && pnpm -r --filter './packages/*' exec attw --pack . --profile node16",
     "changeset": "changeset",
     "changeset:version": "changeset version && pnpm install --lockfile-only",
