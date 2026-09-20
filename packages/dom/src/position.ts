@@ -108,6 +108,14 @@ export function computePosition(input: PositionInput): PositionResult {
   if (side === 'left') x = anchor.x - gap - floating.width
   if (side === 'right') x = anchor.x + anchor.width + gap
 
+  // Main axis: stay on screen even when no side has room. Covering part of
+  // the target is better than hanging off the edge, where nothing is readable.
+  if (isVertical(side)) {
+    y = clamp(y, vy + edge, Math.max(vy + edge, vy + viewport.height - edge - floating.height))
+  } else {
+    x = clamp(x, vx + edge, Math.max(vx + edge, vx + viewport.width - edge - floating.width))
+  }
+
   // Cross axis
   if (isVertical(side)) {
     if (align === 'start') x = anchor.x

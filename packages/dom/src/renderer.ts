@@ -22,7 +22,7 @@ import type {
   ThemeSpec,
 } from '@docentjs/core'
 import { arrowGap, isConnector } from './arrows'
-import type { Connector, Point } from './connector'
+import type { Connector } from './connector'
 import { BUILT_IN_LOOKS, type LookName } from './looks'
 import { uncover } from './occlusion'
 import { Overlay } from './overlay'
@@ -31,7 +31,9 @@ import {
   centerPosition,
   clipToViewport,
   computePosition,
+  type PositionResult,
   type Rect,
+  type Size,
   type Viewport,
 } from './position'
 import { STYLES } from './styles'
@@ -93,6 +95,11 @@ interface Look {
 
 const DEFAULT_LOOK: Look = { arrow: 'caret', spotlight: {}, overlay: {} }
 
+/** Breathing room kept between the popover and the edges of the screen. */
+const EDGE = 12
+/** How wide the docked card grows on a small screen. */
+const DOCKED_MAX_WIDTH = 460
+
 const FOCUSABLE =
   'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
 
@@ -124,6 +131,8 @@ export class DomRenderer implements Renderer {
   private presetLoad: Promise<void> | undefined
   /** Set while `appearance: 'auto'` is following the system setting. */
   private schemeQuery: MediaQueryList | undefined
+  /** The body element currently watched for scrolling. */
+  private scrollingBody: HTMLElement | undefined
   /** Until then the step's own transition runs; scroll updates may animate. */
   private settleUntil = 0
   /** Play the connector draw-in on its next render. */
@@ -213,6 +222,8 @@ export class DomRenderer implements Renderer {
 
   hide(): void {
     this.teardownStep()
+    this.scrollingBody?.removeEventListener('scroll', this.onBodyScroll)
+    this.scrollingBody = undefined
     this.schemeQuery?.removeEventListener('change', this.onSchemeChange)
     this.schemeQuery = undefined
     if (this.host) {
@@ -254,8 +265,14 @@ export class DomRenderer implements Renderer {
     const external = this.headlessContainer
     const sheet = this.isSheet(viewport)
     popover.classList.toggle('sheet', sheet)
-    popover.style.width = sheet ? `${viewport.width}px` : ''
+    // Never taller than the screen: the body scrolls instead of being cut off.
+    // Docked, it also leaves the page visible above it.
+    const limit = sheet ? viewport.height * 0.72 : viewport.height - EDGE * 2
+    this.host?.style.setProperty('--docent-max-h', `${Math.max(160, Math.round(limit))}px`)
+    // Docked: a card with air around it, as wide as the screen allows.
+    popover.style.width = sheet ? `${Math.min(viewport.width - EDGE * 2, DOCKED_MAX_WIDTH)}px` : ''
     const floating = { width: popover.offsetWidth, height: popover.offsetHeight }
+    this.markScrollable(popover)
 
     if (sheet) {
       const rect = this.target?.isConnected ? toRect(this.target.getBoundingClientRect()) : null
@@ -266,8 +283,12 @@ export class DomRenderer implements Renderer {
       )
       this.connector?.clear()
       const vx = viewport.x ?? 0
-      const top = (viewport.y ?? 0) + viewport.height - floating.height
-      popover.style.transform = `translate(${vx}px, ${top}px)`
+      const left = vx + Math.max(EDGE, (viewport.width - floating.width) / 2)
+      const top = Math.max(
+        (viewport.y ?? 0) + EDGE,
+        (viewport.y ?? 0) + viewport.height - floating.height - EDGE,
+      )
+      popover.style.transform = `translate(${Math.round(left)}px, ${Math.round(top)}px)`
       popover.setAttribute('data-side', 'sheet')
       external?.setAttribute('data-side', 'sheet')
       this.keepClearOfSheet(rect, top)
@@ -296,7 +317,7 @@ export class DomRenderer implements Renderer {
       floating,
       viewport,
       placement: ctx.step.placement ?? 'auto',
-      gap: this.options.gap ?? arrowGap(this.look.arrow),
+      gap: this.gap(),
     })
     popover.style.transform = `translate(${pos.x}px, ${pos.y}px)`
     popover.setAttribute('data-side', pos.side)
@@ -309,18 +330,27 @@ export class DomRenderer implements Renderer {
       external.setAttribute('data-side', pos.side)
       external.style.setProperty('--docent-arrow', `${pos.arrow}px`)
     }
-    this.renderConnector(pos, floating, hole)
+    this.renderConnector(pos, floating, clipToViewport(hole, viewport))
+  }
+
+  /**
+   * Distance between the target and the popover. A drawn connector needs room
+   * to be seen, and `options.gap` is written with the default caret in mind, so
+   * a connector takes the larger of the two rather than being squeezed out.
+   */
+  private gap(): number {
+    const needed = arrowGap(this.look.arrow)
+    const configured = this.options.gap
+    if (configured === undefined) return needed
+    return isConnector(this.look.arrow) ? Math.max(configured, needed) : configured
   }
 
   /** Draw the connector for connector arrow styles; clear it otherwise. */
-  private renderConnector(
-    pos: { x: number; y: number; side: string; arrow: number },
-    floating: { width: number; height: number },
-    hole: Rect,
-  ): void {
+  private renderConnector(pos: PositionResult, floating: Size, hole: Rect): void {
     const style = this.look.arrow
     if (!isConnector(style)) {
       this.connector?.clear()
+      this.host?.removeAttribute('data-caret')
       return
     }
     const mod = this.connectorModule
@@ -329,47 +359,18 @@ export class DomRenderer implements Renderer {
       this.loadConnector()
       return
     }
-    const inset = 6
-    const clampX = (x: number) => Math.min(Math.max(x, hole.x + 10), hole.x + hole.width - 10)
-    const clampY = (y: number) => Math.min(Math.max(y, hole.y + 10), hole.y + hole.height - 10)
-    const cx = hole.x + hole.width / 2
-    const cy = hole.y + hole.height / 2
-    // Leave from 30% or 70% along the edge (away from the target's centre) so the
-    // connector runs diagonally and each style reads distinctly.
-    const alongX = pos.x + floating.width * (cx < pos.x + floating.width / 2 ? 0.3 : 0.7)
-    const alongY = pos.y + floating.height * (cy < pos.y + floating.height / 2 ? 0.3 : 0.7)
-    let from: Point
-    let to: Point
-    switch (pos.side) {
-      case 'bottom':
-        from = { x: alongX, y: pos.y }
-        to = { x: clampX(cx), y: hole.y + hole.height + inset }
-        break
-      case 'top':
-        from = { x: alongX, y: pos.y + floating.height }
-        to = { x: clampX(cx), y: hole.y - inset }
-        break
-      case 'right':
-        from = { x: pos.x, y: alongY }
-        to = { x: hole.x + hole.width + inset, y: clampY(cy) }
-        break
-      default:
-        from = { x: pos.x + floating.width, y: alongY }
-        to = { x: hole.x - inset, y: clampY(cy) }
+    const ends = mod.connectorEndpoints({
+      side: pos.side,
+      popover: { x: pos.x, y: pos.y, width: floating.width, height: floating.height },
+      target: hole,
+    })
+    // No room for a line: show the caret rather than a stub drawn under the card.
+    this.host?.toggleAttribute('data-caret', !ends)
+    if (!ends) {
+      connector.clear()
+      return
     }
-    // Bow curves outward, away from the popover's middle.
-    const bend =
-      pos.side === 'top' || pos.side === 'bottom'
-        ? to.x < from.x
-          ? 1
-          : -1
-        : to.y < from.y
-          ? -1
-          : 1
-    connector.render(
-      mod.connectorShape(style, from, to, pos.side === 'top' || pos.side === 'left' ? -bend : bend),
-      this.drawConnector,
-    )
+    connector.render(mod.connectorShape(style, ends.from, ends.to, ends.bend), this.drawConnector)
     this.drawConnector = false
   }
 
@@ -522,6 +523,29 @@ export class DomRenderer implements Renderer {
     if (vv) return { x: vv.offsetLeft, y: vv.offsetTop, width: vv.width, height: vv.height }
     const el = this.doc.documentElement
     return { x: 0, y: 0, width: el.clientWidth, height: el.clientHeight }
+  }
+
+  /**
+   * Fade the bottom of the text while there is more to read, so a scrollable
+   * body never looks like a sentence that was cut off.
+   */
+  private markScrollable(popover: HTMLElement): void {
+    const body = popover.querySelector('.body')
+    if (!(body instanceof HTMLElement)) return
+    const update = () => {
+      const more = body.scrollHeight - body.clientHeight - body.scrollTop
+      popover.classList.toggle('scrolls', more > 4)
+    }
+    if (!this.scrollingBody || this.scrollingBody !== body) {
+      this.scrollingBody?.removeEventListener('scroll', this.onBodyScroll)
+      this.scrollingBody = body
+      body.addEventListener('scroll', this.onBodyScroll, { passive: true })
+    }
+    update()
+  }
+
+  private onBodyScroll = (): void => {
+    if (this.popover) this.markScrollable(this.popover)
   }
 
   private isSheet(viewport: Viewport): boolean {

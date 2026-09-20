@@ -42,7 +42,11 @@ placement: 'auto' | 'top' | 'right' | 'bottom' | 'left'
 
 If the preferred side has no room, the popover flips to the opposite side, then tries the other two, and finally slides along the edge to stay on screen. `-start` and `-end` align the popover with one end of the element instead of its middle.
 
-On screens narrower than 480 px, the popover docks to the bottom of the screen as a sheet, and the page scrolls so the element is not hidden behind it. Change the width with the renderer's `sheetBreakpoint`, or set it to `0` to turn the sheet off.
+### Small screens
+
+Below 480 px wide there is no room beside an element, so the popover docks near the bottom as a card with a margin around it, and the page scrolls so the element stays visible above it. Change that width with the renderer's `sheetBreakpoint`, or set it to `0` to keep the popover floating at every size.
+
+The popover never grows taller than the screen. When a step has more text than fits, the text scrolls inside the card, the last line fades while more remains, and the buttons stay put at the bottom. On short screens, such as a phone held sideways, spacing and type tighten a little. If no side has room, the popover sits over part of the element rather than off the edge of the screen.
 
 ## Moving on
 

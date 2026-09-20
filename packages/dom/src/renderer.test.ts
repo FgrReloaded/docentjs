@@ -25,8 +25,41 @@ function ctx(overrides: Partial<RenderContext> = {}): RenderContext {
 const host = () => document.querySelector('[data-docent-host]') as HTMLElement | null
 const shadow = () => host()?.shadowRoot as ShadowRoot
 
+const restores: Array<() => void> = []
+
+/**
+ * jsdom measures everything as zero, which leaves no space between the target
+ * and the popover. Give both real sizes so layout code has something to work with.
+ */
+function stubLayout(target: HTMLElement): void {
+  target.getBoundingClientRect = () =>
+    ({
+      x: 20,
+      y: 240,
+      width: 140,
+      height: 44,
+      top: 240,
+      left: 20,
+      right: 160,
+      bottom: 284,
+    }) as DOMRect
+  const define = (obj: object, key: string, value: number) => {
+    const previous = Object.getOwnPropertyDescriptor(obj, key)
+    Object.defineProperty(obj, key, { value, configurable: true })
+    restores.push(() => {
+      if (previous) Object.defineProperty(obj, key, previous)
+      else delete (obj as Record<string, unknown>)[key]
+    })
+  }
+  define(HTMLElement.prototype, 'offsetWidth', 320)
+  define(HTMLElement.prototype, 'offsetHeight', 180)
+  define(document.documentElement, 'clientWidth', 1024)
+  define(document.documentElement, 'clientHeight', 768)
+}
+
 afterEach(() => {
   document.body.innerHTML = ''
+  for (const restore of restores.splice(0)) restore()
 })
 
 describe('DomRenderer', () => {
@@ -90,7 +123,7 @@ describe('DomRenderer', () => {
 
   it('draws a connector for connector styles and clears it otherwise', async () => {
     document.body.innerHTML = '<button id="target">go</button>'
-    // jsdom reports a 0px viewport, which would switch to the mobile sheet (no connector).
+    stubLayout(document.getElementById('target') as HTMLElement)
     const r = new DomRenderer({ arrow: 'loop', sheetBreakpoint: 0 })
     r.show(ctx())
     // The connector code is a lazy chunk; it draws once the import resolves.
@@ -106,6 +139,19 @@ describe('DomRenderer', () => {
     expect(svg.classList.contains('animate')).toBe(false)
     r.show({ ...ctx(), step: { ...ctx().step, arrow: 'caret' } })
     expect(svg.childElementCount).toBe(0)
+    r.hide()
+  })
+
+  it('keeps room for a connector even when the app sets a small gap', async () => {
+    document.body.innerHTML = '<button id="target">go</button>'
+    stubLayout(document.getElementById('target') as HTMLElement)
+    // `gap` is written with the default caret in mind; a drawn arrow needs more.
+    const r = new DomRenderer({ arrow: 'sketch', gap: 14, sheetBreakpoint: 0 })
+    r.show(ctx())
+    await vi.waitFor(() => {
+      if (!shadow().querySelector('svg.connector path.stroke')) throw new Error('not drawn')
+    })
+    expect(host()?.hasAttribute('data-caret')).toBe(false)
     r.hide()
   })
 

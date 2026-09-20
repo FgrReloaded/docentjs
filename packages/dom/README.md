@@ -1,6 +1,6 @@
 # @docentjs/dom
 
-Web renderer for [Docent](https://github.com/FgrReloaded/docentjs), a guided product tour library. Overlay with a rounded spotlight, custom positioning, an accessible popover in a Shadow Root, keyboard and focus handling, a mobile bottom sheet, and a customization layer with theme tokens, slots, templates and headless mode. About 13 kB compressed including the core.
+Web renderer for [Docent](https://github.com/FgrReloaded/docentjs), a guided product tour library. Overlay with a rounded spotlight, custom positioning, an accessible popover in a Shadow Root, keyboard and focus handling, a card that docks on small screens, and a customization layer with theme tokens, slots, templates and headless mode. About 13 kB compressed including the core.
 
 ```sh
 pnpm add @docentjs/dom

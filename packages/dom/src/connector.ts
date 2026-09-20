@@ -25,7 +25,9 @@ export interface ConnectorShape {
   dot?: Point
 }
 
+import type { Side } from '@docentjs/core'
 import type { ConnectorStyle } from './arrows'
+import type { Rect } from './position'
 
 export { arrowGap, CONNECTOR_STYLES, type ConnectorStyle, isConnector } from './arrows'
 
@@ -79,6 +81,123 @@ function rounded(points: Point[], radius: number): string {
     d += `L${pt({ x: p.x + a.x * c, y: p.y + a.y * c })}Q${pt(p)} ${pt({ x: p.x + b.x * c, y: p.y + b.y * c })}`
   }
   return `${d}L${pt(points[points.length - 1] as Point)}`
+}
+
+/** How far outside the target the arrowhead stops. */
+const TIP = 6
+/** The line leaves a little clear of the card, so it reads as drawn onto the page. */
+const STANDOFF = 5
+/** Keeps the popover end away from the card's corners. */
+const CORNER = 16
+/** Keeps the target end away from the cutout's corners. */
+const EDGE = 12
+/** Below this the two are too close to run a line between them. */
+const MIN_GAP = 16
+/** A line routed around the card needs at least this much clear edge to land on. */
+const MIN_CLEAR = 28
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
+}
+
+export interface EndpointInput {
+  /** Which side of the target the popover ended up on. */
+  side: Side
+  /** The popover, in viewport coordinates. */
+  popover: Rect
+  /** The spotlight cutout, clipped to the visible area. */
+  target: Rect
+}
+
+export interface Endpoints {
+  from: Point
+  to: Point
+  /** Which way curves bow, as `connectorShape` takes it. */
+  bend: 1 | -1
+}
+
+/**
+ * Where a connector starts and ends.
+ *
+ * It lands on the part of the target's near edge that faces the popover, never
+ * on the target's centre: aiming at the centre of a sidebar or a full-width
+ * banner drags the line down or across the whole element, far from the popover
+ * it is supposed to connect. A deliberate lean along that edge keeps the line
+ * from pointing dead-on, which reads as drawn rather than mechanical.
+ *
+ * A target too big to sit beside leaves the popover on top of it, with no band
+ * to draw in. The line then leaves the card sideways and lands on the stretch of
+ * the same edge the card does not cover.
+ *
+ * Returns `null` only when the card covers the target with nothing to point at.
+ */
+export function connectorEndpoints({ side, popover, target }: EndpointInput): Endpoints | null {
+  const horizontal = side === 'left' || side === 'right'
+  /** Which way the target lies from the popover, along the main axis. */
+  const toward = side === 'right' || side === 'bottom' ? -1 : 1
+  const at = (main: number, across: number): Point =>
+    horizontal ? { x: main, y: across } : { x: across, y: main }
+
+  const mainStart = horizontal ? popover.x : popover.y
+  const mainSize = horizontal ? popover.width : popover.height
+  const targetMain = horizontal ? target.x : target.y
+  const targetMainSize = horizontal ? target.width : target.height
+  /** The popover edge facing the target, and the target edge facing back. */
+  const face = toward > 0 ? mainStart + mainSize : mainStart
+  const edge = toward > 0 ? targetMain : targetMain + targetMainSize
+  const gap = (edge - face) * toward
+  const tip = edge - TIP * toward
+
+  // The rest is the cross axis: y beside the target, x above or below it.
+  const pStart = horizontal ? popover.y : popover.x
+  const pSize = horizontal ? popover.height : popover.width
+  const tStart = horizontal ? target.y : target.x
+  const tSize = horizontal ? target.height : target.width
+  const inset = Math.min(EDGE, tSize / 2)
+  const lo = tStart + inset
+  const hi = tStart + tSize - inset
+
+  let from: Point
+  let to: Point
+  /** Which way along the target's edge the line reaches. */
+  let dir: 1 | -1
+  /** Whether the line runs across the gap or around the card. */
+  let between: boolean
+
+  if (gap >= MIN_GAP) {
+    between = true
+    // The point on the target's edge the popover already sits across from.
+    const facing = clamp(pStart + pSize / 2, lo, hi)
+    // Lean along that edge, toward whichever end of the target has more room, so
+    // the line arrives at an angle. Proportional to the gap, so the angle holds.
+    const lean = clamp(gap * 0.5, 20, 52)
+    dir = hi - facing >= facing - lo ? 1 : -1
+    const land = clamp(facing + dir * lean, lo, hi)
+    const corner = Math.min(CORNER, pSize / 2)
+    const leave = clamp(land - dir * lean, pStart + corner, pStart + pSize - corner)
+    from = at(face + STANDOFF * toward, leave)
+    to = at(tip, land)
+  } else {
+    between = false
+    // The card overlaps the target. Reach past it, to whichever side of the card
+    // leaves more of the target's edge uncovered.
+    const before = pStart - tStart
+    const after = tStart + tSize - (pStart + pSize)
+    dir = after >= before ? 1 : -1
+    const clear = dir > 0 ? after : before
+    if (clear < MIN_CLEAR) return null
+    const lean = clamp(clear * 0.5, 20, 52)
+    const leave = dir > 0 ? pStart + pSize : pStart
+    from = at(face - CORNER * toward, leave + STANDOFF * dir)
+    to = at(tip, clamp(leave + lean * dir, lo, hi))
+  }
+
+  // A line across the gap bows away from the target's bulk, so it arcs over open
+  // space; one routed around the card bows away from the card instead.
+  const u = unit(from, to)
+  const normal = horizontal ? u.x : -u.y
+  const outward = between ? -dir : dir
+  return { from, to, bend: normal * outward > 0 ? 1 : -1 }
 }
 
 /**

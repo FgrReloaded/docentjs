@@ -32,8 +32,8 @@ The web renderer, plus browser-ready versions of the engine's entry points.
 | `headless` | [your own popover](/customize/headless/) |
 | `css` | extra CSS inside the shadow root |
 | `labels` | button and progress wording |
-| `gap` | space between the popover and the target, in px |
-| `sheetBreakpoint` | the width below which the popover becomes a bottom sheet; `0` turns it off |
+| `gap` | space between the popover and the target, in px. Drawn arrows use it as a minimum and take more room if their style needs it |
+| `sheetBreakpoint` | the width below which the popover docks near the bottom as a card; `0` keeps it floating |
 | `avoidOcclusion` | move the target out from under sticky headers (default `true`) |
 | `document` | render into another document, such as an iframe |
 

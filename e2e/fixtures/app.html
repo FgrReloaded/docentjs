@@ -126,6 +126,18 @@
           { id: 'done', title: 'Done', body: 'Bye' },
         ],
       }),
+      wordy: defineTour({
+        id: 'wordy',
+        steps: [
+          {
+            id: 'wordy',
+            target: { name: 'save' },
+            title: 'A step with plenty to say',
+            body: 'One two three four five six seven eight nine ten. '.repeat(14),
+            placement: 'bottom',
+          },
+        ],
+      }),
       modes: defineTour({
         id: 'modes',
         steps: [

@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- Design review page for the default popover. Serve with `node e2e/server.mjs`, open
      /e2e/fixtures/showcase.html?step=new (params: step, font=serif, theme=dark, arrow, shape,
-     ring, overlay). Not used by tests. -->
+     ring, overlay, gap, big=1 to blow the revenue panel up past the room beside it). -->
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -50,6 +50,7 @@
     const p = new URLSearchParams(location.search)
     if (p.get('font') === 'serif') document.body.classList.add('serif')
     if (p.get('theme') === 'dark') document.body.classList.add('dark')
+    if (p.get('big')) document.querySelector('[data-docent="revenue"]').style.cssText = 'grid-column: 1 / -1; min-height: 520px'
     const tour = defineTour({
       id: 'showcase-' + Math.random(),
       options: { showProgress: true },
@@ -64,6 +65,7 @@
     const renderer = {}
     if (p.get('theme') === 'dark') renderer.theme = themes.dark
     if (p.get('arrow')) renderer.arrow = p.get('arrow')
+    if (p.get('gap')) renderer.gap = Number(p.get('gap'))
     if (p.get('shape') || p.get('ring')) renderer.spotlight = { ...(p.get('shape') ? { shape: p.get('shape') } : {}), ...(p.get('ring') ? { ring: p.get('ring') } : {}) }
     if (p.get('overlay')) renderer.overlay = { style: p.get('overlay') }
     const opts = { renderer }

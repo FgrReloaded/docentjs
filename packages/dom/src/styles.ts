@@ -126,6 +126,8 @@ export const STYLES = `
 }
 
 :host(:not([data-arrow="caret"])) .arrow { display: none; }
+/* A connector with no room to be drawn falls back to the caret. */
+:host([data-caret]) .arrow { display: block; }
 
 /* Scroll-driven updates follow the target instantly. */
 :host([data-tracking]) .overlay,
@@ -142,6 +144,7 @@ export const STYLES = `
   flex-direction: column;
   width: var(--docent-width);
   max-width: calc(100vw - 32px);
+  max-height: var(--docent-max-h, none);
   padding: 20px 20px 16px;
   background: var(--docent-bg);
   border-radius: var(--docent-radius);
@@ -207,7 +210,7 @@ export const STYLES = `
 
 /* ------------------------------------------------------------------ content */
 
-.header { display: flex; align-items: flex-start; gap: 12px; }
+.header { flex: none; display: flex; align-items: flex-start; gap: 12px; }
 .title {
   flex: 1;
   min-width: 0;
@@ -237,7 +240,23 @@ export const STYLES = `
 .close svg { width: 14px; height: 14px; }
 .close:hover { background: var(--_soft); color: var(--docent-fg); }
 
-.body { margin-top: 6px; color: var(--_body); text-wrap: pretty; }
+/* While more text remains below, the last line fades instead of being cut. */
+.popover.scrolls .body {
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent);
+}
+
+/* Grows to fill the card, and scrolls when the screen is too short for it. */
+.body {
+  flex: 0 1 auto;
+  min-height: 0;
+  margin-top: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--_line) transparent;
+  color: var(--_body);
+  text-wrap: pretty;
+}
 .body p { margin: 0; }
 .body p + p { margin-top: 8px; }
 .body strong { font-weight: 600; color: var(--docent-fg); }
@@ -259,10 +278,12 @@ export const STYLES = `
   color: var(--docent-fg);
 }
 
-.media { margin-top: 14px; }
+.media { flex: none; margin-top: 14px; min-height: 0; }
 .media img, .media video {
   display: block;
   width: 100%;
+  max-height: min(40vh, 280px);
+  object-fit: cover;
   border-radius: 8px;
   box-shadow: 0 0 0 1px var(--_line);
 }
@@ -270,6 +291,7 @@ export const STYLES = `
 /* ------------------------------------------------------------------- footer */
 
 .footer {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -342,15 +364,28 @@ export const STYLES = `
   outline-offset: 2px;
 }
 
-/* ------------------------------------------------------------ mobile sheet */
+/* --------------------------------------------------- small screens: docked */
 
+/*
+ * Too little room to sit beside the target: the popover docks near the bottom
+ * as a card with air around it, rather than a drawer stuck to the edge.
+ */
 .popover.sheet {
   max-width: none;
-  padding: 20px 20px max(16px, env(safe-area-inset-bottom));
-  border-radius: var(--docent-radius) var(--docent-radius) 0 0;
+  border-radius: var(--docent-radius);
   box-shadow:
     0 0 0 1px var(--_line),
-    0 -12px 40px -12px oklch(23% 0.02 285 / 0.28);
+    0 2px 6px -2px oklch(23% 0.02 285 / 0.12),
+    0 -14px 44px -16px oklch(23% 0.02 285 / 0.34);
+}
+
+/* Tighter type and spacing where the screen is short or narrow. */
+@media (max-height: 600px), (max-width: 420px) {
+  .popover { padding: 16px 16px 14px; }
+  .title { font-size: 16.5px; }
+  .footer { margin-top: 14px; }
+  .media { margin-top: 10px; }
+  .media img, .media video { max-height: min(28vh, 200px); }
 }
 @media (pointer: coarse) {
   :host { font-size: 15px; }

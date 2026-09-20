@@ -83,6 +83,14 @@ test.describe('devtools', () => {
       ).docent.getTours(),
     )
     expect(tours.find((t) => t.id === 'm-welcome')?.steps[0]?.target).toEqual({ name: 'save' })
+
+    // Picking an arrow re-renders the running step with it.
+    const arrow = panel(page).locator('.field', { hasText: 'Arrow' }).last().locator('select')
+    await arrow.selectOption('curve')
+    await expect(page.locator('[data-docent-host]')).toHaveAttribute('data-arrow', 'curve')
+    await expect(
+      page.locator('[data-docent-host] svg.connector path.stroke').first(),
+    ).toBeAttached()
   })
 
   test('audit reports a target hidden under a fixed panel', async ({ page }) => {
