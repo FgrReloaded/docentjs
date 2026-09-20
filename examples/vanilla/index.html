@@ -3,8 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" href="data:," />
-  <title>Docent — vanilla example</title>
+  <link rel="icon" href="data:," />
+  <title>Nocturne — Overnight playout</title>
+  <meta name="description" content="Docent vanilla example: a radio playout desk driven by the built-in DOM renderer, no framework." />
+  <meta name="color-scheme" content="dark" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500&family=Hanken+Grotesk:wght@300;400;500;600;800&display=swap"
+  />
   <script type="importmap">
     {
       "imports": {
@@ -15,109 +23,954 @@
     }
   </script>
   <style>
+    /*
+     * Nocturne — the desk a presenter drives between two and six in the
+     * morning. Dark because the studio is, cool because the warmth in the
+     * room should come from the one thing that is live. Levels, clocks and
+     * durations are monospaced; everything else is not.
+     */
+
+    :root {
+      color-scheme: dark;
+
+      --night: oklch(14.5% 0.008 265);
+      --surface: oklch(18.5% 0.011 265);
+      --raised: oklch(23% 0.013 265);
+      --sunk: oklch(16.5% 0.01 265);
+      --line: oklch(29% 0.013 265);
+      --line-soft: oklch(24% 0.011 265);
+
+      --bone: oklch(95% 0.004 265);
+      --bone-2: oklch(76% 0.008 265);
+      --bone-3: oklch(59% 0.01 265);
+
+      --clay: oklch(68% 0.13 48);
+      --clay-dim: oklch(30% 0.065 48);
+      --sage: oklch(74% 0.1 162);
+      --rose: oklch(66% 0.15 14);
+
+      --face: 'Hanken Grotesk', ui-sans-serif, -apple-system, 'Segoe UI', sans-serif;
+      --mono: 'Azeret Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+      --t-micro: 0.6875rem;
+      --t-small: 0.8125rem;
+      --t-body: 0.9375rem;
+      --t-lead: 1.0625rem;
+      --t-title: 1.375rem;
+      --t-display: 2.25rem;
+
+      --space-2xs: 4px;
+      --space-xs: 8px;
+      --space-sm: 12px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
     * { box-sizing: border-box; }
-    body { margin: 0; font: 15px/1.5 system-ui, sans-serif; color: #1f2937; background: #f3f4f6; }
-    header { position: sticky; top: 0; display: flex; align-items: center; gap: 16px; padding: 12px 24px; background: #111827; color: #fff; z-index: 10; }
-    header .brand { font-weight: 700; }
-    header nav a { color: #cbd5e1; margin-right: 12px; text-decoration: none; }
-    .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 200vh; }
-    aside { background: #fff; border-right: 1px solid #e5e7eb; padding: 16px; }
-    aside a { display: block; padding: 8px 10px; border-radius: 6px; color: #374151; text-decoration: none; }
-    aside a.active { background: #eef2ff; color: #3730a3; }
-    main { padding: 24px; }
-    .toolbar { display: flex; gap: 8px; margin-bottom: 16px; }
-    button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid #d1d5db; background: #fff; cursor: pointer; }
-    button.primary { background: #2563eb; color: #fff; border-color: #2563eb; }
-    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
-    .far { margin-top: 90vh; }
-    .dots { display: flex; gap: 5px; align-items: center; }
-    .dots i { width: 7px; height: 7px; border-radius: 50%; background: #d1d5db; }
-    .dots i.on { background: #7c3aed; }
-    input { font: inherit; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 8px; width: 260px; }
+
+    body {
+      margin: 0;
+      background: var(--night);
+      color: var(--bone);
+      font-family: var(--face);
+      font-size: var(--t-body);
+      font-weight: 400;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3 { margin: 0; font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; }
+    p, ul { margin: 0; }
+    ul { padding: 0; list-style: none; }
+    button, input { font: inherit; color: inherit; }
+    :focus-visible { outline: 2px solid var(--clay); outline-offset: 2px; border-radius: 3px; }
+    ::selection { background: var(--clay-dim); }
+
+    .visually-hidden {
+      position: absolute; width: 1px; height: 1px; margin: -1px;
+      overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+    }
+
+    /* ------------------------------------------------------------ primitives */
+
+    .label {
+      font-family: var(--mono);
+      font-size: var(--t-micro);
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--bone-3);
+    }
+
+    .mono { font-family: var(--mono); font-size: var(--t-micro); letter-spacing: 0.02em; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      height: 34px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: var(--raised);
+      font-size: var(--t-small);
+      font-weight: 500;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background-color 120ms var(--ease-out), border-color 120ms var(--ease-out);
+    }
+    .btn:hover { background: oklch(28% 0.015 265); border-color: oklch(36% 0.016 265); }
+    .btn--bone { border-color: var(--bone); background: var(--bone); color: var(--night); font-weight: 600; }
+    .btn--bone:hover { background: oklch(88% 0.006 265); border-color: oklch(88% 0.006 265); }
+    .btn--quiet { border-color: transparent; background: transparent; color: var(--bone-2); }
+    .btn--quiet:hover { background: var(--raised); border-color: var(--line); color: var(--bone); }
+    .btn--small { height: 28px; padding: 0 10px; font-size: var(--t-micro); }
+
+    /* ------------------------------------------------------------------- bar */
+
+    .bar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      height: 56px;
+      padding: 0 var(--space-lg);
+      border-bottom: 1px solid var(--line-soft);
+      background: var(--surface);
+    }
+
+    .bar__brand { display: flex; align-items: baseline; gap: var(--space-xs); }
+    .bar__name { font-size: var(--t-lead); font-weight: 800; letter-spacing: -0.03em; }
+    .bar__station { font-family: var(--mono); font-size: var(--t-micro); color: var(--bone-3); }
+
+    .onair {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 10px 5px 12px;
+      border: 1px solid var(--clay-dim);
+      border-radius: 999px;
+      background: oklch(22% 0.045 48);
+      font-family: var(--mono);
+      font-size: var(--t-micro);
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      color: var(--clay);
+    }
+
+    /* Six bars, each on its own delay: a level meter, not decoration. */
+    .levels { display: flex; align-items: flex-end; gap: 2px; height: 14px; }
+    .levels i {
+      width: 2px;
+      border-radius: 1px;
+      background: var(--clay);
+      animation: level 900ms var(--ease-out) infinite alternate;
+    }
+    .levels i:nth-child(1) { height: 40%; animation-delay: 0ms; }
+    .levels i:nth-child(2) { height: 75%; animation-delay: 120ms; }
+    .levels i:nth-child(3) { height: 55%; animation-delay: 60ms; }
+    .levels i:nth-child(4) { height: 95%; animation-delay: 200ms; }
+    .levels i:nth-child(5) { height: 60%; animation-delay: 140ms; }
+    .levels i:nth-child(6) { height: 35%; animation-delay: 80ms; }
+    @keyframes level { from { transform: scaleY(0.45); } to { transform: scaleY(1); } }
+
+    .bar__clock { margin-left: auto; font-family: var(--mono); font-size: var(--t-small); color: var(--bone-2); }
+    .bar__studio {
+      display: flex; align-items: center; gap: var(--space-xs);
+      padding-left: var(--space-md); border-left: 1px solid var(--line-soft);
+      font-size: var(--t-small); color: var(--bone-2);
+    }
+    .bar__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--sage); }
+
+    /* ---------------------------------------------------------------- layout */
+
+    .deck {
+      display: grid;
+      grid-template-columns: 300px minmax(0, 1fr) 280px;
+      align-items: stretch;
+      min-height: calc(100dvh - 56px);
+    }
+
+    .pane { display: flex; flex-direction: column; gap: var(--space-md); padding: var(--space-md); }
+    .pane--rundown { border-right: 1px solid var(--line-soft); background: var(--surface); }
+    .pane--library { border-left: 1px solid var(--line-soft); background: var(--surface); }
+    .pane--stage { gap: var(--space-lg); padding: var(--space-lg); }
+
+    .pane__head { display: flex; align-items: center; gap: var(--space-xs); }
+    .pane__head .label { margin-right: auto; }
+
+    /* --------------------------------------------------------------- rundown */
+
+    .chips { display: flex; gap: var(--space-2xs); }
+    .chip {
+      height: 24px; padding: 0 9px;
+      border: 1px solid var(--line-soft); border-radius: 999px; background: transparent;
+      font-family: var(--mono); font-size: var(--t-micro); letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--bone-3); cursor: pointer;
+    }
+    .chip[aria-pressed="true"] { border-color: var(--clay-dim); background: var(--clay-dim); color: oklch(92% 0.06 48); }
+
+    .rundown { display: flex; flex-direction: column; gap: 2px; }
+    .cue {
+      display: grid;
+      grid-template-columns: 44px minmax(0, 1fr) auto;
+      gap: var(--space-xs);
+      align-items: baseline;
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+      transition: background-color 120ms var(--ease-out);
+    }
+    .cue:hover { background: var(--raised); }
+    .cue[aria-current="true"] { border-color: var(--clay-dim); background: oklch(21% 0.03 48); }
+    .cue__at { font-family: var(--mono); font-size: var(--t-micro); color: var(--bone-3); }
+    .cue__title { font-size: var(--t-small); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cue__kind { font-family: var(--mono); font-size: var(--t-micro); color: var(--bone-3); }
+    .cue[data-state="played"] .cue__title { color: var(--bone-3); font-weight: 400; }
+    .cue[data-state="live"] .cue__title { color: var(--clay); font-weight: 600; }
+    .cue__meta { grid-column: 2 / -1; font-family: var(--mono); font-size: var(--t-micro); color: var(--bone-3); }
+
+    .pane__foot { margin-top: auto; padding-top: var(--space-sm); border-top: 1px solid var(--line-soft); }
+
+    /* ----------------------------------------------------------------- stage */
+
+    .now { border: 1px solid var(--line-soft); border-radius: 12px; background: var(--surface); }
+    .now__head { display: flex; align-items: center; gap: var(--space-xs); padding: 10px var(--space-md); border-bottom: 1px solid var(--line-soft); }
+    .now__head .label { margin-right: auto; }
+    .now__body { padding: var(--space-md) var(--space-md) var(--space-sm); }
+    .now__title { font-size: var(--t-display); letter-spacing: -0.035em; text-wrap: balance; }
+    .now__artist { margin-top: 4px; font-size: var(--t-lead); color: var(--bone-2); }
+    .now__release { margin-top: 6px; font-family: var(--mono); font-size: var(--t-micro); color: var(--bone-3); }
+
+    .wave { display: flex; align-items: center; gap: 2px; height: 64px; margin-top: var(--space-md); }
+    .wave i { flex: 1; border-radius: 1px; background: var(--line); }
+    .wave i[data-played] { background: var(--bone-2); }
+    .wave i[data-head] { background: var(--clay); }
+
+    .times { display: flex; justify-content: space-between; margin-top: var(--space-xs); font-family: var(--mono); font-size: var(--t-micro); color: var(--bone-3); }
+    .times b { color: var(--bone); font-weight: 500; }
+
+    .now__foot { display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-sm) var(--space-md); border-top: 1px solid var(--line-soft); }
+    .now__foot .label { margin-right: auto; }
+
+    .next { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1px; border: 1px solid var(--line-soft); border-radius: 12px; background: var(--line-soft); overflow: hidden; }
+    .next__item { padding: var(--space-sm) var(--space-md); background: var(--surface); }
+    .next__item b { display: block; margin-top: 4px; font-size: var(--t-small); font-weight: 500; }
+    .next__item span { font-family: var(--mono); font-size: var(--t-micro); color: var(--bone-3); }
+
+    .log { border: 1px solid var(--line-soft); border-radius: 12px; background: var(--surface); }
+    .log__head { display: flex; align-items: center; gap: var(--space-xs); padding: 10px var(--space-md); border-bottom: 1px solid var(--line-soft); }
+    .log__head .label { margin-right: auto; }
+    .log__list { padding: var(--space-xs) var(--space-md) var(--space-md); }
+    .log__list li { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: var(--space-sm); padding: 7px 0; border-bottom: 1px solid var(--line-soft); font-size: var(--t-small); color: var(--bone-2); }
+    .log__list li:last-child { border-bottom: 0; }
+    .log__list time { font-family: var(--mono); font-size: var(--t-micro); color: var(--bone-3); }
+
+    /* --------------------------------------------------------------- library */
+
+    .search { display: flex; align-items: center; gap: var(--space-xs); height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--sunk); color: var(--bone-3); }
+    .search:focus-within { border-color: var(--clay-dim); }
+    .search input { width: 100%; border: 0; background: none; font-size: var(--t-small); outline: none; }
+    .search input::placeholder { color: var(--bone-3); }
+
+    .results { display: flex; flex-direction: column; }
+    .results li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-xs); padding: 9px 0; border-bottom: 1px solid var(--line-soft); }
+    .results li:last-child { border-bottom: 0; }
+    .results__title { font-size: var(--t-small); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .results__artist { grid-column: 1; font-family: var(--mono); font-size: var(--t-micro); color: var(--bone-3); }
+    .results__len { grid-row: span 2; align-self: center; font-family: var(--mono); font-size: var(--t-micro); color: var(--bone-3); }
+    .results__empty { padding: var(--space-lg) 0; font-size: var(--t-small); color: var(--bone-3); }
+
+    .carts { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-xs); }
+    .cart {
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 10px; border: 1px solid var(--line); border-radius: 7px;
+      background: var(--sunk); text-align: left; cursor: pointer;
+      transition: border-color 120ms var(--ease-out), background-color 120ms var(--ease-out);
+    }
+    .cart:hover { border-color: var(--clay-dim); background: oklch(20% 0.028 48); }
+    .cart b { font-size: var(--t-small); font-weight: 500; }
+    .cart span { font-family: var(--mono); font-size: var(--t-micro); color: var(--bone-3); }
+
+    /* ----------------------------------------------------------------- toast */
+
+    .toast {
+      position: fixed; left: 50%; bottom: var(--space-lg); z-index: 60;
+      display: flex; align-items: center; gap: var(--space-xs);
+      padding: 10px var(--space-md);
+      border: 1px solid var(--line); border-radius: 999px;
+      background: var(--raised); font-size: var(--t-small);
+      box-shadow: 0 14px 36px -16px oklch(8% 0.01 265 / 0.9);
+      transform: translateX(-50%);
+      animation: toast-in 200ms var(--ease-out);
+    }
+    @keyframes toast-in { from { transform: translate(-50%, 8px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+
+    /* --------------------------------------- slotted popover content */
+
+    .tp-title { display: flex; flex-direction: column; gap: 4px; }
+    .tp-kicker { font-family: var(--mono); font-size: var(--t-micro); font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--clay); }
+    .tp-heading { margin: 0; font-size: 1.1875rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; color: var(--bone); text-wrap: balance; }
+    .tp-progress { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .tp-count { font-family: var(--mono); font-size: var(--t-micro); color: var(--bone-3); white-space: nowrap; }
+    .tp-ticks { display: flex; gap: 3px; flex: 1; }
+    .tp-ticks i { height: 3px; flex: 1; border-radius: 2px; background: oklch(36% 0.014 265); }
+    .tp-ticks i[data-done] { background: var(--clay); }
+
+    /* --------------------------------------- custom popover (headless) */
+
+    .handover { width: 330px; max-width: calc(100vw - 32px); border: 1px solid var(--line); border-radius: 10px; background: var(--raised); box-shadow: 0 26px 60px -26px oklch(6% 0.01 265 / 0.95); overflow: hidden; }
+    .handover__head { display: flex; align-items: center; gap: var(--space-xs); padding: 8px var(--space-sm); border-bottom: 1px solid var(--line-soft); background: var(--sunk); }
+    .handover__head .label { margin-right: auto; }
+    .handover__body { padding: var(--space-sm) var(--space-md) var(--space-md); }
+    .handover__body h3 { font-size: var(--t-lead); }
+    .handover__body p { margin-top: 6px; font-size: var(--t-small); color: var(--bone-2); text-wrap: pretty; }
+    .handover__foot { display: flex; align-items: center; gap: var(--space-xs); padding: 0 var(--space-md) var(--space-md); }
+    .handover__foot .btn:last-child { margin-left: auto; }
+
+    /* ------------------------------------------------------------ responsive */
+
+    @media (max-width: 1160px) {
+      .deck { grid-template-columns: 280px minmax(0, 1fr); }
+      .pane--library { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line-soft); }
+      .carts { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+    }
+
+    @media (max-width: 800px) {
+      .bar { height: auto; min-height: 56px; flex-wrap: wrap; gap: var(--space-xs); padding: var(--space-xs) var(--space-sm); }
+      .bar__clock, .bar__studio { display: none; }
+      .deck { grid-template-columns: minmax(0, 1fr); }
+      /* On a phone the deck is what matters; the rundown follows it. */
+      .pane--stage { order: -1; }
+      .pane--rundown { border-right: 0; border-top: 1px solid var(--line-soft); }
+      .pane--stage { padding: var(--space-md); }
+      .now__title { font-size: 1.75rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .toast { animation: none; }
+      .levels i { animation: none; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <span class="brand">Acme</span>
-    <nav><a href="#">Home</a><a href="#">Reports</a><a href="#">Settings</a></nav>
-    <span style="flex:1"></span>
-    <button id="start" class="primary">Start tour</button>
+  <header class="bar">
+    <span class="bar__brand">
+      <span class="bar__name">Nocturne</span>
+      <span class="bar__station">Meridian FM · 104.6</span>
+    </span>
+
+    <span class="onair" data-docent="onair">
+      On air
+      <span class="levels" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+    </span>
+
+    <span class="bar__clock" id="clock">02:47:13</span>
+
+    <button type="button" class="btn btn--quiet btn--small" id="guide-studio">Studio tour</button>
+    <button type="button" class="btn btn--quiet btn--small" id="guide-handover">Handover check</button>
+
+    <span class="bar__studio">
+      <span class="bar__dot" aria-hidden="true"></span>
+      Studio A · Ilse Marchetti
+    </span>
   </header>
-  <div class="layout">
-    <aside data-docent="sidebar">
-      <a class="active" href="#">Dashboard</a>
-      <a href="#">Projects</a>
-      <a href="#">Invoices</a>
-      <a href="#">Team</a>
+
+  <main class="deck">
+    <section class="pane pane--rundown" aria-label="Rundown">
+      <div class="pane__head">
+        <p class="label">Rundown</p>
+        <div class="chips" role="group" aria-label="Filter">
+          <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
+          <button type="button" class="chip" data-filter="queued" aria-pressed="false">Queued</button>
+        </div>
+      </div>
+
+      <div class="rundown" id="rundown" data-docent="rundown"></div>
+
+      <p class="pane__foot label" id="rundown-foot">02:00–06:00 · automation takes back at 06:00</p>
+    </section>
+
+    <section class="pane pane--stage" aria-label="Playout">
+      <div class="now" data-docent="now">
+        <div class="now__head">
+          <p class="label">Now playing</p>
+          <span class="mono" style="color: var(--bone-3)" id="now-source">Deck A · 320 kbps</span>
+        </div>
+
+        <div class="now__body">
+          <h1 class="now__title" id="now-title">Slow Water</h1>
+          <p class="now__artist" id="now-artist">Hania Vess</p>
+          <p class="now__release" id="now-release">Tideline · 2024 · PPL 7741-22</p>
+
+          <div class="wave" id="wave" data-docent="wave" role="img"
+               aria-label="Waveform with the playhead at two minutes fourteen of four minutes forty-one"></div>
+
+          <p class="times">
+            <span><b id="elapsed">02:14</b> elapsed</span>
+            <span id="remaining">−02:27 to the next cue</span>
+          </p>
+        </div>
+
+        <div class="now__foot">
+          <p class="label">Fades at 02:49:40</p>
+          <button type="button" class="btn btn--small" id="skip">Skip</button>
+          <button type="button" class="btn btn--bone btn--small" id="dropin" data-docent="dropin">
+            Drop in live
+          </button>
+        </div>
+      </div>
+
+      <div class="next" data-docent="next">
+        <div class="next__item">
+          <span>Up next · 02:49</span>
+          <b>Station ident — overnight</b>
+          <span>0:12 · cart wall</span>
+        </div>
+        <div class="next__item">
+          <span>Then · 02:50</span>
+          <b>Interview — Dr Ama Boateng</b>
+          <span>8:40 · pre-recorded</span>
+        </div>
+        <div class="next__item">
+          <span>Then · 02:59</span>
+          <b>Traffic and travel</b>
+          <span>1:20 · live read</span>
+        </div>
+      </div>
+
+      <div class="log" data-docent="log">
+        <div class="log__head">
+          <p class="label">Compliance log</p>
+          <span class="mono" style="color: var(--bone-3)" id="log-count">4 entries</span>
+        </div>
+        <ul class="log__list" id="log-list"></ul>
+      </div>
+    </section>
+
+    <aside class="pane pane--library" aria-label="Library">
+      <div class="pane__head"><p class="label">Library</p></div>
+
+      <label class="search" for="library-search">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <circle cx="6.2" cy="6.2" r="4.2" stroke="currentColor" stroke-width="1.4" />
+          <path d="M9.4 9.4 12 12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+        </svg>
+        <span class="visually-hidden">Search the library</span>
+        <input id="library-search" data-docent="search" type="search" placeholder="Title, artist, mood" />
+      </label>
+
+      <ul class="results" id="results"></ul>
+
+      <div>
+        <div class="pane__head"><p class="label">Cart wall</p></div>
+        <div class="carts" data-docent="carts" id="carts"></div>
+      </div>
     </aside>
-    <main>
-      <div class="toolbar">
-        <button id="new-project" class="primary">New project</button>
-        <button id="import">Import</button>
-        <button id="export">Export</button>
-      </div>
-      <div class="card">
-        <h2 style="margin-top:0">Welcome back</h2>
-        <p>Nothing much here. Scroll down for the search box.</p>
-      </div>
-      <div class="card far">
-        <label>Search projects<br /><input id="search" placeholder="Type anything" /></label>
-      </div>
-    </main>
-  </div>
+  </main>
+
+  <div id="toast-host"></div>
 
   <script type="module">
-    import { createTour, defineTour } from '@docentjs/dom'
-    import { minimal } from '@docentjs/dom/themes'
+    import { createDocent, createTour, defineTour } from '@docentjs/dom'
 
-    const tour = defineTour({
-      id: 'vanilla-demo',
-      version: 1,
+    // ---------------------------------------------------------------- data
+
+    const cues = [
+      { at: '02:31', title: 'Night Ferry', kind: 'Track', by: 'Ovel', len: '3:58', state: 'played' },
+      { at: '02:35', title: 'Weather — coastal', kind: 'Live', by: 'Ilse', len: '0:50', state: 'played' },
+      { at: '02:36', title: 'Hollow Road', kind: 'Track', by: 'Marisa Tey', len: '4:22', state: 'played' },
+      { at: '02:41', title: 'Bed — low strings', kind: 'Bed', by: 'Library', len: '2:00', state: 'played' },
+      { at: '02:44', title: 'Slow Water', kind: 'Track', by: 'Hania Vess', len: '4:41', state: 'live' },
+      { at: '02:49', title: 'Station ident — overnight', kind: 'Cart', by: 'Cart wall', len: '0:12', state: 'queued' },
+      { at: '02:50', title: 'Interview — Dr Ama Boateng', kind: 'Pre-rec', by: 'Production', len: '8:40', state: 'queued' },
+      { at: '02:59', title: 'Traffic and travel', kind: 'Live', by: 'Ilse', len: '1:20', state: 'queued' },
+      { at: '03:01', title: 'Kestrel', kind: 'Track', by: 'Ourobo', len: '5:12', state: 'queued' },
+      { at: '03:06', title: 'Sponsor read — Halden', kind: 'Ad', by: 'Commercial', len: '0:30', state: 'queued' },
+    ]
+
+    const library = [
+      { title: 'Paper Lanterns', artist: 'Ourobo', len: '4:08' },
+      { title: 'Tideline', artist: 'Hania Vess', len: '5:31' },
+      { title: 'Second Signal', artist: 'Kestrel Bikes Sound Club', len: '3:44' },
+      { title: 'Long Grass', artist: 'Marisa Tey', len: '6:02' },
+      { title: 'Harbour Lights', artist: 'Ovel', len: '4:55' },
+    ]
+
+    const carts = [
+      { name: 'Ident — overnight', len: '0:12' },
+      { name: 'Sting — news bed', len: '0:06' },
+      { name: 'Travel bed', len: '0:30' },
+      { name: 'Sponsor — Halden', len: '0:30' },
+    ]
+
+    const log = [
+      { at: '02:44', text: 'Slow Water — logged for PPL reporting' },
+      { at: '02:41', text: 'Bed under live read, 2:00' },
+      { at: '02:35', text: 'Coastal weather read — script v4' },
+      { at: '02:31', text: 'Night Ferry — logged for PPL reporting' },
+    ]
+
+    /** Fixed so the waveform is the same on every load. Real audio, same idea. */
+    const WAVE = [
+      12, 18, 26, 22, 34, 44, 38, 52, 61, 48, 40, 55, 68, 74, 66, 58, 47, 39, 52, 63, 71, 80, 76,
+      64, 55, 44, 38, 46, 57, 69, 78, 86, 92, 84, 72, 63, 54, 48, 41, 36, 44, 52, 61, 58, 49, 42,
+      35, 30, 38, 46, 41, 33, 28, 24, 31, 27, 22, 18, 15, 12,
+    ]
+
+    // --------------------------------------------------------------- state
+
+    const state = {
+      filter: 'all',
+      selected: 'Slow Water',
+      query: '',
+      onAir: true,
+      played: 0.48,
+      log: log.slice(),
+      cues: cues.slice(),
+    }
+
+    const $ = (id) => document.getElementById(id)
+    const el = (tag, className, text) => {
+      const node = document.createElement(tag)
+      if (className) node.className = className
+      if (text !== undefined) node.textContent = text
+      return node
+    }
+
+    // -------------------------------------------------------------- render
+
+    function renderRundown() {
+      const host = $('rundown')
+      host.replaceChildren()
+      const visible = state.cues.filter((cue) => state.filter === 'all' || cue.state === 'queued')
+      for (const cue of visible) {
+        const item = el('button', 'cue')
+        item.type = 'button'
+        item.dataset.state = cue.state
+        item.setAttribute('aria-current', String(cue.title === state.selected))
+        item.append(
+          el('span', 'cue__at', cue.at),
+          el('span', 'cue__title', cue.title),
+          el('span', 'cue__kind', cue.kind),
+          el('span', 'cue__meta', `${cue.by} · ${cue.len}`),
+        )
+        item.addEventListener('click', () => {
+          state.selected = cue.title
+          renderRundown()
+        })
+        host.appendChild(item)
+      }
+      if (visible.length === 0) {
+        host.appendChild(el('p', 'results__empty', 'Nothing queued. Automation is next.'))
+      }
+    }
+
+    function renderWave() {
+      const host = $('wave')
+      host.replaceChildren()
+      const head = Math.round(WAVE.length * state.played)
+      WAVE.forEach((height, i) => {
+        const bar = el('i')
+        bar.style.height = `${Math.max(6, height)}%`
+        if (i < head) bar.dataset.played = ''
+        if (i === head) bar.dataset.head = ''
+        host.appendChild(bar)
+      })
+    }
+
+    function renderResults() {
+      const host = $('results')
+      host.replaceChildren()
+      const q = state.query.trim().toLowerCase()
+      const found = library.filter(
+        (track) =>
+          !q || track.title.toLowerCase().includes(q) || track.artist.toLowerCase().includes(q),
+      )
+      for (const track of found) {
+        const row = el('li')
+        row.append(
+          el('span', 'results__title', track.title),
+          el('span', 'results__len', track.len),
+          el('span', 'results__artist', track.artist),
+        )
+        host.appendChild(row)
+      }
+      if (found.length === 0) {
+        host.appendChild(
+          el('li', 'results__empty', `Nothing in the library matches “${state.query}”.`),
+        )
+      }
+    }
+
+    function renderCarts() {
+      const host = $('carts')
+      host.replaceChildren()
+      for (const cart of carts) {
+        const button = el('button', 'cart')
+        button.type = 'button'
+        button.append(el('b', '', cart.name), el('span', '', cart.len))
+        button.addEventListener('click', () => fireCart(cart))
+        host.appendChild(button)
+      }
+    }
+
+    function renderLog() {
+      const host = $('log-list')
+      host.replaceChildren()
+      for (const entry of state.log) {
+        const row = el('li')
+        const time = el('time', '', entry.at)
+        row.append(time, el('span', '', entry.text))
+        host.appendChild(row)
+      }
+      $('log-count').textContent = `${state.log.length} entries`
+    }
+
+    let toastTimer
+    function say(message) {
+      const host = $('toast-host')
+      host.replaceChildren()
+      const toast = el('output', 'toast', message)
+      host.appendChild(toast)
+      clearTimeout(toastTimer)
+      toastTimer = setTimeout(() => host.replaceChildren(), 3200)
+    }
+
+    // ------------------------------------------------------------- actions
+
+    function fireCart(cart) {
+      state.log = [{ at: '02:47', text: `${cart.name} fired from the wall` }, ...state.log]
+      renderLog()
+      say(`${cart.name} · ${cart.len}`)
+      // Fires the `event` trigger on the cart tour.
+      docent.track('cart-fired')
+    }
+
+    function dropIn() {
+      state.cues = state.cues.map((cue) =>
+        cue.title === 'Station ident — overnight' ? { ...cue, state: 'queued' } : cue,
+      )
+      state.log = [{ at: '02:47', text: 'Live drop-in — mic open over the outro' }, ...state.log]
+      state.selected = 'Slow Water'
+      renderLog()
+      renderRundown()
+      say('Mic open · fader 1 live')
+    }
+
+    // --------------------------------------------------------------- tours
+
+    /** House style: the app's own title, counter and spotting, in one template. */
+    const nocturne = {
+      theme: {
+        background: 'oklch(23% 0.013 265)',
+        foreground: 'oklch(95% 0.004 265)',
+        muted: 'oklch(74% 0.008 265)',
+        accent: 'oklch(95% 0.004 265)',
+        accentForeground: 'oklch(14.5% 0.008 265)',
+        connector: 'oklch(68% 0.13 48)',
+        ring: 'oklch(68% 0.13 48)',
+        radius: 10,
+        width: 340,
+        font: "'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif",
+        shadow: '0 26px 60px -26px oklch(6% 0.01 265 / 0.95)',
+        overlay: 'oklch(10% 0.01 265)',
+        overlayOpacity: 0.68,
+        duration: 200,
+      },
+      spotlight: { padding: 8, radius: 9, ring: 'hairline', animate: true },
+      slots: {
+        title: (ctx, doc) => {
+          const wrap = doc.createElement('div')
+          wrap.className = 'tp-title'
+          const kicker = doc.createElement('span')
+          kicker.className = 'tp-kicker'
+          kicker.textContent = ctx.tour.name ?? 'Nocturne'
+          const heading = doc.createElement('h2')
+          heading.className = 'tp-heading'
+          heading.textContent = ctx.step.title ?? ''
+          wrap.append(kicker, heading)
+          return wrap
+        },
+        progress: (ctx, doc) => {
+          const wrap = doc.createElement('div')
+          wrap.className = 'tp-progress'
+          const count = doc.createElement('span')
+          count.className = 'tp-count'
+          count.textContent = `${ctx.progress.current} / ${ctx.progress.total}`
+          const ticks = doc.createElement('span')
+          ticks.className = 'tp-ticks'
+          for (let i = 1; i <= ctx.progress.total; i++) {
+            const tick = doc.createElement('i')
+            if (i <= ctx.progress.current) tick.dataset.done = ''
+            ticks.appendChild(tick)
+          }
+          wrap.append(count, ticks)
+          return wrap
+        },
+      },
+      css: `
+        .popover { padding: 16px 16px 12px; }
+        .body { margin-top: 8px; }
+        .footer { margin-top: 16px; }
+      `,
+    }
+
+    /** A cue light: the page stays live, a pulsing ring marks the spot. */
+    const cueLight = {
+      theme: { ...nocturne.theme, width: 296 },
+      overlay: { style: 'none' },
+      spotlight: { ring: 'pulse', padding: 7, radius: 8 },
+      arrow: 'curve',
+      slots: { title: nocturne.slots.title, progress: () => null },
+      css: `.popover { padding: 14px; } .footer { margin-top: 12px; }`,
+    }
+
+    const studioTour = defineTour({
+      id: 'nocturne-studio',
+      version: 2,
+      name: 'The desk',
+      trigger: { type: 'auto', delay: 700 },
+      // `onAir` is a predicate registered on the runtime below: the tour only
+      // runs while the studio is live, which is the only time it helps.
+      conditions: [
+        { type: 'custom', name: 'onAir' },
+        { type: 'trait', key: 'role', op: 'eq', value: 'presenter' },
+      ],
       options: {
+        persist: true,
+        frequency: 'until-completed',
         showProgress: true,
-        closeOnOverlayClick: false,
-        spotlight: { padding: 8, radius: 8 },
-        theme: { accent: '#7c3aed', radius: '14px' },
-        template: 'brand',
+        template: 'nocturne',
+        labels: { next: 'Next', back: 'Back', skip: 'Later', done: 'Take the desk' },
       },
       steps: [
-        { id: 'intro', title: 'Welcome to Acme', body: 'This takes about a minute. Use **arrow keys** or the buttons.', format: 'markdown' },
-        { id: 'sidebar', target: { name: 'sidebar' }, title: 'Navigation', body: 'Everything you own lives here.', placement: 'right' },
-        { id: 'new', target: '#new-project', title: 'Create a project', body: 'Click it to continue.', placement: 'bottom-start', advance: { on: 'click' } },
-        { id: 'search', target: '#search', title: 'Find anything', body: 'Type a letter to move on.', placement: 'top', advance: { on: 'input' } },
-        { id: 'done', title: 'That is it', body: 'Replay from the header button any time.' },
+        {
+          id: 'welcome',
+          title: 'Four hours, yours',
+          body: 'Automation hands over at 02:00 and takes it back at 06:00. Everything between is this screen.',
+          arrow: 'none',
+        },
+        {
+          id: 'rundown',
+          target: { name: 'rundown' },
+          title: 'The rundown runs itself',
+          body: 'Played, live, queued. You only touch it when you want something other than what is next.',
+          placement: 'right',
+        },
+        {
+          id: 'wave',
+          target: { name: 'wave' },
+          title: 'Watch the outro, not the clock',
+          body: 'The playhead is where the fade lands. Talk over the tail, never over the vocal.',
+          placement: 'bottom',
+        },
+        {
+          id: 'dropin',
+          target: { name: 'dropin' },
+          title: 'Open the mic',
+          body: 'Drops you in live over the outro and logs it. Click it — nothing leaves the building.',
+          placement: 'top-end',
+          advance: { on: 'click' },
+          interaction: 'allow',
+          buttons: { next: false },
+        },
+        {
+          id: 'search',
+          target: { name: 'search' },
+          title: 'Pull anything from the library',
+          body: 'Cleared tracks only; rights are checked before they appear. Type a letter to carry on.',
+          placement: 'left',
+          advance: { on: 'input' },
+          interaction: 'allow',
+          buttons: { next: false },
+        },
+        {
+          id: 'log',
+          target: { name: 'log' },
+          title: 'The log writes itself',
+          body: 'Every track, bed and live read is reported. The only thing you add is a note when something goes wrong.',
+          placement: 'top',
+        },
+        {
+          id: 'done',
+          title: 'That is the desk',
+          body: 'Rundown, mic, library, log. Replay this any time from **Studio tour**.',
+          format: 'markdown',
+          arrow: 'none',
+        },
       ],
     })
 
-    const controller = createTour(tour, {
-      sink: { emit: (e) => console.log('[docent]', e.type, e.stepId ?? '') },
+    const cartTour = defineTour({
+      id: 'nocturne-carts',
+      version: 1,
+      name: 'Cart wall',
+      trigger: { type: 'event', name: 'cart-fired' },
+      options: {
+        persist: true,
+        frequency: 'once',
+        showProgress: false,
+        template: 'cue',
+        labels: { next: 'Got it', done: 'Got it' },
+      },
+      steps: [
+        {
+          id: 'logged',
+          target: { name: 'log' },
+          title: 'Carts are logged too',
+          body: 'Idents, stings and sponsor reads all land in the compliance log with the second they fired.',
+          placement: 'top',
+          interaction: 'allow',
+        },
+      ],
+    })
+
+    /** Drawn by this page rather than the library: headless mode, no framework. */
+    const handoverTour = defineTour({
+      id: 'nocturne-handover',
+      version: 1,
+      name: 'Handover',
+      options: {
+        showProgress: true,
+        spotlight: { padding: 8, radius: 9, ring: 'glow' },
+        overlay: { style: 'dim', color: 'oklch(10% 0.01 265)', opacity: 0.66 },
+      },
+      steps: [
+        {
+          id: 'onair',
+          target: { name: 'onair' },
+          title: 'Confirm the studio is still yours',
+          body: 'The light follows the desk, not the room. If it is amber somewhere else, you are not on.',
+          placement: 'bottom-start',
+        },
+        {
+          id: 'next',
+          target: { name: 'next' },
+          title: 'Leave three cues of runway',
+          body: 'The presenter after you should never arrive to a rundown with nothing queued.',
+          placement: 'bottom',
+        },
+        {
+          id: 'log',
+          target: { name: 'log' },
+          title: 'Sign the log before you go',
+          body: 'Anything unusual — a dropout, a duplicate, a late read — goes in as a note.',
+          placement: 'top',
+        },
+      ],
+    })
+
+    // Shared by the manager and by the single-tour controller below.
+    const renderer = {
+      templates: { nocturne, cue: cueLight },
+      gap: 12,
+      labels: { close: 'Dismiss' },
+    }
+
+    const sink = {
+      emit: (event) => console.debug('[docent]', event.type, event.tourId, event.stepId ?? ''),
+    }
+
+    // The manager watches triggers, checks conditions and frequency, and runs
+    // one tour at a time.
+    const docent = createDocent({
+      tours: [studioTour, cartTour],
+      renderer,
+      sink,
+      custom: { onAir: () => state.onAir },
+    })
+    docent.identify('u_31', { role: 'presenter', shift: 'overnight', station: 'meridian' })
+
+    /**
+     * The handover check is drawn by this page. Docent still owns the overlay,
+     * the spotlight, positioning, focus and keys; everything inside the
+     * container is ours.
+     */
+    const handover = createTour(handoverTour, {
+      sink,
       renderer: {
-        theme: minimal,
-        templates: {
-          brand: {
-            // Custom progress dots, rendered in the page's DOM so page CSS applies.
-            slots: {
-              progress: (ctx) => {
-                const wrap = document.createElement('div')
-                wrap.className = 'dots'
-                for (let i = 1; i <= ctx.progress.total; i++) {
-                  const dot = document.createElement('i')
-                  if (i === ctx.progress.current) dot.className = 'on'
-                  wrap.appendChild(dot)
-                }
-                return wrap
-              },
-            },
-            css: '.popover { border: 1px solid rgba(124, 58, 237, 0.35); }',
+        ...renderer,
+        theme: nocturne.theme,
+        headless: {
+          render: (ctx, container) => {
+            container.appendChild(handoverCard(ctx))
+            return () => container.replaceChildren()
           },
         },
       },
     })
-    window.docent = controller
-    document.getElementById('start').addEventListener('click', () => controller.start())
 
+    function handoverCard(ctx) {
+      const card = el('div', 'handover')
+
+      const head = el('div', 'handover__head')
+      head.append(el('p', 'label', 'Handover'))
+      head.append(el('span', 'mono', `${ctx.progress.current} / ${ctx.progress.total}`))
+      head.lastChild.style.color = 'var(--bone-3)'
+
+      const body = el('div', 'handover__body')
+      body.append(el('h3', '', ctx.step.title ?? ''))
+      if (ctx.step.body) body.append(el('p', '', ctx.step.body))
+
+      const foot = el('div', 'handover__foot')
+      const hint = el('span', 'label', 'Esc to leave')
+      foot.append(hint)
+      if (ctx.canGoBack) {
+        const back = el('button', 'btn btn--quiet btn--small', 'Back')
+        back.type = 'button'
+        back.addEventListener('click', ctx.actions.back)
+        foot.append(back)
+      }
+      const next = el('button', 'btn btn--bone btn--small', ctx.isLast ? 'Sign off' : 'Next')
+      next.type = 'button'
+      next.addEventListener('click', ctx.actions.next)
+      foot.append(next)
+
+      card.append(head, body, foot)
+      return card
+    }
+
+    // ---------------------------------------------------------------- wiring
+
+    $('guide-studio').addEventListener('click', () => docent.start(studioTour.id))
+    $('guide-handover').addEventListener('click', () => handover.start())
+    $('dropin').addEventListener('click', dropIn)
+    $('skip').addEventListener('click', () => say('Skipped to the next cue'))
+    $('library-search').addEventListener('input', (event) => {
+      state.query = event.target.value
+      renderResults()
+    })
+    for (const chip of document.querySelectorAll('.chip')) {
+      chip.addEventListener('click', () => {
+        state.filter = chip.dataset.filter
+        for (const other of document.querySelectorAll('.chip')) {
+          other.setAttribute('aria-pressed', String(other === chip))
+        }
+        renderRundown()
+      })
+    }
+
+    renderRundown()
+    renderWave()
+    renderResults()
+    renderCarts()
+    renderLog()
+
+    // Handy for the docs and for screenshots: ?start=nocturne-handover
     const params = new URLSearchParams(location.search)
-    if (params.has('start')) controller.start(params.get('start') || undefined)
+    const wanted = params.get('start')
+    if (wanted === handoverTour.id) handover.start()
+    else if (wanted) docent.start(wanted)
   </script>
 </body>
 </html>

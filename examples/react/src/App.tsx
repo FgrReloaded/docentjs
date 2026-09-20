@@ -1,66 +1,145 @@
 import { DocentDevtools } from '@docentjs/devtools/react'
-import { DocentProvider, useDocent, useTour } from '@docentjs/react'
-import { minimal } from '@docentjs/react/themes'
+import { DocentProvider, type EventSink, useDocent, useTour } from '@docentjs/react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { DraftDrawer } from './components/DraftDrawer'
+import { Figures } from './components/Figures'
+import { Ledger } from './components/Ledger'
+import { Notes } from './components/Notes'
+import { Rail } from './components/Rail'
+import { type Period, Topbar } from './components/Topbar'
+import { type Invoice, invoices } from './data'
 import { TourCard } from './TourCard'
-import { customTour, themedTour, welcomeTour } from './tours'
+import { rendererDefaults } from './tour-theme'
+import { onboardingTour, reconcileTour, releaseTour, remindersTour } from './tours'
 
-function Page() {
-  // The manager runs tours from their rules: the welcome tour starts itself on page load.
-  const docent = useDocent({ tours: [welcomeTour, themedTour] })
-  // A single tour on demand, drawn with our own React component.
-  const custom = useTour(customTour, { popover: (ctx) => <TourCard ctx={ctx} /> })
+/** Where product analytics would go. Every tour event arrives here. */
+const analytics: EventSink = {
+  emit: (event) => console.debug('[docent]', event.type, event.tourId, event.stepId ?? ''),
+}
+
+function matches(invoice: Invoice, query: string): boolean {
+  const q = query.trim().toLowerCase()
+  if (!q) return true
+  return (
+    invoice.client.toLowerCase().includes(q) ||
+    invoice.ref.includes(q) ||
+    String(invoice.amount).includes(q)
+  )
+}
+
+function Console() {
+  const [period, setPeriod] = useState<Period>('quarter')
+  const [query, setQuery] = useState('')
+  const [draftOpen, setDraftOpen] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+
+  const say = useCallback((message: string) => setToast(message), [])
+  const openDraft = useCallback(() => setDraftOpen(true), [])
+  const closeDraft = useCallback(() => setDraftOpen(false), [])
+
+  // The manager reads its options once, on mount. Hooks reach the live app
+  // through this ref instead of capturing the first render's closures.
+  const app = useRef({ openDraft, closeDraft, say })
+  app.current = { openDraft, closeDraft, say }
+
+  const docent = useDocent({
+    tours: [onboardingTour, remindersTour, releaseTour],
+    hooks: {
+      [onboardingTour.id]: {
+        steps: {
+          // The drawer normally opens because the user clicked. If they got
+          // here another way, open it so the step has something to point at.
+          'draft-total': {
+            beforeShow: (): undefined => {
+              app.current.openDraft()
+            },
+          },
+          done: {
+            beforeShow: (): undefined => {
+              app.current.closeDraft()
+            },
+          },
+        },
+        onComplete: () => app.current.say('Setup finished — replay it from Guides'),
+      },
+    },
+  })
+
+  // Month-end guide, drawn by our own React component.
+  const reconcile = useTour(reconcileTour, { popover: (ctx) => <TourCard ctx={ctx} /> })
+
+  // Traits decide who is eligible: the release note is owners-only.
+  useEffect(() => {
+    docent.identify('u_2291', { plan: 'studio', role: 'owner', invoices: 128 })
+  }, [docent])
+
+  useEffect(() => {
+    if (!toast) return
+    const timer = setTimeout(() => setToast(null), 3200)
+    return () => clearTimeout(timer)
+  }, [toast])
+
+  const rows = useMemo(() => invoices.filter((invoice) => matches(invoice, query)), [query])
+
+  const sendDraft = () => {
+    setDraftOpen(false)
+    say('Invoice #1043 sent to Two Rivers Press')
+    docent.track('invoice-sent')
+  }
+
+  const remind = (invoice: Invoice) => {
+    say(`Reminder sent to ${invoice.client}`)
+    // Fires the `event` trigger on the reminders tour.
+    docent.track('reminder-sent')
+  }
 
   return (
     <>
-      <header>
-        <span className="brand">Acme</span>
-        <span className="spacer" />
-        <button type="button" onClick={() => docent.start(welcomeTour.id)}>
-          Built-in tour
-        </button>
-        <button type="button" onClick={() => custom.start()}>
-          Custom popover
-        </button>
-        <button type="button" onClick={() => docent.start(themedTour.id)}>
-          Themed
-        </button>
-      </header>
-      <div className="layout">
-        <aside data-docent="sidebar">
-          <a href="#dashboard">Dashboard</a>
-          <a href="#projects">Projects</a>
-          <a href="#team">Team</a>
-        </aside>
-        <main>
-          <div className="toolbar">
-            <button type="button" id="new-project" className="primary">
-              New project
-            </button>
-            <button type="button" id="import">
-              Import
-            </button>
-            <button type="button" id="export">
-              Export
-            </button>
-          </div>
-          <div className="card">
-            <h2 style={{ marginTop: 0 }}>Welcome back</h2>
-            <p>
-              Manager: <b>{docent.state.active ?? 'idle'}</b> · Custom tour:{' '}
-              <b>{custom.state.status}</b>
-            </p>
-          </div>
-          <div className="card far">
-            <label>
-              Search projects
-              <br />
-              <input id="search" placeholder="Type anything" />
-            </label>
-          </div>
-        </main>
+      <div className="app">
+        <Rail
+          onSetupTour={() => void docent.start(onboardingTour.id)}
+          onReconcileTour={() => void reconcile.start()}
+          onReleaseTour={() => void docent.start(releaseTour.id)}
+        />
+        <div className="frame">
+          <Topbar
+            period={period}
+            onPeriod={setPeriod}
+            query={query}
+            onQuery={setQuery}
+            onNewInvoice={openDraft}
+          />
+          <main className="sheet">
+            <Figures />
+            <div className="columns">
+              <Ledger rows={rows} query={query} onRemind={remind} onOpen={openDraft} />
+              <Notes />
+            </div>
+          </main>
+        </div>
       </div>
-      {custom.portal}
-      {/* Development only: renders nothing and is removed from production builds. */}
+
+      {draftOpen && <DraftDrawer onClose={closeDraft} onSend={sendDraft} />}
+
+      {toast && (
+        <output className="toast">
+          <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true" fill="none">
+            <path
+              d="M3 7.4l2.6 2.6L11 4.4"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          {toast}
+        </output>
+      )}
+
+      {/* The container the month-end guide renders into. */}
+      {reconcile.portal}
+
+      {/* Development only: renders nothing and drops out of production builds. */}
       <DocentDevtools docent={docent} />
     </>
   )
@@ -68,11 +147,8 @@ function Page() {
 
 export function App() {
   return (
-    <DocentProvider
-      renderer={{ templates: { minimal: { theme: minimal } } }}
-      sink={{ emit: (e) => console.log('[docent]', e.type, e.stepId ?? '') }}
-    >
-      <Page />
+    <DocentProvider renderer={rendererDefaults} sink={analytics}>
+      <Console />
     </DocentProvider>
   )
 }
