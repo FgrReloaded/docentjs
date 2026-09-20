@@ -11,6 +11,7 @@ export { isSafeUrl, renderBody, renderMedia } from './content'
 export { type CreateTourOptions, createTour, DomTourController } from './create'
 export { type CreateDocentOptions, createDocent } from './docent'
 export { createDomEnvironment } from './environment'
+export { BUILT_IN_LOOKS, type LookName } from './looks'
 export { findOccluder, type Occluder, uncover } from './occlusion'
 export { holePath, Overlay } from './overlay'
 export {

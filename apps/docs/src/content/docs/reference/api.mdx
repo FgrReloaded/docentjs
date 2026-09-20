@@ -118,3 +118,26 @@ The tour manager. Build it with `createDocent` from the dom package, which suppl
 | --- | --- |
 | `DocentDevtools` from `/react`, `/vue`, `/svelte` | a component that mounts the panel in development and renders nothing in production |
 | `mount(docent, { open?, shortcut? })` | mounts the panel directly and returns a function that removes it |
+
+## `@docentjs/cli`
+
+```sh
+npx @docentjs/cli validate "tours/*.json"
+```
+
+| Command | What it does |
+| --- | --- |
+| `docent validate <files...>` | check tour files against the schema; exits 1 when anything is wrong |
+| `docent schema [file]` | print the tour JSON Schema, or write it to a file |
+
+Options: `--json`, `--quiet`, `--allow-unknown`.
+
+## Addresses
+
+| Address | What it is |
+| --- | --- |
+| [/schema/tour-v1.json](https://docentjs.dev/schema/tour-v1.json) | the tour format as JSON Schema |
+| [/llms.txt](https://docentjs.dev/llms.txt) | a summary for AI tools, with links |
+| [/llms-small.txt](https://docentjs.dev/llms-small.txt), [/llms-full.txt](https://docentjs.dev/llms-full.txt) | the documentation as plain text |
+
+See [Using Docent with AI](/reference/for-ai/).

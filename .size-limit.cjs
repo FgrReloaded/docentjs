@@ -26,14 +26,14 @@ module.exports = [
     path: 'packages/dom/dist/index.js',
     import: '{ createTour }',
     modifyRolldownConfig: initialLoad,
-    limit: '14.25 kB',
+    limit: '14.5 kB',
   },
   {
     name: 'createDocent (core + dom + manager)',
     path: 'packages/dom/dist/index.js',
     import: '{ createDocent }',
     modifyRolldownConfig: initialLoad,
-    limit: '16 kB',
+    limit: '16.25 kB',
   },
   {
     name: 'schema checker (development only)',

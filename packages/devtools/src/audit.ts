@@ -40,6 +40,98 @@ function isStructural(selector: string): boolean {
   return /:nth-(of-type|child)|\s>\s.*\s>\s/.test(selector)
 }
 
+/**
+ * Checks against the element as it is right now: a target that exists but
+ * cannot be seen, or sits under something else, spotlights nothing.
+ */
+function elementIssues(
+  at: { tourId: string; stepId: string },
+  step: Step,
+  element: Element,
+  out: Issue[],
+): void {
+  // Some environments (jsdom, printing) report no layout at all; there is
+  // nothing to measure there, and every element would look invisible.
+  if (element.ownerDocument.body.getBoundingClientRect().width === 0) return
+  const rect = element.getBoundingClientRect()
+  const style = getComputedStyle(element)
+  if (rect.width === 0 || rect.height === 0 || style.visibility === 'hidden') {
+    out.push({
+      ...at,
+      severity: 'warning',
+      message: 'Target is on the page but has no visible box.',
+      hint: 'The spotlight would have nothing to draw. Point at the visible parent instead.',
+    })
+    return
+  }
+  if (Number.parseFloat(style.opacity) < 0.1) {
+    out.push({ ...at, severity: 'warning', message: 'Target is on the page but transparent.' })
+  }
+  if (rect.width < 8 || rect.height < 8) {
+    out.push({
+      ...at,
+      severity: 'info',
+      message: `Target is only ${Math.round(rect.width)}×${Math.round(rect.height)} px.`,
+      hint: 'Spotlight padding helps, or point at its container.',
+    })
+  }
+  const view = element.ownerDocument.defaultView
+  if (!view) return
+  const width = view.innerWidth
+  const height = view.innerHeight
+  if (rect.bottom < 0 || rect.top > height || rect.right < 0 || rect.left > width) {
+    out.push({
+      ...at,
+      severity: 'info',
+      message: 'Target is off screen right now.',
+      hint: 'Docent scrolls to it, unless the step sets scroll: { enabled: false }.',
+    })
+  } else {
+    const covering = occluder(element, rect)
+    if (covering) {
+      out.push({
+        ...at,
+        severity: 'warning',
+        message: `Target is covered by <${covering.tagName.toLowerCase()}${idOf(covering)}>.`,
+        hint: 'Docent moves stickies out of the way, but a fixed panel over it stays.',
+      })
+    }
+  }
+  if (rect.width > width * 0.9 || rect.height > height * 0.9) {
+    out.push({
+      ...at,
+      severity: 'info',
+      message: 'Target fills most of the screen.',
+      hint: 'The popover has little room beside it; it will be placed over the page.',
+    })
+  }
+  if (step.advance && typeof step.advance === 'object' && step.advance.on === 'click') {
+    const disabled = element.matches('[disabled], [aria-disabled="true"]')
+    if (disabled) {
+      out.push({
+        ...at,
+        severity: 'error',
+        message: 'Step waits for a click, but the target is disabled.',
+      })
+    }
+  }
+}
+
+/** The element painted over the middle of the target, when it is not the target itself. */
+function occluder(element: Element, rect: DOMRect): Element | null {
+  const doc = element.ownerDocument
+  const x = rect.left + rect.width / 2
+  const y = rect.top + rect.height / 2
+  const top = doc.elementFromPoint(x, y)
+  if (!top || top === element || element.contains(top) || top.contains(element)) return null
+  // Ignore anything Docent itself puts on the page.
+  if (top.closest('[data-docent-host], [data-docent-devtools], [data-docent-devtools-highlight]'))
+    return null
+  return top
+}
+
+const idOf = (el: Element) => (el.id ? `#${el.id}` : '')
+
 function stepIssues(tour: Tour, step: Step, route: string | undefined, out: Issue[]): void {
   const at = { tourId: tour.id, stepId: step.id }
   if (!step.title && !step.body) {
@@ -82,7 +174,9 @@ function stepIssues(tour: Tour, step: Step, route: string | undefined, out: Issu
       hint: 'Add data-docent="…" to the element and target it by name.',
     })
   }
-  if (!resolveTarget(step.target)) {
+  const element = resolveTarget(step.target)
+  if (element) elementIssues(at, step, element, out)
+  if (!element) {
     const elsewhere =
       step.route !== undefined && route !== undefined && !matchRoute(step.route, route)
     if (elsewhere) {

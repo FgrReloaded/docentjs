@@ -84,4 +84,11 @@ test.describe('devtools', () => {
     )
     expect(tours.find((t) => t.id === 'm-welcome')?.steps[0]?.target).toEqual({ name: 'save' })
   })
+
+  test('audit reports a target hidden under a fixed panel', async ({ page }) => {
+    await page.goto('/app?manager&devtools&user=dt5&plan=pro')
+    const p = panel(page)
+    await p.getByRole('tab', { name: /Audit/ }).click()
+    await expect(p.getByText(/Target is covered by <div#cover>/)).toBeVisible()
+  })
 })

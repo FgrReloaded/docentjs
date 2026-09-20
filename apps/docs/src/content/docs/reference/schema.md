@@ -5,7 +5,7 @@ description: Every field of the tour JSON document.
 
 A tour is one JSON document. This page lists every field. All fields are optional unless marked required, and every type is exported from `@docentjs/core` and re-exported by the other packages.
 
-Tours written as `.json` files can point at the published schema, which gives most editors completion and checking as you type:
+The schema is published at [docentjs.dev/schema/tour-v1.json](https://docentjs.dev/schema/tour-v1.json). Tours written as `.json` files can point at it, which gives most editors completion and checking as you type:
 
 ```json
 {
@@ -48,7 +48,7 @@ The guides explain each area with examples: [steps](/guides/steps/), [targets](/
 | `labels` | `Labels` | English defaults; `progress` supports `{current}` and `{total}` |
 | `theme` | `ThemeSpec` | a preset name, tokens, or `{ preset, ...tokens }` |
 | `appearance` | `'light' \| 'dark' \| 'auto'` | `'light'`; `auto` follows the system setting |
-| `template` | `string` | name of a template registered on the renderer |
+| `template` | `string` | a built-in look (`spotlight`, `hint`, `announcement`) or a template the app registered |
 
 ## Step
 
@@ -149,4 +149,30 @@ It catches unknown values, missing and misspelled fields, wrong types, out-of-ra
 
 **This already runs for you in development.** `createTour` and `createDocent` check each tour once and warn in the console. Production builds contain neither the check nor the code behind it, as long as your bundler sets `process.env.NODE_ENV`, which Vite, webpack, Next.js, Rollup and esbuild setups do.
 
-The same function is exported from `@docentjs/core/validate` and re-exported from `@docentjs/dom/validate`. `isValidTour(tour)` returns a boolean, and `tourJsonSchema()` returns the JSON Schema published at [docentjs.dev/schema/tour-v1.json](https://docentjs.dev/schema/tour-v1.json).
+### From the command line
+
+```sh
+npx @docentjs/cli validate "tours/*.json"
+```
+
+Checks tour files without a browser, which suits CI and tools that write tours. It exits 1 when anything is wrong. `--json` reports for other tools to read, and `docent schema tour-schema.json` writes the schema to a file for offline use.
+
+```
+tours/welcome.json
+✗ steps[0].arrow: "curvy" is not one of: caret, none, line, … Did you mean "curve"?
+! steps[1].titel: Unknown field, which Docent will ignore. Did you mean "title"?
+1 file checked: 1 error, 1 warning.
+```
+
+### Warnings while you build
+
+Besides the schema check, Docent warns in development when something would otherwise fail in silence:
+
+- starting a tour id that does not exist, listing the ids it knows,
+- a step skipped because its target is not on the page, naming the step and the target.
+
+The same rule applies: production builds contain neither the checks nor their messages.
+
+The validate function is exported from `@docentjs/core/validate` and re-exported from `@docentjs/dom/validate`. `isValidTour(tour)` returns a boolean, and `tourJsonSchema()` returns the JSON Schema published at [docentjs.dev/schema/tour-v1.json](https://docentjs.dev/schema/tour-v1.json).
+
+The documentation is also published as plain text for AI tools: see [Using Docent with AI](/reference/for-ai/).

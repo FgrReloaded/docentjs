@@ -1,0 +1,52 @@
+{
+  "name": "@docentjs/cli",
+  "version": "0.6.0",
+  "description": "Command line tools for Docent: check tour files and print the tour JSON Schema.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FgrReloaded/docentjs.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/FgrReloaded/docentjs/tree/main/packages/cli#readme",
+  "bugs": {
+    "url": "https://github.com/FgrReloaded/docentjs/issues"
+  },
+  "keywords": [
+    "product-tour",
+    "guided-tour",
+    "onboarding",
+    "cli",
+    "docent"
+  ],
+  "type": "module",
+  "bin": {
+    "docent": "./dist/cli.mjs"
+  },
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo"
+  },
+  "dependencies": {
+    "@docentjs/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "tsdown": "^0.23.0",
+    "typescript": "^5.9.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}

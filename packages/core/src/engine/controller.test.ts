@@ -64,6 +64,24 @@ function fakeRenderer(present: string[] = [], route?: string) {
   return renderer
 }
 
+describe('development warnings', () => {
+  it('says which step was skipped and why when a target is missing', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const tour = defineTour({
+      id: 'warn-missing',
+      steps: [{ id: 'gone', target: { name: 'never-rendered' } }, { id: 'end' }],
+    })
+    const c = new TourController({ tour, renderer: fakeRenderer([]) })
+    await c.start()
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('Step "gone" of tour "warn-missing" was skipped'),
+    )
+    expect(warn.mock.calls[0]?.[0]).toContain('[data-docent="never-rendered"]')
+    warn.mockRestore()
+    await c.destroy()
+  })
+})
+
 function recorder() {
   const events: DocentEvent[] = []
   return {

@@ -5,6 +5,10 @@
   "description": "A guided tour: what to show, to whom, and when.",
   "type": "object",
   "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Optional link to this schema, for editors: https://docentjs.dev/schema/tour-v1.json"
+    },
     "schemaVersion": {
       "type": "number",
       "minimum": 1,
@@ -323,7 +327,7 @@
         },
         "template": {
           "type": "string",
-          "description": "Name of a template registered on the renderer."
+          "description": "A built-in look ('spotlight', 'hint' or 'announcement') or a template the app registered."
         }
       }
     },

@@ -17,6 +17,7 @@ export default defineConfig({
             '',
             '- A tour is `{ id, steps }` plus optional `trigger`, `conditions` and `options`. Every field is documented at https://docentjs.dev/reference/schema/.',
             '- Point a `.tour.json` file at https://docentjs.dev/schema/tour-v1.json with `$schema` for completion and checking.',
+            '- Check tour files from a terminal or CI with `npx @docentjs/cli validate "tours/*.json"`; it exits 1 on errors and `--json` gives machine-readable output.',
             "- Check a tour before shipping it: `import { validateTour } from '@docentjs/dom/validate'`. It reports unknown values, misspelled fields, wrong types and duplicate step ids, each with a path such as `steps[2].arrow` and the value that was probably meant. `createTour` and `createDocent` run the same check automatically in development.",
             '- Prefer `target: { name: "save" }` with `data-docent="save"` in the markup over CSS selectors: names survive redesigns.',
             '- Visual changes belong in the tour JSON (`options.theme`, `options.arrow`, `options.spotlight`, `options.overlay`, `options.appearance`), not in CSS, so they travel with the tour.',
@@ -112,7 +113,14 @@ export default defineConfig({
             { slug: 'frameworks/svelte' },
           ],
         },
-        { label: 'Reference', items: [{ slug: 'reference/schema' }, { slug: 'reference/api' }] },
+        {
+          label: 'Reference',
+          items: [
+            { slug: 'reference/schema' },
+            { slug: 'reference/api' },
+            { slug: 'reference/for-ai' },
+          ],
+        },
       ],
     }),
   ],

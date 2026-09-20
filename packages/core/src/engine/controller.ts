@@ -4,6 +4,7 @@
  * side-effectful piece of the core.
  */
 
+import { devWarn } from '../dev'
 import type { StepContext, TourHooks } from '../hooks'
 import type { Step, Tour, TourProgressState } from '../schema/tour'
 import { ANONYMOUS_IDENTITY, type EventSink, type Identity, type StorageAdapter } from '../seams'
@@ -375,7 +376,14 @@ export class TourController {
     if (target === undefined) return true
     if (this.renderer.hasTarget(target)) return true
     const waitMs = step.waitFor ?? (step.onMissing === 'wait' ? this.defaultWaitMs : 0)
-    if (waitMs <= 0) return false
+    if (waitMs <= 0) {
+      devWarn(
+        `Step "${step.id}" of tour "${this.tour.id}" was ${step.onMissing === 'abort' ? 'aborted' : 'skipped'}: ` +
+          `its target ${describeTarget(step.target)} is not on the page. ` +
+          'Set `onMissing: "wait"` for elements that appear later.',
+      )
+      return false
+    }
     const abort = new AbortController()
     this.pendingAbort = abort
     const found = await this.renderer.waitForTarget(target, waitMs, abort.signal)
@@ -422,4 +430,12 @@ export class TourController {
       },
     }
   }
+}
+
+/** Describe a target for a warning, the way the tour wrote it. */
+function describeTarget(target: Step['target']): string {
+  if (target === undefined) return '(none)'
+  if (typeof target === 'string') return `"${target}"`
+  if (target.name) return `[data-docent="${target.name}"]`
+  return `"${target.selectors?.[0] ?? 'unknown'}"`
 }

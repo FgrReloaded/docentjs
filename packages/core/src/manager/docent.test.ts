@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { defineTour } from '../define'
 import { TourController } from '../engine/controller'
 import { createMemoryStorage } from '../engine/progress'
@@ -468,6 +468,18 @@ describe('Docent sources and state', () => {
     await docent.updateTour(oneStep('b', { trigger: { type: 'route', pattern: '/**' } }))
     await settle()
     expect(shown).toEqual(['a:only', 'a:only'])
+  })
+
+  it('warns and does nothing when starting a tour id that does not exist', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const { docent } = setup([defineTour({ id: 'welcome', steps: [{ id: 'a' }] })])
+    await docent.ready
+    expect(await docent.start('welcom')).toBe(false)
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining('start("welcom"): no tour with that id'),
+    )
+    warn.mockRestore()
+    await docent.destroy()
   })
 
   it('destroy stops everything', async () => {

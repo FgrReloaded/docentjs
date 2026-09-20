@@ -75,6 +75,8 @@ options: { template: 'card' }
 
 This split is deliberate. Code stays in your app, while the JSON only says "use card", so a builder or an API can choose looks without shipping functions. Set the renderer's `template` to apply one when a tour names none.
 
+Three names are built in: `spotlight`, `hint` and `announcement`. See [three looks under one name](/customize/arrows-and-spotlight/#three-looks-under-one-name). Registering a template with one of those names replaces it.
+
 Templates can also set `arrow`, `spotlight` and `overlay`, so a "hint" template could use no overlay and a pin arrow everywhere.
 
 <Demo

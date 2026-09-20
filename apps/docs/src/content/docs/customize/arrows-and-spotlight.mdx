@@ -122,6 +122,22 @@ options: { overlay: { style: 'blur', blur: 6, opacity: 0.4 } }
   </div>
 </Demo>
 
+## Three looks under one name
+
+Setting an arrow, a spotlight and an overlay for each tour gets repetitive. Three built-in looks bundle the common combinations, and a tour picks one by name:
+
+```ts
+options: { template: 'hint' }
+```
+
+| Name | What it does | Suits |
+| --- | --- | --- |
+| `spotlight` | the default: dimmed page, soft cutout, small caret | walking someone through a task |
+| `hint` | no dimming so the page stays usable, a glowing ring, a curved arrow, a narrower card | a tip beside one feature |
+| `announcement` | the page blurs away, no arrow, no ring, a wider card | something to read, not to do |
+
+They are ordinary [templates](/customize/slots-and-templates/#templates), so registering a template of the same name replaces the built-in one, and anything the tour or the step sets still wins.
+
 ## Where to set it
 
 Settings stack. Each layer overrides the one before it:

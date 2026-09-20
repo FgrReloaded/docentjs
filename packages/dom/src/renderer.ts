@@ -23,6 +23,7 @@ import type {
 } from '@docentjs/core'
 import { arrowGap, isConnector } from './arrows'
 import type { Connector, Point } from './connector'
+import { BUILT_IN_LOOKS, type LookName } from './looks'
 import { uncover } from './occlusion'
 import { Overlay } from './overlay'
 import { buildHeadlessShell, buildPopover } from './popover'
@@ -579,9 +580,11 @@ export class DomRenderer implements Renderer {
   // Popover construction
   // -------------------------------------------------------------------------
 
+  /** The tour's template: one the app registered, or a built-in look. */
   private template(ctx: RenderContext): PopoverTemplate | undefined {
     const name = ctx.tour.options?.template ?? this.options.template
-    return name === undefined ? undefined : this.options.templates?.[name]
+    if (name === undefined) return undefined
+    return this.options.templates?.[name] ?? BUILT_IN_LOOKS[name as LookName]
   }
 
   private buildDefault(

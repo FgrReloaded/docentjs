@@ -112,6 +112,8 @@ Checks every tour against the current page, sorted by severity. The tab shows a 
 - **Warnings**: targets missing from this page, structural selectors likely to break, steps with no text, conditions pointing at unknown tours, and contrast below the WCAG AA ratio.
 - **Info**: long bodies, tours with no trigger, and tours that show on every page load.
 
+It also measures the page as it is now, which catches the problems a schema check cannot: a target that exists but has no visible box, one that is transparent, tiny, off screen, or covered by a fixed panel, and a click step whose target is disabled.
+
 ## Performance
 
 Play a tour to record it. The tab shows the time to show each step, how often the popover moved, long frames and the worst frame while a step was visible, and how many DOM nodes the tour added.

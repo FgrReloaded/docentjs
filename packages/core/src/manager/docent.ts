@@ -4,6 +4,7 @@
  * turns the rules in the tour JSON into behaviour.
  */
 
+import { devWarn } from '../dev'
 import { type ConditionEnv, type CustomPredicate, evaluateAll } from '../engine/conditions'
 import type { ControllerOptions, TourController } from '../engine/controller'
 import {
@@ -206,7 +207,12 @@ export class Docent {
   async start(tourId: string, options: StartOptions = {}): Promise<boolean> {
     await this.ready
     const tour = this.tours.get(tourId)
-    if (!tour) return false
+    if (!tour) {
+      devWarn(
+        `start("${tourId}"): no tour with that id. Known tours: ${[...this.tours.keys()].join(', ') || 'none'}.`,
+      )
+      return false
+    }
     await this.stopActive()
     await this.run(tour, options.at, true)
     return true

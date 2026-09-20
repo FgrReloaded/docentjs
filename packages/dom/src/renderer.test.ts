@@ -161,6 +161,27 @@ describe('DomRenderer', () => {
     vi.unstubAllGlobals()
   })
 
+  it('applies a built-in look by name, and lets an app replace it', () => {
+    document.body.innerHTML = '<button id="target">go</button>'
+    const r = new DomRenderer({ sheetBreakpoint: 0 })
+    const tour = { ...ctx().tour, options: { template: 'hint' } }
+    r.show(ctx({ tour }))
+    expect(host()?.getAttribute('data-overlay')).toBe('none')
+    expect(host()?.getAttribute('data-ring')).toBe('glow')
+    expect(host()?.getAttribute('data-arrow')).toBe('curve')
+    expect(host()?.style.getPropertyValue('--docent-width')).toBe('300px')
+    r.hide()
+
+    const own = new DomRenderer({
+      sheetBreakpoint: 0,
+      templates: { hint: { arrow: 'none', theme: { width: 200 } } },
+    })
+    own.show(ctx({ tour }))
+    expect(host()?.getAttribute('data-arrow')).toBe('none')
+    expect(host()?.style.getPropertyValue('--docent-width')).toBe('200px')
+    own.hide()
+  })
+
   it('applies renderer, template and tour themes in order', () => {
     const r = new DomRenderer({
       theme: { accent: 'base', radius: '1px', width: '10px' },

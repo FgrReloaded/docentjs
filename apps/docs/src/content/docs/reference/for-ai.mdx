@@ -1,0 +1,54 @@
+---
+title: Using Docent with AI
+description: Plain-text documentation, a machine-readable schema and a checker, so an assistant can write and change tours correctly.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+
+Tours are data, which makes them a good fit for an assistant: it can write one, change one, and check its work without running a browser. These four addresses are what it needs.
+
+| Address | What it is |
+| --- | --- |
+| [docentjs.dev/llms.txt](https://docentjs.dev/llms.txt) | A short summary of Docent, the rules worth following, and links to everything else. Start here. |
+| [docentjs.dev/llms-small.txt](https://docentjs.dev/llms-small.txt) | The documentation as plain text, trimmed of asides and extras. Fits a smaller context window. |
+| [docentjs.dev/llms-full.txt](https://docentjs.dev/llms-full.txt) | Every page as plain text, complete. |
+| [docentjs.dev/schema/tour-v1.json](https://docentjs.dev/schema/tour-v1.json) | The tour format as JSON Schema: every field, type and allowed value. |
+
+They are generated from these pages on every build, so they never fall behind.
+
+## Pointing a tool at them
+
+Most assistants take a URL directly: paste the `llms.txt` address and ask it to read the linked documentation. In editors, give it whichever fits the window, `llms-small.txt` or `llms-full.txt`.
+
+For tour files in your repository, the schema is more useful than any prose. Add it to the file and most editors will complete fields and mark mistakes as you type, with or without an assistant:
+
+```json title="tours/welcome.tour.json"
+{
+  "$schema": "https://docentjs.dev/schema/tour-v1.json",
+  "id": "welcome",
+  "steps": [{ "id": "intro", "title": "Welcome" }]
+}
+```
+
+## Checking the result
+
+Never take a generated tour on trust. The checker reports unknown values, misspelled fields, wrong types and duplicate step ids, and names the value that was probably meant:
+
+```sh
+npx @docentjs/cli validate "tours/*.json"
+```
+
+It exits 1 when anything is wrong, so it works as a step in CI or as the last step of an assistant's own loop. `--json` gives output another program can read. The same checks run automatically in development, and [`validateTour`](/reference/schema/#checking-a-tour) is available in code.
+
+<Aside type="caution" title="What a check cannot tell you">
+A valid tour can still point at the wrong button or explain the wrong thing. The [devtools](/guides/devtools/) Audit tab measures the real page: targets that are missing, invisible, covered or too small, and text contrast. Play the tour once before shipping it.
+</Aside>
+
+## Advice worth passing on
+
+These are the habits that keep generated tours working:
+
+- Target elements by name, with `data-docent="save"` in the markup and `target: { name: 'save' }` in the tour. Generated CSS selectors break at the next redesign.
+- Keep visual choices in the tour JSON, through `theme`, `arrow`, `spotlight`, `overlay` and `appearance`, rather than in stylesheets. They travel with the tour.
+- One idea per step. A step that needs three sentences is usually two steps.
+- Use `onMissing: 'wait'` for anything that renders late, such as a menu or a list from an API.

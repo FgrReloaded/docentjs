@@ -354,7 +354,10 @@ const options: Spec = {
       enums('light', 'dark', 'auto'),
       "`auto` follows the reader's system setting.",
     ),
-    template: field(str, 'Name of a template registered on the renderer.'),
+    template: field(
+      str,
+      "A built-in look ('spotlight', 'hint' or 'announcement') or a template the app registered.",
+    ),
   },
 }
 
@@ -397,6 +400,10 @@ const tour: Spec = {
   kind: 'object',
   doc: 'A guided tour: what to show, to whom, and when.',
   fields: {
+    $schema: field(
+      str,
+      'Optional link to this schema, for editors: https://docentjs.dev/schema/tour-v1.json',
+    ),
     schemaVersion: field({ kind: 'number', min: 1, max: 1 }, '`defineTour` sets this for you.'),
     id: required(str, 'Stable identifier, used for progress and analytics.'),
     version: field(num, 'Bump to show the tour again to people who saw an older one.'),

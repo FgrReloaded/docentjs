@@ -17,6 +17,11 @@
     }
   </script>
   <style>
+    .under { position: relative; margin: 8px 0; width: 160px; height: 40px; }
+    .under .cover {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      background: #e5e7eb; border: 1px solid #cbd5f5; font-size: 12px;
+    }
     * { box-sizing: border-box; }
     body { margin: 0; font: 15px/1.5 system-ui, sans-serif; background: #f3f4f6; color: #111; }
     header { position: sticky; top: 0; height: 64px; display: flex; align-items: center; gap: 16px; padding: 0 24px; background: #111827; color: #fff; z-index: 10; }
@@ -55,6 +60,11 @@
           <span id="lazy-slot"></span>
         </div>
         <p>Clicks on Blocked: <span id="blocked-count">0</span></p>
+        <!-- A target sitting under a fixed panel, for the devtools audit. -->
+        <div class="under">
+          <button id="buried" data-docent="buried">Buried</button>
+          <div class="cover" id="cover">Fixed panel</div>
+        </div>
         <div class="far">
           <input id="search" placeholder="search" />
         </div>
@@ -187,6 +197,10 @@
           id: 'm-settings',
           trigger: { type: 'route', pattern: '/app/settings' },
           steps: [{ id: 'pref', target: { name: 'pref' }, title: 'Your preferences' }],
+        }),
+        defineTour({
+          id: 'm-buried',
+          steps: [{ id: 'buried', target: { name: 'buried' }, title: 'Under the panel' }],
         }),
         defineTour({
           id: 'm-lazy',
