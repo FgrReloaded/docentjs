@@ -1,6 +1,6 @@
 {
   "name": "@docentjs/devtools",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "Development panel for Docent: inspect tours, see why a tour is not showing, replay steps, simulate users and events, check targets.",
   "license": "MIT",
   "repository": {
