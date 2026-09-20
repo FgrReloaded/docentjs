@@ -1,5 +1,14 @@
 # @docentjs/devtools
 
+## 0.7.1
+
+### Patch Changes
+
+- Updated dependencies [5d23354]
+- Updated dependencies [5d23354]
+  - @docentjs/dom@0.7.1
+  - @docentjs/core@0.7.1
+
 ## 0.7.0
 
 ### Minor Changes
