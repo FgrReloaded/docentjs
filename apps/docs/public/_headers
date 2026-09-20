@@ -1,0 +1,19 @@
+# Cloudflare Pages reads this from the published directory. Astro copies
+# everything in `public/` there verbatim.
+#
+# Only the example apps are covered: their asset filenames are content-hashed
+# by Vite, and the vendored packages are a copy of one released version, so
+# nothing under these paths ever changes without changing its name. Each
+# example's index.html keeps the platform default, which revalidates.
+
+/examples/react/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/examples/vue/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/examples/svelte/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/examples/vanilla/vendor/*
+  Cache-Control: public, max-age=31536000, immutable

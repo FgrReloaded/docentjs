@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { DocentDevtools } from '@docentjs/devtools/vue'
 import { TourPopover, useDocent, useTour } from '@docentjs/vue'
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import type { Event, IncidentState } from '../data'
 import { incidents, timelines } from '../data'
 import TourCard from '../TourCard.vue'
@@ -51,6 +51,18 @@ const postmortem = useTour(postmortemTour, { popover: true })
 
 // Traits decide eligibility: the triage tour is for whoever holds the pager.
 docent.identify('u_88', { role: 'oncall', team: 'platform', rota: 'W38' })
+
+// Lets the docs link straight into a tour: /examples/vue/?start=<id>
+onMounted(() => {
+  const wanted = new URLSearchParams(window.location.search).get('start')
+  if (!wanted) return
+  if (wanted === postmortemTour.id) {
+    // The close-out guide runs outside the manager, so stop the manager
+    // watching triggers for this visit: the link asked for one tour.
+    void docent.docent.disconnect()
+    void postmortem.start()
+  } else void docent.start(wanted)
+})
 
 let timer: ReturnType<typeof setTimeout> | undefined
 function say(message: string) {
@@ -110,8 +122,13 @@ function check(id: string) {
 }
 
 function guide(which: 'triage' | 'postmortem') {
-  if (which === 'triage') void docent.start(triageTour.id)
-  else void postmortem.start()
+  if (which === 'triage') {
+    void docent.start(triageTour.id)
+    return
+  }
+  // Only one tour at a time, even across two controllers.
+  void docent.stop()
+  void postmortem.start()
 }
 
 // Switching incidents closes the runbook: it belongs to one alert rule.

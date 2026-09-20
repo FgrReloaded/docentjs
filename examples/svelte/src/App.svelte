@@ -1,7 +1,7 @@
 <script lang="ts">
   import { DocentDevtools } from '@docentjs/devtools/svelte'
   import { type EventSink, useDocent, useTour } from '@docentjs/svelte'
-  import { onDestroy } from 'svelte'
+  import { onDestroy, onMount } from 'svelte'
   import Checks from './components/Checks.svelte'
   import FrontPage from './components/FrontPage.svelte'
   import Masthead from './components/Masthead.svelte'
@@ -83,6 +83,18 @@
   // Traits decide eligibility: the desk tour is for editors and producers.
   docent.identify('u_17', { role: 'editor', desk: 'news', edition: 'evening' })
 
+  // Lets the docs link straight into a tour: /examples/svelte/?start=<id>
+  onMount(() => {
+    const wanted = new URLSearchParams(window.location.search).get('start')
+    if (!wanted) return
+    if (wanted === publishTour.id) {
+      // The publish check runs outside the manager, so stop the manager
+      // watching triggers for this visit: the link asked for one tour.
+      void docent.docent.disconnect()
+      void publish.start()
+    } else void docent.start(wanted)
+  })
+
   onDestroy(() => {
     clearTimeout(timer)
     void docent.destroy()
@@ -108,8 +120,13 @@
   }
 
   function guide(which: 'desk' | 'publish') {
-    if (which === 'desk') void docent.start(deskTour.id)
-    else void publish.start()
+    if (which === 'desk') {
+      void docent.start(deskTour.id)
+      return
+    }
+    // Only one tour at a time, even across two controllers.
+    void docent.stop()
+    void publish.start()
   }
 </script>
 

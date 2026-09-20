@@ -83,7 +83,10 @@ export default defineConfig({
         },
       },
       sidebar: [
-        { label: 'Start here', items: [{ slug: 'getting-started' }, { slug: 'concepts' }] },
+        {
+          label: 'Start here',
+          items: [{ slug: 'getting-started' }, { slug: 'concepts' }, { slug: 'examples' }],
+        },
         {
           label: 'Guides',
           items: [

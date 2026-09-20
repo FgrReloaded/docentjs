@@ -45,4 +45,28 @@ popover built with `document.createElement`, plus a `custom` condition
 predicate (`onAir`) that keeps a tour from running when the studio is not live.
 Open it with `?start=<tour-id>` to jump straight into one.
 
+## Deploying
+
+`pnpm build:site` builds the docs site and the four examples — nothing else — and then runs
+`scripts/collect-examples.mjs`, which gathers the apps into the docs output:
+
+| Published at | From |
+| --- | --- |
+| `apps/docs/dist/examples/react/` | `examples/react/dist` |
+| `apps/docs/dist/examples/vue/` | `examples/vue/dist` |
+| `apps/docs/dist/examples/svelte/` | `examples/svelte/dist` |
+| `apps/docs/dist/examples/vanilla/` | `examples/vanilla/index.html` plus a vendored copy of the packages |
+
+Cloudflare Pages runs the same command and publishes `apps/docs/dist`, so the apps end up at
+`docentjs.dev/examples/<name>/`. It replaces the docs-only build the project used before
+(`turbo run build --filter=@docentjs/docs...`), which never touched the examples. Each Vite example sets `base` at build time to match its
+subpath; the dev server still runs at the root.
+
+The vanilla example's import map points at `../../packages/*/dist` so it works against this
+repo during development. The collect script copies that ESM output into
+`examples/vanilla/vendor/` on the way out and rewrites the import map to match — the source
+file is left alone. Change those paths and the script will tell you to update `VENDORED`.
+
+Each app also reads `?start=<tour-id>` on load, so the docs can link straight into one tour.
+
 The Playwright fixture used by `pnpm test:e2e` lives in `e2e/fixtures/`, not here.

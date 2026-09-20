@@ -73,6 +73,20 @@ function Console() {
     docent.identify('u_2291', { plan: 'studio', role: 'owner', invoices: 128 })
   }, [docent])
 
+  // Lets the docs link straight into a tour: /examples/react/?start=<id>.
+  // Both dependencies are stable for the life of their controller, so this
+  // runs once rather than on every state change.
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get('start')
+    if (!wanted) return
+    if (wanted === reconcileTour.id) {
+      // The month-end guide runs outside the manager, so stop the manager
+      // watching triggers for this visit: the link asked for one tour.
+      void docent.docent.disconnect()
+      void reconcile.controller.start()
+    } else void docent.start(wanted)
+  }, [docent, reconcile.controller])
+
   useEffect(() => {
     if (!toast) return
     const timer = setTimeout(() => setToast(null), 3200)
@@ -98,7 +112,11 @@ function Console() {
       <div className="app">
         <Rail
           onSetupTour={() => void docent.start(onboardingTour.id)}
-          onReconcileTour={() => void reconcile.start()}
+          onReconcileTour={() => {
+            // Only one tour at a time, even across two controllers.
+            void docent.stop()
+            void reconcile.start()
+          }}
           onReleaseTour={() => void docent.start(releaseTour.id)}
         />
         <div className="frame">

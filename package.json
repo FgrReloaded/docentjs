@@ -16,6 +16,7 @@
   "scripts": {
     "build": "turbo run build",
     "build:packages": "turbo run build --filter='./packages/*'",
+    "build:site": "turbo run build --filter=@docentjs/docs... --filter='@docentjs/example-*...' && node scripts/collect-examples.mjs",
     "dev": "turbo run dev",
     "test": "vitest run",
     "test:watch": "vitest",

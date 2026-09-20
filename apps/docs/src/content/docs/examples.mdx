@@ -1,0 +1,59 @@
+---
+title: Examples
+description: Four complete apps, each with its own design language and a full Docent setup — running in the browser, with the source on GitHub.
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components'
+
+Four small products rather than four demos. Each one is a plausible slice of a real interface with its own typography, palette and layout, so you can see what a tour looks like when it has to live inside someone else's brand instead of next to it.
+
+Every app runs the manager (`useDocent` / `createDocent`) alongside one tour the app draws itself, so both halves of the API appear in all four.
+
+<CardGrid>
+  <LinkCard
+    title="Ledgerline — React"
+    href="/examples/react/"
+    description="Receivables for a design studio. An auto trigger that fires once per person, steps that hand control back to the user, a step that waits for a drawer to mount, traits gating a release note, and three templates."
+  />
+  <LinkCard
+    title="Cinder — Vue"
+    href="/examples/vue/"
+    description="An on-call incident console. A tour triggered by an element appearing rather than a timer, a step that waits for a checklist to be revealed, and a dark surface with brand tokens layered over it."
+  />
+  <LinkCard
+    title="Pressroom — Svelte"
+    href="/examples/svelte/"
+    description="A newsroom run of show. The buttons slot replaced with the paper's own controls, a folio counter in roman numerals, and a hand-drawn connector for the galley note."
+  />
+  <LinkCard
+    title="Nocturne — no framework"
+    href="/examples/vanilla/"
+    description="An overnight radio playout desk. Templates, slots and a headless popover built with document.createElement, plus a custom condition that keeps a tour from running when the studio is off air."
+  />
+</CardGrid>
+
+## Linking into a tour
+
+Each app reads a `start` parameter and runs that tour on load, so a link can drop someone straight into the thing you are describing:
+
+```
+/examples/vue/?start=cinder-postmortem
+/examples/vanilla/?start=nocturne-handover
+```
+
+## Reading the source
+
+Every app keeps its tours in `src/tours.ts`, its renderer defaults and templates in `src/tour-theme.ts`, and its app-drawn popover in `src/TourCard.*`. Those three files are the whole integration; the rest is an ordinary app.
+
+<CardGrid>
+  <LinkCard
+    title="Source on GitHub"
+    href="https://github.com/FgrReloaded/docentjs/tree/main/examples"
+    description="All four apps, plus a README saying which Docent features each one covers."
+  />
+  <LinkCard
+    title="Run them locally"
+    href="https://github.com/FgrReloaded/docentjs/blob/main/examples/README.md"
+    description="pnpm build, then one dev server per example."
+  />
+</CardGrid>

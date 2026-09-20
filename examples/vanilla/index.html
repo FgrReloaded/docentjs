@@ -944,7 +944,11 @@
     // ---------------------------------------------------------------- wiring
 
     $('guide-studio').addEventListener('click', () => docent.start(studioTour.id))
-    $('guide-handover').addEventListener('click', () => handover.start())
+    $('guide-handover').addEventListener('click', () => {
+      // Only one tour at a time, even across two controllers.
+      docent.stop()
+      handover.start()
+    })
     $('dropin').addEventListener('click', dropIn)
     $('skip').addEventListener('click', () => say('Skipped to the next cue'))
     $('library-search').addEventListener('input', (event) => {
@@ -970,8 +974,12 @@
     // Handy for the docs and for screenshots: ?start=nocturne-handover
     const params = new URLSearchParams(location.search)
     const wanted = params.get('start')
-    if (wanted === handoverTour.id) handover.start()
-    else if (wanted) docent.start(wanted)
+    if (wanted === handoverTour.id) {
+      // The handover check runs outside the manager, so stop the manager
+      // watching triggers for this visit: the link asked for one tour.
+      docent.disconnect()
+      handover.start()
+    } else if (wanted) docent.start(wanted)
   </script>
 </body>
 </html>
