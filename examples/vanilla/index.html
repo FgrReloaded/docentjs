@@ -317,14 +317,6 @@
 
     /* --------------------------------------- slotted popover content */
 
-    .tp-title { display: flex; flex-direction: column; gap: 4px; }
-    .tp-kicker { font-family: var(--mono); font-size: var(--t-micro); font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--clay); }
-    .tp-heading { margin: 0; font-size: 1.1875rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.02em; color: var(--bone); text-wrap: balance; }
-    .tp-progress { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .tp-count { font-family: var(--mono); font-size: var(--t-micro); color: var(--bone-3); white-space: nowrap; }
-    .tp-ticks { display: flex; gap: 3px; flex: 1; }
-    .tp-ticks i { height: 3px; flex: 1; border-radius: 2px; background: oklch(36% 0.014 265); }
-    .tp-ticks i[data-done] { background: var(--clay); }
 
     /* --------------------------------------- custom popover (headless) */
 
@@ -520,7 +512,7 @@
       { at: '02:31', text: 'Night Ferry — logged for PPL reporting' },
     ]
 
-    /** Fixed so the waveform is the same on every load. Real audio, same idea. */
+    /** Fixed, so the waveform is the same on every load. */
     const WAVE = [
       12, 18, 26, 22, 34, 44, 38, 52, 61, 48, 40, 55, 68, 74, 66, 58, 47, 39, 52, 63, 71, 80, 76,
       64, 55, 44, 38, 46, 57, 69, 78, 86, 92, 84, 72, 63, 54, 48, 41, 36, 44, 52, 61, 58, 49, 42,
@@ -652,7 +644,7 @@
       state.log = [{ at: '02:47', text: `${cart.name} fired from the wall` }, ...state.log]
       renderLog()
       say(`${cart.name} · ${cart.len}`)
-      // Fires the `event` trigger on the cart tour.
+      // Fires the cart tour's `event` trigger.
       docent.track('cart-fired')
     }
 
@@ -669,7 +661,7 @@
 
     // --------------------------------------------------------------- tours
 
-    /** House style: the app's own title, counter and spotting, in one template. */
+    /** House style: tokens plus the fields the default popover has no room for. */
     const nocturne = {
       theme: {
         background: 'oklch(23% 0.013 265)',
@@ -681,6 +673,7 @@
         ring: 'oklch(68% 0.13 48)',
         radius: 10,
         width: 340,
+        padding: '16px 16px 12px',
         font: "'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif",
         shadow: '0 26px 60px -26px oklch(6% 0.01 265 / 0.95)',
         overlay: 'oklch(10% 0.01 265)',
@@ -688,51 +681,30 @@
         duration: 200,
       },
       spotlight: { padding: 8, radius: 9, ring: 'hairline', animate: true },
-      slots: {
-        title: (ctx, doc) => {
-          const wrap = doc.createElement('div')
-          wrap.className = 'tp-title'
-          const kicker = doc.createElement('span')
-          kicker.className = 'tp-kicker'
-          kicker.textContent = ctx.tour.name ?? 'Nocturne'
-          const heading = doc.createElement('h2')
-          heading.className = 'tp-heading'
-          heading.textContent = ctx.step.title ?? ''
-          wrap.append(kicker, heading)
-          return wrap
-        },
-        progress: (ctx, doc) => {
-          const wrap = doc.createElement('div')
-          wrap.className = 'tp-progress'
-          const count = doc.createElement('span')
-          count.className = 'tp-count'
-          count.textContent = `${ctx.progress.current} / ${ctx.progress.total}`
-          const ticks = doc.createElement('span')
-          ticks.className = 'tp-ticks'
-          for (let i = 1; i <= ctx.progress.total; i++) {
-            const tick = doc.createElement('i')
-            if (i <= ctx.progress.current) tick.dataset.done = ''
-            ticks.appendChild(tick)
-          }
-          wrap.append(count, ticks)
-          return wrap
-        },
-      },
+      eyebrow: '{tour}',
+      progress: 'ticks',
+      // Custom properties cross the shadow boundary, so the page's faces work by name.
       css: `
-        .popover { padding: 16px 16px 12px; }
+        .title { font-size: 1.1875rem; }
+        .eyebrow { font-family: var(--mono); letter-spacing: 0.14em; color: var(--clay); }
+        .count { font-family: var(--mono); }
         .body { margin-top: 8px; }
         .footer { margin-top: 16px; }
+        .marks { flex: 1; }
+        .marks i { flex: 1; max-width: none; height: 3px; border-radius: 2px; }
+        .marks i[data-done] { background: var(--clay); }
       `,
     }
 
     /** A cue light: the page stays live, a pulsing ring marks the spot. */
     const cueLight = {
-      theme: { ...nocturne.theme, width: 296 },
+      theme: { ...nocturne.theme, width: 296, padding: '14px' },
       overlay: { style: 'none' },
       spotlight: { ring: 'pulse', padding: 7, radius: 8 },
       arrow: 'curve',
-      slots: { title: nocturne.slots.title, progress: () => null },
-      css: `.popover { padding: 14px; } .footer { margin-top: 12px; }`,
+      eyebrow: '{tour}',
+      progress: 'none',
+      css: `${nocturne.css} .footer { margin-top: 12px; }`,
     }
 
     const studioTour = defineTour({
@@ -740,8 +712,7 @@
       version: 2,
       name: 'The desk',
       trigger: { type: 'auto', delay: 700 },
-      // `onAir` is a predicate registered on the runtime below: the tour only
-      // runs while the studio is live, which is the only time it helps.
+      // `onAir` is a predicate registered on the runtime below.
       conditions: [
         { type: 'custom', name: 'onAir' },
         { type: 'trait', key: 'role', op: 'eq', value: 'presenter' },
@@ -836,7 +807,7 @@
       ],
     })
 
-    /** Drawn by this page rather than the library: headless mode, no framework. */
+    /** Drawn by this page (headless), with no framework. */
     const handoverTour = defineTour({
       id: 'nocturne-handover',
       version: 1,
@@ -882,8 +853,7 @@
       emit: (event) => console.debug('[docent]', event.type, event.tourId, event.stepId ?? ''),
     }
 
-    // The manager watches triggers, checks conditions and frequency, and runs
-    // one tour at a time.
+    // Watches triggers, checks conditions, runs one tour at a time.
     const docent = createDocent({
       tours: [studioTour, cartTour],
       renderer,
@@ -892,11 +862,7 @@
     })
     docent.identify('u_31', { role: 'presenter', shift: 'overnight', station: 'meridian' })
 
-    /**
-     * The handover check is drawn by this page. Docent still owns the overlay,
-     * the spotlight, positioning, focus and keys; everything inside the
-     * container is ours.
-     */
+    // Docent keeps the overlay, spotlight, positioning, focus and keys.
     const handover = createTour(handoverTour, {
       sink,
       renderer: {
@@ -945,7 +911,7 @@
 
     $('guide-studio').addEventListener('click', () => docent.start(studioTour.id))
     $('guide-handover').addEventListener('click', () => {
-      // Only one tour at a time, even across two controllers.
+      // One tour at a time, even across two controllers.
       docent.stop()
       handover.start()
     })
@@ -971,12 +937,11 @@
     renderCarts()
     renderLog()
 
-    // Handy for the docs and for screenshots: ?start=nocturne-handover
+    // Lets the docs link into a tour: ?start=<id>.
     const params = new URLSearchParams(location.search)
     const wanted = params.get('start')
     if (wanted === handoverTour.id) {
-      // The handover check runs outside the manager, so stop the manager
-      // watching triggers for this visit: the link asked for one tour.
+      // It runs outside the manager, so stop the manager watching triggers.
       docent.disconnect()
       handover.start()
     } else if (wanted) docent.start(wanted)

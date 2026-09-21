@@ -1,6 +1,6 @@
 # @docentjs/dom
 
-Web renderer for [Docent](https://github.com/FgrReloaded/docentjs), a guided product tour library. Overlay with a rounded spotlight, custom positioning, an accessible popover in a Shadow Root, keyboard and focus handling, a card that docks on small screens, and a customization layer with theme tokens, slots, templates and headless mode. About 13 kB compressed including the core.
+Web renderer for [Docent](https://github.com/FgrReloaded/docentjs), a guided product tour library. Overlay with a rounded spotlight, custom positioning, an accessible popover in a Shadow Root, keyboard and focus handling, a card that docks on small screens, and a customization layer: JSON themes, slots, templates and headless mode. About 15 kB compressed including the core.
 
 ```sh
 pnpm add @docentjs/dom
@@ -38,20 +38,36 @@ It starts tours from their `trigger` (page load, route, element, event), checks 
 
 ## Customize
 
+A whole look is one JSON file — a theme. Install it in a line:
+
+```ts
+import theme from './docent-theme.json'
+
+createTour(tour, { renderer: { template: theme } })
+```
+
+Ready-made themes: [docentjs.dev/customize/themes](https://docentjs.dev/customize/themes/).
+
+The pieces a theme sets, any of which a tour can override:
+
 ```ts
 import { minimal } from '@docentjs/dom/themes'
 
 createTour(tour, {
   renderer: {
-    theme: minimal,                                  // presets or your own tokens
-    slots: { progress: (ctx) => `${ctx.progress.current}/${ctx.progress.total}` },
-    templates: { card: { theme: { radius: '16px' }, css: '.popover { border: 1px solid #ddd }' } },
+    theme: minimal,              // presets or your own tokens
+    eyebrow: '{tour}',           // a small line above every title
+    progress: 'ticks',           // meter | count | ticks | dots | none
+    templates: { card: { theme: { radius: 16 }, css: '.popover { border: 1px solid #ddd }' } },
+    slots: { media: (ctx, doc) => doc.createElement('figure') },
     headless: { render: (ctx, container) => { /* draw your own popover */ } },
   },
 })
 ```
 
-Tours can also carry `options.theme` and `options.template` in their JSON.
+Tours can also carry `options.theme`, `options.template`, `options.progress` and
+`options.eyebrow` in their JSON. Reach for `slots` only when no field covers what you
+need: they take functions, so a look that uses them stops being data.
 
 ## Arrows, spotlight and overlay
 

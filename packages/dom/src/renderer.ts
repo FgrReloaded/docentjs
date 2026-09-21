@@ -13,6 +13,7 @@ import type {
   ArrowStyle,
   Labels,
   OverlayOptions,
+  ProgressStyle,
   RenderContext,
   Renderer,
   SpotlightOptions,
@@ -26,7 +27,7 @@ import type { Connector } from './connector'
 import { BUILT_IN_LOOKS, type LookName } from './looks'
 import { uncover } from './occlusion'
 import { Overlay } from './overlay'
-import { buildHeadlessShell, buildPopover } from './popover'
+import { buildHeadlessShell, buildPopover, type PopoverLook } from './popover'
 import {
   centerPosition,
   clipToViewport,
@@ -60,6 +61,10 @@ export interface DomRendererOptions {
   spotlight?: SpotlightOptions
   /** Arrow style when a tour sets none. Default `caret`. */
   arrow?: ArrowStyle
+  /** How the step counter is drawn when a tour sets none. Default `meter`. */
+  progress?: ProgressStyle
+  /** A small line above every title. `{tour}` becomes the tour's name. */
+  eyebrow?: string
   /** Overlay defaults when a tour sets none: style, color, opacity, blur. */
   overlay?: OverlayOptions
   /** Base theme: a preset name, tokens, or both. Tours and templates layer on top. */
@@ -70,8 +75,8 @@ export interface DomRendererOptions {
   slots?: PopoverSlots
   /** Named templates that tours select with `options.template`. */
   templates?: Record<string, PopoverTemplate>
-  /** Template to use when a tour names none. */
-  template?: string
+  /** Template to use when a tour names none: a registered name, or a theme itself. */
+  template?: string | PopoverTemplate
   /** Bring your own popover. Overlay, spotlight, positioning and keys stay. */
   headless?: HeadlessPopover
   /** Extra CSS injected into the shadow root. */
@@ -87,13 +92,14 @@ export interface DomRendererOptions {
 
 type Cleanup = () => void
 
-interface Look {
+interface Look extends PopoverLook {
   arrow: ArrowStyle
+  progress: ProgressStyle
   spotlight: SpotlightOptions
   overlay: OverlayOptions
 }
 
-const DEFAULT_LOOK: Look = { arrow: 'caret', spotlight: {}, overlay: {} }
+const DEFAULT_LOOK: Look = { arrow: 'caret', progress: 'meter', spotlight: {}, overlay: {} }
 
 /** Breathing room kept between the popover and the edges of the screen. */
 const EDGE = 12
@@ -466,6 +472,9 @@ export class DomRenderer implements Renderer {
     const step = ctx.step
     return {
       arrow: step.arrow ?? tour.arrow ?? template?.arrow ?? this.options.arrow ?? 'caret',
+      eyebrow: tour.eyebrow ?? template?.eyebrow ?? this.options.eyebrow,
+      progress: tour.progress ?? template?.progress ?? this.options.progress ?? 'meter',
+      count: template?.count,
       spotlight: {
         ...this.options.spotlight,
         ...template?.spotlight,
@@ -606,9 +615,12 @@ export class DomRenderer implements Renderer {
 
   /** The tour's template: one the app registered, or a built-in look. */
   private template(ctx: RenderContext): PopoverTemplate | undefined {
-    const name = ctx.tour.options?.template ?? this.options.template
-    if (name === undefined) return undefined
-    return this.options.templates?.[name] ?? BUILT_IN_LOOKS[name as LookName]
+    // A tour names a template; the renderer may instead be handed one outright,
+    // which is how an installed theme arrives.
+    const chosen = ctx.tour.options?.template ?? this.options.template
+    if (chosen === undefined) return undefined
+    if (typeof chosen !== 'string') return chosen
+    return this.options.templates?.[chosen] ?? BUILT_IN_LOOKS[chosen as LookName]
   }
 
   private buildDefault(
@@ -622,6 +634,7 @@ export class DomRenderer implements Renderer {
       ctx,
       this.options.labels ?? {},
       slots,
+      this.look,
     )
     this.popover = el
     this.arrow = arrow

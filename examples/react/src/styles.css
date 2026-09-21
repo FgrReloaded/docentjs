@@ -988,88 +988,11 @@ kbd {
   margin-left: auto;
 }
 
-/* ------------------------------------------------- slotted popover content
- * Projected into the built-in popover through named slots. It lives in the
- * page's DOM, so these are ordinary page styles.
- *
- * Slotted nodes replace the popover's own header/footer children, so they have
- * to claim the space those children did: the title takes the row so the close
- * button stays hard right, and the counter takes the rest so the buttons never
- * ride over it.
+/* ----------------------------------------------------- popover figure
+ * The release note's diagram is still projected through a slot, so it lives in
+ * the page's DOM and is styled here. The brand's type and colour for the
+ * popover itself live in the template's own CSS, inside the shadow root.
  */
-
-.tp-title {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.tp-kicker {
-  font-size: var(--t-micro);
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--pine);
-}
-
-.tp-kicker--note {
-  color: var(--ink-3);
-}
-
-.tp-heading {
-  margin: 0;
-  font-family: var(--face-display);
-  font-size: 1.25rem;
-  font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  color: var(--ink);
-  text-wrap: balance;
-}
-
-.tp-heading--sm {
-  font-size: 1.0625rem;
-}
-
-.tp-progress {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.tp-count {
-  white-space: nowrap;
-  font-size: var(--t-micro);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.06em;
-  color: var(--ink-3);
-}
-
-.tp-rule {
-  display: flex;
-  gap: 3px;
-  flex: 1;
-  min-width: 0;
-}
-
-/* Ticks give up width evenly on a long tour rather than pushing the footer. */
-.tp-tick {
-  flex: 1 1 8px;
-  min-width: 0;
-  max-width: 8px;
-  height: 2px;
-  border-radius: 999px;
-  background: var(--rule-strong);
-}
-
-.tp-tick[data-done] {
-  background: var(--pine);
-}
 
 .tp-figure {
   margin-top: 14px;

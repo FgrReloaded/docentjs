@@ -1,0 +1,21 @@
+{
+  "name": "Broadsheet",
+  "theme": {
+    "background": "oklch(98.6% 0.006 85)",
+    "foreground": "oklch(21% 0.012 60)",
+    "muted": "oklch(52% 0.014 60)",
+    "accent": "oklch(45% 0.14 28)",
+    "accentForeground": "oklch(98% 0.008 85)",
+    "connector": "oklch(45% 0.14 28)",
+    "overlay": "oklch(24% 0.03 60)",
+    "overlayOpacity": 0.46,
+    "radius": 3,
+    "width": 360,
+    "padding": "18px 20px 16px",
+    "duration": 190
+  },
+  "eyebrow": "{tour}",
+  "progress": "count",
+  "spotlight": { "padding": 8, "radius": 3, "ring": "hairline" },
+  "css": ".title { font-family: ui-serif, Georgia, 'Times New Roman', serif; font-size: 21px; letter-spacing: -0.01em; } .eyebrow { letter-spacing: 0.14em; } .footer { margin-top: 20px; padding-top: 12px; border-top: 1px solid color-mix(in oklch, var(--docent-fg) 14%, transparent); }"
+}

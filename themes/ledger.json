@@ -1,0 +1,27 @@
+{
+  "name": "Ledger",
+  "theme": {
+    "background": "oklch(99.3% 0.005 95)",
+    "foreground": "oklch(24% 0.014 95)",
+    "muted": "oklch(58% 0.011 95)",
+    "accent": "oklch(42% 0.082 155)",
+    "accentForeground": "oklch(98% 0.012 155)",
+    "connector": "oklch(42% 0.082 155)",
+    "ring": "oklch(98% 0.01 95)",
+    "overlay": "oklch(32% 0.03 95)",
+    "overlayOpacity": 0.44,
+    "radius": 12,
+    "width": 352,
+    "padding": "18px 18px 14px",
+    "shadow": "0 1px 2px oklch(24% 0.014 95 / 0.08), 0 26px 52px -26px oklch(24% 0.014 95 / 0.55)",
+    "duration": 220
+  },
+  "eyebrow": "{tour}",
+  "progress": "ticks",
+  "count": "{current2} / {total2}",
+  "spotlight": {
+    "padding": 10,
+    "radius": 10,
+    "animate": true
+  }
+}

@@ -81,6 +81,16 @@ export type ArrowStyle =
   | 'sketch'
   | 'pin'
 
+/**
+ * How the step counter is drawn.
+ * - `meter` (default): a slim bar and the count.
+ * - `count`: the count on its own.
+ * - `ticks`: one mark per step, filled up to the current one.
+ * - `dots`: one dot per step.
+ * - `none`: nothing.
+ */
+export type ProgressStyle = 'meter' | 'count' | 'ticks' | 'dots' | 'none'
+
 /** Shape of the cutout around the target. `circle` circumscribes the target. */
 export type SpotlightShape = 'rounded' | 'rect' | 'pill' | 'circle'
 
@@ -262,6 +272,8 @@ export interface Theme {
   font?: string
   /** Popover width. Number means px. */
   width?: ThemeValue
+  /** Padding inside the popover, any CSS padding value. Number means px. */
+  padding?: ThemeValue
   /**
    * Backdrop colour. `options.overlay.color` wins when both are set; prefer
    * that one, which keeps every overlay setting together.
@@ -284,7 +296,10 @@ export interface Labels {
   skip?: string
   done?: string
   close?: string
-  /** Supports `{current}` and `{total}` placeholders. */
+  /**
+   * Supports `{current}` and `{total}`, and `{current2}` / `{total2}` for the
+   * same numbers padded to two digits (`03 / 09`).
+   */
   progress?: string
 }
 
@@ -298,6 +313,8 @@ export interface Step {
   /** Omit for a centred modal step (welcome / finish screens). */
   target?: Target
   title?: string
+  /** Overrides the tour's eyebrow for this step. `''` removes it. */
+  eyebrow?: string
   body?: string
   /** How `body` is interpreted. Renderers never inject raw HTML. */
   format?: 'text' | 'markdown'
@@ -333,6 +350,13 @@ export interface TourOptions {
   persist?: boolean
   frequency?: Frequency
   showProgress?: boolean
+  /** How the step counter is drawn. Default: `meter`. */
+  progress?: ProgressStyle
+  /**
+   * A small line above every step's title: a section, a date, the product.
+   * `{tour}` is replaced with the tour's name. Off unless set.
+   */
+  eyebrow?: string
   /** Allow closing with Escape or the close button. */
   allowClose?: boolean
   closeOnOverlayClick?: boolean

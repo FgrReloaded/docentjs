@@ -22,6 +22,7 @@ A step is one stop on the tour: an element, a short explanation, and a way to co
 ```
 
 - `title` is the heading. Keep it short, ideally under six words.
+- `eyebrow` is a small line above it. Set it once for the whole tour, or per step; `''` removes it for one step. See [themes](/customize/themes/).
 - `body` is plain text by default.
 - With `format: 'markdown'`, a safe subset is rendered: **bold**, *italic*, `code`, links, paragraphs and line breaks.
 - `media` adds an image or a video above the text. Always give images an `alt`.
@@ -96,12 +97,19 @@ Change the wording for a whole tour with `options.labels`, or for every tour at 
 ```ts
 options: {
   labels: { next: 'Continue', back: 'Previous', skip: 'Not now', done: 'Finish', progress: 'Step {current} of {total}' },
+  // `{current2}` and `{total2}` pad to two digits: `03 / 09`.
 }
 ```
 
 ## Progress
 
 With `showProgress` on, the popover shows how far along the person is. The count includes every step, even ones later skipped by a condition, so the numbers never jump backwards mid-tour.
+
+`progress` picks how it is drawn: `meter` (the default, a slim bar and the count), `count`, `ticks`, `dots`, or `none`.
+
+```ts
+options: { showProgress: true, progress: 'dots' }
+```
 
 ## Skipping steps for some people
 

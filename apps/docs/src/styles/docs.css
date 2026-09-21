@@ -623,3 +623,79 @@ starlight-tabs [role="tab"][aria-selected="true"] {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* ------------------------------------------------------------ theme gallery */
+
+.themes {
+  display: grid;
+  gap: var(--dc-space-6);
+  margin-block: var(--dc-space-8);
+}
+.theme {
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 14px;
+  background: var(--dc-surface);
+  overflow: hidden;
+}
+.theme-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--dc-space-3);
+  padding: 0.6rem 0.75rem 0.6rem 1rem;
+  border-bottom: 1px solid var(--sl-color-hairline);
+  background: var(--sl-color-black);
+}
+.theme-name {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--sl-color-white);
+}
+.theme-facts {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.75rem;
+  color: var(--sl-color-gray-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.theme-stage {
+  display: flex;
+  align-items: center;
+  min-height: 7.5rem;
+  padding: var(--dc-space-6);
+  background-image: radial-gradient(var(--dc-dot) 1px, transparent 1.2px);
+  background-size: 18px 18px;
+  background-position: 9px 9px;
+}
+.theme-json {
+  border-top: 1px solid var(--sl-color-hairline);
+  font-size: 0.8125rem;
+}
+.theme-json > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--dc-space-3);
+  padding: 0.55rem 1rem;
+  color: var(--sl-color-gray-2);
+  cursor: pointer;
+  list-style: none;
+}
+.theme-json > summary::-webkit-details-marker {
+  display: none;
+}
+.theme-json > summary > span {
+  flex: 1;
+  font-family: var(--sl-font-mono);
+}
+.theme-json > summary > button {
+  height: 1.75rem;
+  padding: 0 0.6rem;
+  font-size: 0.75rem;
+}
+.theme-json pre {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  max-height: 22rem;
+}

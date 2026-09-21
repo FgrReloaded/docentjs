@@ -6,6 +6,15 @@ description: Replace one part of the popover with your own content, and bundle a
 import { Aside } from '@astrojs/starlight/components'
 import Demo from '../../../components/Demo.astro'
 
+:::tip[Check the fields first]
+The two things most designs reach for — a small line above the title, and a
+different progress counter — are [fields](/customize/themes/), not slots:
+`eyebrow`, `progress` and `count`. Staying in JSON keeps the look installable,
+shareable and editable by a tool. Use a slot when you need markup the library
+has no field for, like a diagram.
+:::
+
+
 Customization comes in levels. Use the lowest one that does the job:
 
 | You want to | Use |
@@ -77,7 +86,17 @@ This split is deliberate. Code stays in your app, while the JSON only says "use 
 
 Three names are built in: `spotlight`, `hint` and `announcement`. See [three looks under one name](/customize/arrows-and-spotlight/#three-looks-under-one-name). Registering a template with one of those names replaces it.
 
-Templates can also set `arrow`, `spotlight` and `overlay`, so a "hint" template could use no overlay and a pin arrow everywhere.
+Templates can also set `arrow`, `spotlight`, `overlay`, `eyebrow`, `progress` and `count`, so a "hint" template could use no overlay and a pin arrow everywhere.
+
+A template with no `slots` is a [theme](/customize/themes/) — pure data, so it can be published and installed as one file. `renderer.template` takes one directly:
+
+```ts
+import theme from './docent-theme.json'
+
+createTour(tour, { renderer: { template: theme } })
+```
+
+The type is `DocentTheme`, exported from `@docentjs/dom` and each framework package.
 
 <Demo
   caption="A template with CSS, picked by name in the tour"

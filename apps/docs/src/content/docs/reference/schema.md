@@ -38,6 +38,8 @@ The guides explain each area with examples: [steps](/guides/steps/), [targets](/
 | `persist` | `boolean` | – |
 | `frequency` | `'once' \| 'until-completed' \| 'always'` | `'once'` |
 | `showProgress` | `boolean` | `true` |
+| `progress` | `ProgressStyle` | `'meter'`; see [Themes](/customize/themes/) |
+| `eyebrow` | `string` | – ; a small line above every title. `{tour}` becomes the tour's name |
 | `allowClose` | `boolean` | `true` (Escape and the close button) |
 | `closeOnOverlayClick` | `boolean` | `false` |
 | `keyboard` | `boolean` | `true` (arrow keys) |
@@ -45,10 +47,10 @@ The guides explain each area with examples: [steps](/guides/steps/), [targets](/
 | `spotlight` | `{ padding?, radius?, shape?, ring?, animate? }` | `8`, `10`, `'rounded'`, `'hairline'`, `true` |
 | `overlay` | `{ style?, color?, opacity?, blur? }` | `'dim'`, tinted ink, `0.52`, `4` |
 | `scroll` | `{ enabled?, behavior?, block? }` | `true`, `'auto'`, `'center'` |
-| `labels` | `Labels` | English defaults; `progress` supports `{current}` and `{total}` |
+| `labels` | `Labels` | English defaults; `progress` supports `{current}`, `{total}`, `{current2}`, `{total2}` |
 | `theme` | `ThemeSpec` | a preset name, tokens, or `{ preset, ...tokens }` |
 | `appearance` | `'light' \| 'dark' \| 'auto'` | `'light'`; `auto` follows the system setting |
-| `template` | `string` | a built-in look (`spotlight`, `hint`, `announcement`) or a template the app registered |
+| `template` | `string` | a built-in look (`spotlight`, `hint`, `announcement`), a [theme](/customize/themes/), or a template the app registered |
 
 ## Step
 
@@ -57,6 +59,7 @@ The guides explain each area with examples: [steps](/guides/steps/), [targets](/
 | `id` | `string` | required; unique within the tour |
 | `target` | `Target` | omit for a centred modal step |
 | `title`, `body` | `string` | |
+| `eyebrow` | `string` | overrides the tour's eyebrow; `''` removes it |
 | `format` | `'text' \| 'markdown'` | markdown subset: bold, italic, code, links, paragraphs; never raw HTML |
 | `media` | `{ type: 'image' \| 'video', src, alt? }` | |
 | `placement` | `Placement` | `'auto'`, a side, or `side-start` / `side-end` |
@@ -120,13 +123,14 @@ A string is a CSS selector. An object is the portable form:
 
 ## Theme
 
-Sizes and times accept a CSS string or a number (`radius: 12` is `12px`, `duration: 180` is `180ms`). Tokens map to `--docent-*` custom properties: `background`, `foreground`, `muted`, `accent`, `accentForeground`, `radius`, `shadow`, `font`, `width`, `overlay`, `overlayOpacity`, `duration`, `zIndex`, `connector`, `ring`. All are CSS strings.
+Sizes and times accept a CSS string or a number (`radius: 12` is `12px`, `duration: 180` is `180ms`). Tokens map to `--docent-*` custom properties: `background`, `foreground`, `muted`, `accent`, `accentForeground`, `radius`, `shadow`, `font`, `width`, `padding`, `overlay`, `overlayOpacity`, `duration`, `zIndex`, `connector`, `ring`. All are CSS strings.
 
 ## Looks
 
 ```ts
 type ArrowStyle = 'caret' | 'none' | 'line' | 'dashed' | 'dotted' | 'curve' | 'curve-dashed'
   | 'squiggle' | 'loop' | 'elbow' | 'sketch' | 'pin'
+type ProgressStyle = 'meter' | 'count' | 'ticks' | 'dots' | 'none'
 type SpotlightShape = 'rounded' | 'rect' | 'pill' | 'circle'
 type SpotlightRing = 'hairline' | 'none' | 'glow' | 'pulse' | 'dashed' | 'solid'
 type OverlayStyle = 'dim' | 'blur' | 'vignette' | 'none'

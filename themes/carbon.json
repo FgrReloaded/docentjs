@@ -1,0 +1,20 @@
+{
+  "name": "Carbon",
+  "theme": {
+    "background": "oklch(13% 0.01 285)",
+    "foreground": "oklch(99% 0.002 285)",
+    "muted": "oklch(88% 0.008 285)",
+    "accent": "oklch(90% 0.18 100)",
+    "accentForeground": "oklch(13% 0.01 285)",
+    "connector": "oklch(90% 0.18 100)",
+    "ring": "oklch(90% 0.18 100)",
+    "overlayOpacity": 0.8,
+    "radius": 4,
+    "width": 340,
+    "padding": "18px",
+    "shadow": "none"
+  },
+  "progress": "ticks",
+  "spotlight": { "padding": 6, "radius": 2, "ring": "solid" },
+  "css": ".popover { box-shadow: 0 0 0 2px var(--docent-accent); } .marks i { height: 3px; }"
+}

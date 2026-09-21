@@ -1,21 +1,15 @@
-/**
- * Cinder's tours. Everything here is data — the same JSON drives the built-in
- * popover, the app's own Vue popover, and (eventually) the hosted builder.
- */
+/** Cinder's tours, as data. Nothing here touches Vue. */
 
 import { defineTour } from '@docentjs/vue'
 
-/**
- * Triage. It does not start on a timer: it starts when a SEV1 banner appears
- * in the page, which is the moment the guidance is actually worth reading.
- */
+/** Triage. Starts when a SEV1 banner appears, not on a timer. */
 export const triageTour = defineTour({
   id: 'cinder-triage',
   version: 2,
   name: 'Triage',
   description: 'How to take a page from alert to acknowledged.',
   trigger: { type: 'element', target: { name: 'sev1-banner' }, delay: 800 },
-  // Only the person holding the pager needs this.
+  // Whoever holds the pager.
   conditions: [{ type: 'trait', key: 'role', op: 'in', value: ['oncall', 'sre'] }],
   options: {
     persist: true,
@@ -28,6 +22,7 @@ export const triageTour = defineTour({
   steps: [
     {
       id: 'welcome',
+      eyebrow: 'Cinder',
       title: 'You are on call',
       body: 'One SEV1 is open and unassigned. This walks the first four minutes of it.',
       arrow: 'none',
@@ -65,7 +60,7 @@ export const triageTour = defineTour({
       placement: 'top',
       interaction: 'allow',
       buttons: { next: false },
-      // The step completes when the checklist exists, however the user got there.
+      // Completes when the checklist exists, however the user got there.
       advance: { on: 'element', target: { name: 'runbook-steps' } },
     },
     {
@@ -89,6 +84,7 @@ export const triageTour = defineTour({
     },
     {
       id: 'done',
+      eyebrow: 'Cinder',
       title: 'That is the loop',
       body: 'Acknowledge, mitigate, note. **Escalate** if the budget keeps burning after the runbook.',
       format: 'markdown',
@@ -97,7 +93,7 @@ export const triageTour = defineTour({
   ],
 })
 
-/** Fires from the app, not from a timer: `docent.track('incident-escalated')`. */
+/** Fired by the app: `docent.track('incident-escalated')`. */
 export const escalationTour = defineTour({
   id: 'cinder-escalation',
   version: 1,
@@ -122,10 +118,7 @@ export const escalationTour = defineTour({
   ],
 })
 
-/**
- * The close-out walkthrough, drawn by a Vue component instead of the built-in
- * popover. Docent keeps the overlay, spotlight, positioning and keys.
- */
+/** Drawn by a Vue component (headless). Overlay, spotlight, positioning and keys stay. */
 export const postmortemTour = defineTour({
   id: 'cinder-postmortem',
   version: 1,

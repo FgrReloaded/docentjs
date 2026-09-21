@@ -45,6 +45,7 @@ export {
 } from './target'
 export {
   applyTheme,
+  type DocentTheme,
   type HeadlessPopover,
   mergeThemeSpecs,
   mergeThemes,

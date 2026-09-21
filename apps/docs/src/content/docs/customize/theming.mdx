@@ -8,6 +8,9 @@ import Demo from '../../../components/Demo.astro'
 
 Docent looks finished out of the box, and most teams change one thing: the accent color. This page goes from that one change to full control.
 
+Looking for a ready-made look instead? The [theme gallery](/customize/themes/) has
+several to copy, and each one is a single JSON file.
+
 ## The default look
 
 Ink on paper: a near-white card, near-black text and an ink Next button, all tinted very slightly toward violet, with hairline edges instead of heavy borders. It is meant to sit quietly in any product without competing with its brand.
@@ -34,6 +37,7 @@ defineTour({
 | `accent`, `accentForeground` | the Next button's background and text |
 | `background`, `foreground`, `muted` | the card, its main text, and secondary text |
 | `radius`, `width`, `shadow` | the card's corners, width and shadow |
+| `padding` | the space inside the card; any CSS padding value |
 | `font` | the font family, if not your site's |
 | `overlay`, `overlayOpacity` | the backdrop, but prefer the [overlay options](/customize/arrows-and-spotlight/#overlay), which win when both are set |
 | `ring`, `connector` | the spotlight ring and drawn arrows |

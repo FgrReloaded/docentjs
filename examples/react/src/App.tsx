@@ -12,7 +12,7 @@ import { TourCard } from './TourCard'
 import { rendererDefaults } from './tour-theme'
 import { onboardingTour, reconcileTour, releaseTour, remindersTour } from './tours'
 
-/** Where product analytics would go. Every tour event arrives here. */
+/** Every tour event arrives here; product analytics would go in its place. */
 const analytics: EventSink = {
   emit: (event) => console.debug('[docent]', event.type, event.tourId, event.stepId ?? ''),
 }
@@ -37,8 +37,7 @@ function Console() {
   const openDraft = useCallback(() => setDraftOpen(true), [])
   const closeDraft = useCallback(() => setDraftOpen(false), [])
 
-  // The manager reads its options once, on mount. Hooks reach the live app
-  // through this ref instead of capturing the first render's closures.
+  // The manager reads its options once, on mount, so hooks reach the app through a ref.
   const app = useRef({ openDraft, closeDraft, say })
   app.current = { openDraft, closeDraft, say }
 
@@ -47,8 +46,7 @@ function Console() {
     hooks: {
       [onboardingTour.id]: {
         steps: {
-          // The drawer normally opens because the user clicked. If they got
-          // here another way, open it so the step has something to point at.
+          // Open it anyway, so the step always has a target.
           'draft-total': {
             beforeShow: (): undefined => {
               app.current.openDraft()
@@ -65,23 +63,20 @@ function Console() {
     },
   })
 
-  // Month-end guide, drawn by our own React component.
+  // Month-end guide, drawn by our own component.
   const reconcile = useTour(reconcileTour, { popover: (ctx) => <TourCard ctx={ctx} /> })
 
-  // Traits decide who is eligible: the release note is owners-only.
+  // Traits decide eligibility: the release note is owners-only.
   useEffect(() => {
     docent.identify('u_2291', { plan: 'studio', role: 'owner', invoices: 128 })
   }, [docent])
 
-  // Lets the docs link straight into a tour: /examples/react/?start=<id>.
-  // Both dependencies are stable for the life of their controller, so this
-  // runs once rather than on every state change.
+  // Lets the docs link into a tour: ?start=<id>.
   useEffect(() => {
     const wanted = new URLSearchParams(window.location.search).get('start')
     if (!wanted) return
     if (wanted === reconcileTour.id) {
-      // The month-end guide runs outside the manager, so stop the manager
-      // watching triggers for this visit: the link asked for one tour.
+      // It runs outside the manager, so stop the manager watching triggers.
       void docent.docent.disconnect()
       void reconcile.controller.start()
     } else void docent.start(wanted)
@@ -103,7 +98,7 @@ function Console() {
 
   const remind = (invoice: Invoice) => {
     say(`Reminder sent to ${invoice.client}`)
-    // Fires the `event` trigger on the reminders tour.
+    // Fires the reminders tour's `event` trigger.
     docent.track('reminder-sent')
   }
 
@@ -113,7 +108,7 @@ function Console() {
         <Rail
           onSetupTour={() => void docent.start(onboardingTour.id)}
           onReconcileTour={() => {
-            // Only one tour at a time, even across two controllers.
+            // One tour at a time, even across two controllers.
             void docent.stop()
             void reconcile.start()
           }}
@@ -154,10 +149,10 @@ function Console() {
         </output>
       )}
 
-      {/* The container the month-end guide renders into. */}
+      {/* Where the month-end guide renders. */}
       {reconcile.portal}
 
-      {/* Development only: renders nothing and drops out of production builds. */}
+      {/* Dev only: renders nothing and drops out of production builds. */}
       <DocentDevtools docent={docent} />
     </>
   )

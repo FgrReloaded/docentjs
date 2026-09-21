@@ -23,6 +23,7 @@ export {
   type OverlayOptions,
   type OverlayStyle,
   type Placement,
+  type ProgressStyle,
   SCHEMA_VERSION,
   type SchemaVersion,
   type ScrollOptions,

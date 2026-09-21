@@ -1,0 +1,132 @@
+---
+/**
+ * The theme gallery. Reads the published themes straight from `themes/` at the
+ * repo root — the same files the install instructions tell you to copy — so a
+ * card can never show something different from what you get.
+ *
+ * Every card runs the real renderer on its own stage. Nothing here reproduces
+ * the popover's markup, so a card cannot drift from the library.
+ */
+// Resolved by the bundler against this file, so it keeps working once built.
+const files = import.meta.glob('../../../../themes/*.json', {
+  eager: true,
+  query: '?raw',
+  import: 'default',
+}) as Record<string, string>
+
+const themes = Object.entries(files)
+  .map(([path, raw]) => {
+    const json = raw.trim()
+    return {
+      slug: path.split('/').pop()?.replace(/\.json$/, '') ?? '',
+      json,
+      theme: JSON.parse(json) as Record<string, any>,
+    }
+  })
+  .sort((a, b) => a.slug.localeCompare(b.slug))
+
+/** Two steps: one anchored to a control, one centred, so a card shows both. */
+const tourFor = (slug: string, name: string) => ({
+  schemaVersion: 1,
+  id: `theme-${slug}`,
+  name,
+  options: { showProgress: true, template: slug },
+  steps: [
+    {
+      id: 'save',
+      target: { name: `${slug}-save` },
+      title: 'Publish when you are ready',
+      body: 'Drafts save as you type, so nothing is lost if you step away.',
+      placement: 'bottom-start',
+    },
+    {
+      id: 'share',
+      target: { name: `${slug}-share` },
+      title: 'Share it with the team',
+      body: 'Anyone with the link can read it. Editing stays with you.',
+      placement: 'bottom',
+    },
+    { id: 'done', title: 'That is the whole loop', body: 'Replay this from Help at any time.' },
+  ],
+})
+---
+
+<div class="themes not-content">
+  {
+    themes.map(({ slug, json, theme }) => (
+      <section class="theme" id={slug}>
+        <header class="theme-bar">
+          <span class="theme-name">{theme.name ?? slug}</span>
+          <span class="theme-facts">
+            {[
+              theme.progress ? `${theme.progress} progress` : null,
+              theme.eyebrow ? 'eyebrow' : null,
+              theme.arrow ? `${theme.arrow} arrow` : null,
+              theme.overlay?.style === 'none' ? 'no scrim' : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </span>
+          <button type="button" class="primary" data-theme-start={slug}>
+            <svg viewBox="0 0 12 12" aria-hidden="true">
+              <path
+                d="M3 1.8v8.4a.6.6 0 0 0 .9.5l6.6-4.2a.6.6 0 0 0 0-1L3.9 1.3a.6.6 0 0 0-.9.5Z"
+                fill="currentColor"
+              />
+            </svg>
+            Preview
+          </button>
+        </header>
+
+        <div class="theme-stage" data-theme-stage={slug} data-tour={JSON.stringify(tourFor(slug, String(theme.name ?? slug)))} data-theme={json}>
+          <div class="row">
+            <button type="button" class="primary" data-docent={`${slug}-save`}>Publish</button>
+            <button type="button" data-docent={`${slug}-share`}>Share</button>
+            <button type="button">Settings</button>
+          </div>
+        </div>
+
+        <details class="theme-json">
+          <summary>
+            <span>{slug}.json</span>
+            <button type="button" data-copy={slug}>Copy</button>
+          </summary>
+          <pre><code>{json}</code></pre>
+        </details>
+      </section>
+    ))
+  }
+</div>
+
+<script>
+  import { createTour } from '@docentjs/dom'
+
+  const nothing = { get: () => null, set: () => {}, remove: () => {} }
+
+  for (const stage of document.querySelectorAll<HTMLElement>('[data-theme-stage]')) {
+    const slug = stage.dataset.themeStage as string
+    const tour = JSON.parse(stage.dataset.tour ?? '{}')
+    const theme = JSON.parse(stage.dataset.theme ?? '{}')
+    // Exactly how an app installs a theme: hand the JSON to the renderer.
+    const controller = createTour(tour, {
+      renderer: { templates: { [slug]: theme } },
+      storage: nothing,
+    })
+    document
+      .querySelector(`[data-theme-start="${slug}"]`)
+      ?.addEventListener('click', () => controller.start())
+  }
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
+    button.addEventListener('click', async (event) => {
+      event.preventDefault()
+      const json = button.closest('.theme')?.querySelector('code')?.textContent ?? ''
+      await navigator.clipboard.writeText(json)
+      const was = button.textContent
+      button.textContent = 'Copied'
+      setTimeout(() => {
+        button.textContent = was
+      }, 1400)
+    })
+  }
+</script>

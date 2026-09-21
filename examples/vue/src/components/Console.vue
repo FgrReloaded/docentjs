@@ -30,13 +30,12 @@ const events = computed<Event[]>(() => [
   ...(timelines[selectedId.value] ?? []),
   ...(added[selectedId.value] ?? []),
 ])
-/** The element trigger on the triage tour watches for this banner. */
+/** The triage tour's element trigger watches for this banner. */
 const sev1Open = computed(() =>
   incidents.some((item) => item.sev === 1 && states[item.id] !== 'resolved'),
 )
 
-// The manager watches triggers (an element appearing, an app event) and runs
-// one tour at a time. Defaults come from the provider above.
+// Watches triggers, checks conditions, runs one tour at a time. Defaults come from App.vue.
 const docent = useDocent({
   tours: [triageTour, escalationTour],
   hooks: {
@@ -46,19 +45,18 @@ const docent = useDocent({
   },
 })
 
-// The close-out guide is drawn by our own Vue component.
+// Drawn by our own component.
 const postmortem = useTour(postmortemTour, { popover: true })
 
 // Traits decide eligibility: the triage tour is for whoever holds the pager.
 docent.identify('u_88', { role: 'oncall', team: 'platform', rota: 'W38' })
 
-// Lets the docs link straight into a tour: /examples/vue/?start=<id>
+// Lets the docs link into a tour: ?start=<id>.
 onMounted(() => {
   const wanted = new URLSearchParams(window.location.search).get('start')
   if (!wanted) return
   if (wanted === postmortemTour.id) {
-    // The close-out guide runs outside the manager, so stop the manager
-    // watching triggers for this visit: the link asked for one tour.
+    // It runs outside the manager, so stop the manager watching triggers.
     void docent.docent.disconnect()
     void postmortem.start()
   } else void docent.start(wanted)
@@ -107,7 +105,7 @@ function escalate() {
     detail: 'M. Lindqvist paged · 10 minute response clock',
   })
   say('Secondary paged')
-  // Fires the `event` trigger on the escalation tour.
+  // Fires the escalation tour's `event` trigger.
   docent.track('incident-escalated')
 }
 
@@ -126,12 +124,12 @@ function guide(which: 'triage' | 'postmortem') {
     void docent.start(triageTour.id)
     return
   }
-  // Only one tour at a time, even across two controllers.
+  // One tour at a time, even across two controllers.
   void docent.stop()
   void postmortem.start()
 }
 
-// Switching incidents closes the runbook: it belongs to one alert rule.
+// The runbook belongs to one alert rule.
 watch(selectedId, () => {
   runbookOpen.value = false
 })
@@ -181,11 +179,11 @@ watch(selectedId, () => {
     {{ toast }}
   </output>
 
-  <!-- Teleports the card above into the container Docent positions. -->
+  <!-- Teleports the card into the container Docent positions. -->
   <TourPopover :tour="postmortem" v-slot="{ ctx }">
     <TourCard :ctx="ctx" />
   </TourPopover>
 
-  <!-- Development only: renders nothing and drops out of production builds. -->
+  <!-- Dev only: renders nothing and drops out of production builds. -->
   <DocentDevtools :docent="docent" />
 </template>

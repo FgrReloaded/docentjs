@@ -7,6 +7,7 @@
 import type {
   ArrowStyle,
   OverlayOptions,
+  ProgressStyle,
   RenderContext,
   SpotlightOptions,
   Theme,
@@ -26,6 +27,7 @@ export const THEME_VARS: Record<keyof Theme, string> = {
   shadow: 'shadow',
   font: 'font',
   width: 'width',
+  padding: 'padding',
   overlay: 'overlay',
   overlayOpacity: 'overlay-opacity',
   duration: 'duration',
@@ -35,7 +37,12 @@ export const THEME_VARS: Record<keyof Theme, string> = {
 }
 
 /** Tokens that take a unit when given as a number. */
-const UNITS: Partial<Record<keyof Theme, string>> = { radius: 'px', width: 'px', duration: 'ms' }
+const UNITS: Partial<Record<keyof Theme, string>> = {
+  radius: 'px',
+  width: 'px',
+  padding: 'px',
+  duration: 'ms',
+}
 
 /** `12` becomes `12px`, `220` becomes `220ms`, strings are passed through. */
 function cssValue(key: keyof Theme, value: ThemeValue): string {
@@ -177,10 +184,28 @@ export interface PopoverTemplate {
   slots?: PopoverSlots
   /** Arrow style for tours using this template. */
   arrow?: ArrowStyle
+  /** How the step counter is drawn. */
+  progress?: ProgressStyle
+  /** A small line above every title. `{tour}` becomes the tour's name. */
+  eyebrow?: string
+  /** Text of the step counter: `{current}`, `{total}`, `{current2}`, `{total2}`. */
+  count?: string
   spotlight?: SpotlightOptions
   overlay?: OverlayOptions
   /** Extra CSS injected into the shadow root while this template is active. */
   css?: string
+}
+
+/**
+ * A theme: everything a template can express without writing code, so it is
+ * plain JSON — publishable, installable, diffable, and editable by a tool.
+ *
+ * A template is a theme plus `slots`, which are functions. Anything that has
+ * to survive being downloaded from somewhere must be a theme.
+ */
+export type DocentTheme = Omit<PopoverTemplate, 'slots'> & {
+  /** Shown in a gallery or a picker. Ignored at runtime. */
+  name?: string
 }
 
 /**

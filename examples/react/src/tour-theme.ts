@@ -1,27 +1,11 @@
 /**
- * Ledgerline's house style for tours: one set of theme tokens plus three
- * named templates the tour JSON selects with `options.template`.
- *
- * Slot content is built as ordinary DOM and projected into the popover's
- * shadow root, so it lives in the page and picks up `styles.css` like
- * anything else on the page.
+ * Ledgerline's house style: brand tokens plus three named looks the tour JSON
+ * selects with `options.template`. Data, apart from one slot for a diagram.
  */
 
-import type { DomRendererOptions, PopoverTemplate, SlotRenderer } from '@docentjs/react'
+import type { DocentTheme, DomRendererOptions, PopoverTemplate } from '@docentjs/react'
 
-function el<K extends keyof HTMLElementTagNameMap>(
-  doc: Document,
-  tag: K,
-  className: string,
-  text?: string,
-): HTMLElementTagNameMap[K] {
-  const node = doc.createElement(tag)
-  node.className = className
-  if (text !== undefined) node.textContent = text
-  return node
-}
-
-/** Brand tokens. Tours and templates layer on top of these. */
+/** Brand tokens. Tours and templates layer on top. */
 const tokens: DomRendererOptions['theme'] = {
   background: 'oklch(99.3% 0.005 95)',
   foreground: 'oklch(24% 0.014 95)',
@@ -39,94 +23,67 @@ const tokens: DomRendererOptions['theme'] = {
   duration: 220,
 }
 
-/**
- * Every template sets its title the same way: the tour's name as a kicker,
- * then the step title in the display face the rest of the app uses.
- */
-function brandTitle(kicker: string | undefined, size: 'md' | 'sm'): SlotRenderer {
-  return (ctx, doc) => {
-    const wrap = el(doc, 'div', 'tp-title')
-    const label = kicker ?? ctx.tour.name
-    if (label) {
-      wrap.appendChild(el(doc, 'span', `tp-kicker${kicker ? ' tp-kicker--note' : ''}`, label))
-    }
-    wrap.appendChild(
-      el(doc, 'h2', `tp-heading${size === 'sm' ? ' tp-heading--sm' : ''}`, ctx.step.title ?? ''),
-    )
-    return wrap
-  }
-}
-
-/**
- * The default: a ruled counter instead of the built-in meter, and the tour's
- * own name set above the step title the way a ledger heading is.
- */
-const ledgerline: PopoverTemplate = {
-  slots: {
-    title: brandTitle(undefined, 'md'),
-    progress: (ctx, doc) => {
-      const { current, total } = ctx.progress
-      const wrap = el(doc, 'div', 'tp-progress')
-      const count = el(doc, 'span', 'tp-count')
-      count.textContent = `${String(current).padStart(2, '0')} / ${String(total).padStart(2, '0')}`
-      const rule = el(doc, 'span', 'tp-rule')
-      for (let i = 1; i <= total; i++) {
-        const tick = el(doc, 'i', 'tp-tick')
-        if (i <= current) tick.dataset.done = ''
-        rule.appendChild(tick)
-      }
-      wrap.append(count, rule)
-      return wrap
-    },
-  },
+/** The default: the tour's name above the title, and a ruled counter. */
+const ledgerline: DocentTheme = {
+  eyebrow: '{tour}',
+  progress: 'ticks',
+  count: '{current2} / {total2}',
+  // Custom properties cross the shadow boundary, so the page's scale works by name.
   css: `
     .popover { padding: 18px 18px 14px; }
     .body { margin-top: 8px; }
-    /* A long tour's counter needs the whole width; let it take its own row
-       when the buttons leave it nothing, instead of running under them. */
+    /* A long tour's counter takes its own row rather than running under the buttons. */
     .footer { margin-top: 18px; flex-wrap: wrap; row-gap: 12px; }
-    .buttons { margin-left: auto; }
+    .title { font-family: var(--face-display); font-size: 1.25rem; letter-spacing: -0.02em; }
+    .eyebrow { color: var(--pine); font-weight: 600; letter-spacing: 0.1em; }
+    .count { font-weight: 600; letter-spacing: 0.06em; }
+    .marks { flex: 1; }
+    .marks i { flex: 1 1 8px; min-width: 0; max-width: 8px; border-radius: 999px; }
+    .marks i[data-done] { background: var(--pine); }
   `,
 }
 
-/**
- * A note in the margin: the page keeps working underneath, a glowing ring
- * marks the spot and a drawn curve reaches over to it.
- */
-const marginNote: PopoverTemplate = {
+/** A note in the margin: no scrim, a glowing ring, a drawn curve. */
+const marginNote: DocentTheme = {
   theme: { width: 296, radius: 10 },
   overlay: { style: 'none' },
   spotlight: { ring: 'glow', padding: 6, radius: 8 },
   arrow: 'curve',
-  slots: {
-    progress: () => null,
-    title: brandTitle('Just now', 'sm'),
-  },
-  css: `.popover { padding: 14px 16px 12px; } .footer { margin-top: 14px; }`,
+  eyebrow: 'Just now',
+  progress: 'none',
+  css: `
+    .popover { padding: 14px 16px 12px; }
+    .footer { margin-top: 14px; }
+    .title { font-family: var(--face-display); font-size: 1.0625rem; }
+    .eyebrow { color: var(--ink-3); font-weight: 600; letter-spacing: 0.1em; }
+  `,
 }
 
-/** A release note: the page blurs away and a drawn figure carries the point. */
+/** A release note: the page blurs away and a diagram carries the point. */
 const bulletin: PopoverTemplate = {
   theme: { width: 452, radius: 14 },
   overlay: { style: 'blur', blur: 7, opacity: 0.5 },
   spotlight: { ring: 'none' },
   arrow: 'none',
+  eyebrow: 'Release 14',
+  // No field draws a diagram, so this one earns a slot.
   slots: {
-    title: brandTitle('Release 14', 'md'),
     media: (ctx, doc) => {
       if (ctx.index !== 0) return null
-      const figure = el(doc, 'div', 'tp-figure')
+      const figure = doc.createElement('div')
+      figure.className = 'tp-figure'
       figure.innerHTML = RELEASE_FIGURE
       return figure
     },
   },
-  css: `.popover { padding: 20px; } .title { font-size: 20px; }`,
+  css: `
+    .popover { padding: 20px; }
+    .title { font-family: var(--face-display); font-size: 20px; }
+    .eyebrow { color: var(--pine); font-weight: 600; letter-spacing: 0.1em; }
+  `,
 }
 
-/**
- * A small diagram: statements on the left, matched entries on the right.
- * Static markup we author ourselves, so `innerHTML` is safe here.
- */
+/** Our own static markup, so `innerHTML` is safe. */
 const RELEASE_FIGURE = `
 <svg viewBox="0 0 412 116" role="img" aria-label="Statement lines matching invoices automatically">
   <g fill="none" stroke="oklch(81% 0.012 95)" stroke-width="1">
@@ -157,7 +114,7 @@ const RELEASE_FIGURE = `
   </g>
 </svg>`
 
-/** Passed to `DocentProvider`, so every tour in the app inherits it. */
+/** Passed to `DocentProvider`; every tour inherits it. */
 export const rendererDefaults: DomRendererOptions = {
   theme: tokens,
   gap: 14,

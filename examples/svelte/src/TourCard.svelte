@@ -2,8 +2,8 @@
   import type { RenderContext } from '@docentjs/svelte'
 
   /**
-   * The publish check, drawn by Svelte rather than the built-in popover.
-   * Docent still owns the overlay, the spotlight, positioning and keys.
+   * Our own popover (headless mode). Docent keeps the overlay, spotlight,
+   * positioning, focus and keys; everything inside the card is ours.
    */
   let { ctx }: { ctx: RenderContext } = $props()
 </script>

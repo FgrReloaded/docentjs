@@ -1,9 +1,8 @@
 import type { RenderContext } from '@docentjs/react'
 
 /**
- * A popover the app draws itself (headless mode). Docent still handles the
- * overlay, the spotlight, positioning, focus and keys — everything inside
- * this card is ours, including app state and page CSS.
+ * Our own popover (headless mode). Docent keeps the overlay, spotlight,
+ * positioning, focus and keys; everything inside the card is ours.
  */
 export function TourCard({ ctx }: { ctx: RenderContext }) {
   const { step, progress, actions, isLast, canGoBack } = ctx

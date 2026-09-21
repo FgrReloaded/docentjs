@@ -1,0 +1,29 @@
+{
+  "name": "Console",
+  "theme": {
+    "background": "oklch(24.5% 0.016 60)",
+    "foreground": "oklch(94% 0.008 60)",
+    "muted": "oklch(72% 0.012 60)",
+    "accent": "oklch(74% 0.165 58)",
+    "accentForeground": "oklch(19% 0.04 60)",
+    "connector": "oklch(74% 0.165 58)",
+    "ring": "oklch(74% 0.165 58)",
+    "overlay": "oklch(12% 0.014 60)",
+    "overlayOpacity": 0.66,
+    "radius": 8,
+    "width": 344,
+    "padding": "16px 16px 12px",
+    "shadow": "0 24px 56px -24px oklch(8% 0.02 60 / 0.95)",
+    "duration": 200
+  },
+  "eyebrow": "{tour}",
+  "progress": "count",
+  "count": "{current2}/{total2}",
+  "spotlight": {
+    "ring": "hairline",
+    "padding": 8,
+    "radius": 6,
+    "animate": true
+  },
+  "css": ".count { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.02em; } .button { border-radius: 6px; }"
+}

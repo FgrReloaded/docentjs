@@ -1,11 +1,8 @@
-/**
- * Pressroom's tours. Three shapes of guidance from one schema: a walkthrough,
- * a note that does not block the page, and a publish check drawn by the app.
- */
+/** Pressroom's tours, as data. Nothing here touches Svelte. */
 
 import { defineTour } from '@docentjs/svelte'
 
-/** First shift on the desk. Starts itself, once, and remembers where you got to. */
+/** First shift. Starts itself, once, and remembers where you got to. */
 export const deskTour = defineTour({
   id: 'pressroom-desk',
   version: 2,
@@ -89,7 +86,7 @@ export const deskTour = defineTour({
   ],
 })
 
-/** Raised by the app after a story is sent for review. Never blocks the page. */
+/** Fired by the app: `docent.track('story-submitted')`. Never blocks the page. */
 export const reviewTour = defineTour({
   id: 'pressroom-review',
   version: 1,
@@ -114,10 +111,7 @@ export const reviewTour = defineTour({
   ],
 })
 
-/**
- * The publish check, drawn by a Svelte component. Docent keeps the overlay,
- * the spotlight, positioning and keys; the card is ours.
- */
+/** Drawn by a Svelte component (headless). Overlay, spotlight, positioning and keys stay. */
 export const publishTour = defineTour({
   id: 'pressroom-publish',
   version: 1,

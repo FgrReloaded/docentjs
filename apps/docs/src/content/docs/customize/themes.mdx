@@ -1,0 +1,112 @@
+---
+title: Themes
+description: Install a ready-made look by copying one JSON file. No code, no CSS, nothing to wire up.
+---
+
+import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components'
+import ThemeGallery from '../../../components/ThemeGallery.astro'
+
+A theme is one JSON file. It carries colors, spacing, the shape of the progress
+counter, the arrow, the spotlight and the scrim — everything about how a tour
+looks, and nothing about what it does.
+
+Because it is only data, you install it by copying it. There is no package to
+add, no build step, and nothing to keep in sync with your framework.
+
+## Install
+
+<Steps>
+
+1. **Copy a theme** from the gallery below, into your project as `docent-theme.json`.
+
+2. **Hand it to the renderer.** One line, wherever you already set up Docent:
+
+   <Tabs syncKey="framework">
+   <TabItem label="Vanilla">
+   ```ts
+   import { createTour } from '@docentjs/dom'
+   import theme from './docent-theme.json'
+
+   createTour(tour, { renderer: { template: theme } })
+   ```
+   </TabItem>
+   <TabItem label="React">
+   ```tsx
+   import { DocentProvider } from '@docentjs/react'
+   import theme from './docent-theme.json'
+
+   <DocentProvider renderer={{ template: theme }}>
+     <App />
+   </DocentProvider>
+   ```
+   </TabItem>
+   <TabItem label="Vue">
+   ```ts
+   import { provideDocentDefaults } from '@docentjs/vue'
+   import theme from './docent-theme.json'
+
+   provideDocentDefaults({ renderer: { template: theme } })
+   ```
+   </TabItem>
+   <TabItem label="Svelte">
+   ```ts
+   import { useDocent } from '@docentjs/svelte'
+   import theme from './docent-theme.json'
+
+   const docent = useDocent({ tours, renderer: { template: theme } })
+   ```
+   </TabItem>
+   </Tabs>
+
+3. **That is it.** Every tour in the app now uses the theme.
+
+</Steps>
+
+<Aside type="tip" title="Several themes at once">
+Register them by name and let each tour choose: `renderer: { templates: { calm, loud } }`,
+then `options: { template: 'loud' }` in the tour JSON. Handy when a release note
+should look different from an onboarding tour.
+</Aside>
+
+## Make it yours
+
+Open the file and change it. Every field is documented in
+[theming](/customize/theming/) and [arrows and spotlight](/customize/arrows-and-spotlight/);
+the ones a theme uses most:
+
+| Field | What it does |
+| --- | --- |
+| `theme` | colors, radius, width, padding, font, shadow, scrim |
+| `eyebrow` | a small line above every title. `{tour}` becomes the tour's name |
+| `progress` | `meter`, `count`, `ticks`, `dots` or `none` |
+| `arrow` | `caret`, `none`, or one of the ten drawn connectors |
+| `spotlight` | padding, radius, shape and ring around the target |
+| `overlay` | `dim`, `blur`, `vignette` or `none` |
+| `css` | anything the fields above do not cover, scoped to the popover |
+
+A tour can override any of it, so one tour can go its own way without a second
+theme:
+
+```json
+{ "options": { "template": "ledger", "progress": "dots", "eyebrow": "New in 2.4" } }
+```
+
+## The gallery
+
+Press **Preview** to run a real tour with that theme. These are live — the card
+is the library rendering, not a picture of it.
+
+<ThemeGallery />
+
+## Writing your own
+
+Start from the closest theme, change the tokens, and keep going until the fields
+run out. If you reach something no field covers, `css` is the next step, and
+[slots](/customize/slots-and-templates/) after that — but a theme that needs
+code is no longer something you can publish, share or let a tool edit, so it is
+worth staying in JSON as long as you can.
+
+<Aside type="note" title="Theme or tour?">
+Put it in the **theme** when it should be true of every tour in the product, and
+in the **tour** when it belongs to that one tour. Both accept the same fields.
+</Aside>

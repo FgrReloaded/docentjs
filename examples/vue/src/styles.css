@@ -844,67 +844,6 @@ input {
   }
 }
 
-/* ----------------------------------------------- slotted popover content
- * Projected into the popover through named slots, so it is styled here.
- */
-
-.tp-progress {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  min-width: 0;
-}
-
-.tp-count {
-  font-family: var(--face-mono);
-  font-size: var(--t-micro);
-  letter-spacing: 0.06em;
-  color: var(--text-3);
-  white-space: nowrap;
-}
-
-.tp-segments {
-  display: flex;
-  gap: 2px;
-  flex: 1;
-}
-
-.tp-segments i {
-  height: 3px;
-  flex: 1;
-  border-radius: 1px;
-  background: oklch(38% 0.018 60);
-}
-
-.tp-segments i[data-done] {
-  background: var(--ember);
-}
-
-.tp-title {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.tp-kicker {
-  font-family: var(--face-mono);
-  font-size: var(--t-micro);
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--ember);
-}
-
-.tp-heading {
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-  line-height: 1.25;
-  letter-spacing: -0.015em;
-  color: var(--text);
-  text-wrap: balance;
-}
-
 /* --------------------------------------------- custom popover (headless) */
 
 .pm {

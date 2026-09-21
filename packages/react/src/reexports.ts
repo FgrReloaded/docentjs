@@ -36,6 +36,7 @@ export {
 } from '@docentjs/core'
 export {
   createLocalStorage,
+  type DocentTheme,
   type DomRendererOptions,
   type HeadlessPopover,
   type PopoverSlots,

@@ -1,7 +1,8 @@
 <!doctype html>
 <!-- Design review page for the default popover. Serve with `node e2e/server.mjs`, open
      /e2e/fixtures/showcase.html?step=new (params: step, font=serif, theme=dark, arrow, shape,
-     ring, overlay, gap, big=1 to blow the revenue panel up past the room beside it). -->
+     ring, overlay, gap, progress, eyebrow, big=1 to blow the revenue panel up past the room
+     beside it). -->
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -53,6 +54,7 @@
     if (p.get('big')) document.querySelector('[data-docent="revenue"]').style.cssText = 'grid-column: 1 / -1; min-height: 520px'
     const tour = defineTour({
       id: 'showcase-' + Math.random(),
+      name: 'Northwind tour',
       options: { showProgress: true },
       steps: [
         { id: 'welcome', title: 'Welcome to Northwind', body: 'A two-minute tour of the places you will use every day. You can leave at any time and pick it up later from Help.' },
@@ -68,6 +70,13 @@
     if (p.get('gap')) renderer.gap = Number(p.get('gap'))
     if (p.get('shape') || p.get('ring')) renderer.spotlight = { ...(p.get('shape') ? { shape: p.get('shape') } : {}), ...(p.get('ring') ? { ring: p.get('ring') } : {}) }
     if (p.get('overlay')) renderer.overlay = { style: p.get('overlay') }
+    // How a theme is installed: a plain object handed to the renderer.
+    if (p.get('progress') || p.get('eyebrow')) {
+      renderer.template = {
+        ...(p.get('progress') ? { progress: p.get('progress') } : {}),
+        ...(p.get('eyebrow') ? { eyebrow: p.get('eyebrow'), count: '{current2} / {total2}' } : {}),
+      }
+    }
     const opts = { renderer }
     createTour(tour, { ...opts, storage: { get: () => null, set() {}, remove() {} } }).start(p.get('step') ?? undefined)
   </script>

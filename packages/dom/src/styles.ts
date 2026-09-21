@@ -145,7 +145,7 @@ export const STYLES = `
   width: var(--docent-width);
   max-width: calc(100vw - 32px);
   max-height: var(--docent-max-h, none);
-  padding: 20px 20px 16px;
+  padding: var(--docent-padding, 20px 20px 16px);
   background: var(--docent-bg);
   border-radius: var(--docent-radius);
   box-shadow: 0 0 0 1px var(--_line), var(--docent-shadow);
@@ -221,6 +221,18 @@ export const STYLES = `
   letter-spacing: -0.012em;
   color: var(--docent-fg);
   text-wrap: balance;
+}
+/* An eyebrow stacks a small line above the heading; without one the h2 stands alone. */
+.titles { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.titles .title { flex: none; }
+.eyebrow {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.085em;
+  text-transform: uppercase;
+  color: var(--docent-muted);
 }
 .close {
   flex: none;
@@ -318,6 +330,13 @@ export const STYLES = `
     linear-gradient(var(--docent-fg), var(--docent-fg)) 0 0 / calc(var(--docent-step) / var(--docent-steps) * 100%) 100% no-repeat,
     var(--_line);
 }
+/* One mark per step, filled up to the current one. Ticks are a ruled line,
+   dots are round and stand on their own. */
+.marks { flex: none; display: flex; align-items: center; gap: 3px; }
+.marks i { width: 8px; height: 2px; border-radius: 1px; background: var(--_line); }
+.marks i[data-done] { background: var(--docent-fg); }
+.progress[data-progress="dots"] .marks { gap: 5px; }
+.progress[data-progress="dots"] .marks i { width: 5px; height: 5px; border-radius: 50%; }
 .buttons { display: flex; align-items: center; gap: 6px; }
 .button {
   appearance: none;

@@ -1,0 +1,23 @@
+{
+  "name": "Bloom",
+  "theme": {
+    "background": "oklch(99% 0.008 330)",
+    "foreground": "oklch(26% 0.05 330)",
+    "muted": "oklch(58% 0.04 330)",
+    "accent": "oklch(58% 0.21 350)",
+    "accentForeground": "oklch(99% 0.008 350)",
+    "connector": "oklch(58% 0.21 350)",
+    "ring": "oklch(78% 0.16 350)",
+    "overlay": "oklch(30% 0.09 330)",
+    "overlayOpacity": 0.38,
+    "radius": 20,
+    "width": 336,
+    "padding": "20px 22px 16px",
+    "shadow": "0 2px 4px oklch(40% 0.12 330 / 0.1), 0 28px 60px -28px oklch(40% 0.14 330 / 0.6)",
+    "duration": 260
+  },
+  "progress": "dots",
+  "arrow": "squiggle",
+  "spotlight": { "padding": 10, "radius": 16, "ring": "pulse", "animate": true },
+  "css": ".title { font-size: 19px; letter-spacing: -0.015em; } .button { border-radius: 999px; padding-inline: 14px; }"
+}

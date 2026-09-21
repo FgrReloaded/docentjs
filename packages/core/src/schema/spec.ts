@@ -64,6 +64,7 @@ export const ARROW_STYLES = [
 export const SPOTLIGHT_SHAPES = ['rounded', 'rect', 'pill', 'circle'] as const
 export const SPOTLIGHT_RINGS = ['hairline', 'none', 'glow', 'pulse', 'dashed', 'solid'] as const
 export const OVERLAY_STYLES = ['dim', 'blur', 'vignette', 'none'] as const
+export const PROGRESS_STYLES = ['meter', 'count', 'ticks', 'dots', 'none'] as const
 export const THEME_NAMES = ['light', 'dark', 'minimal', 'contrast'] as const
 export const PLACEMENTS = [
   'auto',
@@ -279,6 +280,7 @@ const theme: Spec = {
     shadow: field(str),
     font: field(str, "Defaults to the page's own font."),
     width: field(themeValue, 'Popover width. A number means px.'),
+    padding: field(themeValue, 'Padding inside the popover. A number means px.'),
     overlay: field(str, 'Backdrop colour.', { deprecated: 'Prefer `options.overlay.color`.' }),
     overlayOpacity: field(themeValue, 'Backdrop opacity, 0 to 1.', {
       deprecated: 'Prefer `options.overlay.opacity`.',
@@ -331,7 +333,10 @@ const labels: Spec = {
     skip: field(str),
     done: field(str),
     close: field(str),
-    progress: field(str, 'Supports `{current}` and `{total}`.'),
+    progress: field(
+      str,
+      'Supports `{current}` and `{total}`, and `{current2}` / `{total2}` padded to two digits.',
+    ),
   },
 }
 
@@ -341,6 +346,8 @@ const options: Spec = {
     persist: field(bool, 'Remember the current step so `resume()` can continue.'),
     frequency: field(enums('once', 'until-completed', 'always')),
     showProgress: field(bool),
+    progress: field({ kind: 'enum', values: PROGRESS_STYLES }, 'How the step counter is drawn.'),
+    eyebrow: field(str, "A small line above every title. `{tour}` becomes the tour's name."),
     allowClose: field(bool, 'Allow Escape and the close button.'),
     closeOnOverlayClick: field(bool),
     keyboard: field(bool, 'Arrow-key navigation.'),
@@ -367,6 +374,7 @@ const step: Spec = {
     id: required(str, 'Unique within the tour. Keep it stable once shipped.'),
     target: field(ref('target'), 'Leave out for a centred card.'),
     title: field(str),
+    eyebrow: field(str, "Overrides the tour's eyebrow. Empty removes it."),
     body: field(str),
     format: field(enums('text', 'markdown'), 'Markdown is a safe subset; HTML is never injected.'),
     media: field({

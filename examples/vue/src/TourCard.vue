@@ -2,8 +2,8 @@
 import type { RenderContext } from '@docentjs/vue'
 
 /**
- * The close-out guide, drawn by Vue instead of the built-in popover. Docent
- * still owns the overlay, the spotlight, positioning, focus and keys.
+ * Our own popover (headless mode). Docent keeps the overlay, spotlight,
+ * positioning, focus and keys; everything inside the card is ours.
  */
 defineProps<{ ctx: RenderContext }>()
 </script>

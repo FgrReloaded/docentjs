@@ -714,32 +714,7 @@ select {
   }
 }
 
-/* --------------------------------------------- slotted popover content */
-
-.tp-title {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.tp-kicker {
-  font-size: var(--t-micro);
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--vermilion);
-}
-
-.tp-heading {
-  margin: 0;
-  font-family: var(--face-head);
-  font-size: 1.3125rem;
-  font-weight: 600;
-  line-height: 1.12;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-  text-wrap: balance;
-}
+/* The folio is still projected through a slot, so it is styled here. */
 
 .tp-folio {
   font-family: var(--face-head);
@@ -748,39 +723,6 @@ select {
   letter-spacing: 0.06em;
   color: var(--ink-3);
   white-space: nowrap;
-}
-
-.tp-buttons {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-.tp-buttons button {
-  border: 0;
-  padding: 0;
-  background: none;
-  font-family: var(--face-text);
-  font-size: var(--t-small);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-2);
-  cursor: pointer;
-}
-
-.tp-buttons button:hover {
-  color: var(--ink);
-}
-
-.tp-buttons .tp-primary {
-  padding-bottom: 2px;
-  border-bottom: 2px solid var(--vermilion);
-  color: var(--ink);
-}
-
-.tp-buttons .tp-primary:hover {
-  color: var(--vermilion);
 }
 
 /* --------------------------------------------- custom popover (headless) */

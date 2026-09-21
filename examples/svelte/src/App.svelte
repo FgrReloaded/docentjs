@@ -12,13 +12,12 @@
   import { rendererDefaults } from './tour-theme'
   import { deskTour, publishTour, reviewTour } from './tours'
 
-  /** Where product analytics would go. Every tour event arrives here. */
+  /** Every tour event arrives here; product analytics would go in its place. */
   const analytics: EventSink = {
     emit: (event) => console.debug('[docent]', event.type, event.tourId, event.stepId ?? ''),
   }
 
-  // Svelte has no provider, so the shared renderer options are passed to both
-  // the manager and the single-tour controller.
+  // Svelte has no provider, so shared options go to both controllers by hand.
   const shared = { renderer: rendererDefaults, sink: analytics }
 
   let edition = $state<'evening' | 'morning'>('evening')
@@ -56,16 +55,14 @@
     }, 3200)
   }
 
-  // The manager watches triggers, checks conditions and frequency, and runs
-  // one tour at a time. Hooks are keyed by tour id.
+  // Watches triggers, checks conditions, runs one tour at a time. Hooks are keyed by tour id.
   const docent = useDocent({
     ...shared,
     tours: [deskTour, reviewTour],
     hooks: {
       [deskTour.id]: {
         steps: {
-          // The story is normally opened by the click in the step before this
-          // one. Open it anyway, so the step always has a target.
+          // Open it anyway, so the step always has a target.
           schedule: {
             beforeShow: (): undefined => {
               openId ??= 'st-398'
@@ -77,19 +74,18 @@
     },
   })
 
-  // The publish check is drawn by our own Svelte component.
+  // Drawn by our own component.
   const publish = useTour(publishTour, { ...shared, popover: TourCard })
 
   // Traits decide eligibility: the desk tour is for editors and producers.
   docent.identify('u_17', { role: 'editor', desk: 'news', edition: 'evening' })
 
-  // Lets the docs link straight into a tour: /examples/svelte/?start=<id>
+  // Lets the docs link into a tour: ?start=<id>.
   onMount(() => {
     const wanted = new URLSearchParams(window.location.search).get('start')
     if (!wanted) return
     if (wanted === publishTour.id) {
-      // The publish check runs outside the manager, so stop the manager
-      // watching triggers for this visit: the link asked for one tour.
+      // It runs outside the manager, so stop the manager watching triggers.
       void docent.docent.disconnect()
       void publish.start()
     } else void docent.start(wanted)
@@ -105,7 +101,7 @@
     if (!openId) return
     states = { ...states, [openId]: 'review' }
     say('Sent to the legal read')
-    // Fires the `event` trigger on the review tour.
+    // Fires the review tour's `event` trigger.
     docent.track('story-submitted')
   }
 
@@ -124,7 +120,7 @@
       void docent.start(deskTour.id)
       return
     }
-    // Only one tour at a time, even across two controllers.
+    // One tour at a time, even across two controllers.
     void docent.stop()
     void publish.start()
   }
@@ -170,5 +166,5 @@
   <output class="toast">{toast}</output>
 {/if}
 
-<!-- Development only: renders nothing and drops out of production builds. -->
+<!-- Dev only: renders nothing and drops out of production builds. -->
 <DocentDevtools {docent} />

@@ -4,7 +4,7 @@
  * from the light DOM replaces it without touching the rest.
  */
 
-import type { Labels, RenderContext } from '@docentjs/core'
+import type { Labels, ProgressStyle, RenderContext } from '@docentjs/core'
 import { renderBody, renderMedia } from './content'
 import type { PopoverSlots, SlotName } from './theme'
 
@@ -79,8 +79,33 @@ function arrowIcon(doc: Document): SVGSVGElement {
   return svg
 }
 
+const pad = (n: number) => String(n).padStart(2, '0')
+
 export function formatProgress(template: string, current: number, total: number): string {
-  return template.replace('{current}', String(current)).replace('{total}', String(total))
+  return template
+    .replace('{current2}', pad(current))
+    .replace('{total2}', pad(total))
+    .replace('{current}', String(current))
+    .replace('{total}', String(total))
+}
+
+/**
+ * The parts of the look the popover itself draws. Everything else (arrow,
+ * spotlight, overlay) is drawn around it by the renderer.
+ */
+export interface PopoverLook {
+  /** Small line above the title. `{tour}` becomes the tour's name. */
+  eyebrow?: string | undefined
+  progress?: ProgressStyle | undefined
+  /** Text of the step counter, when the look wants one of its own. */
+  count?: string | undefined
+}
+
+/** The eyebrow's text for this step, or empty when there is none. */
+function eyebrowText(look: PopoverLook, ctx: RenderContext): string {
+  const raw = ctx.step.eyebrow ?? look.eyebrow
+  if (!raw) return ''
+  return raw.replace('{tour}', ctx.tour.name ?? '').trim()
 }
 
 /**
@@ -113,10 +138,17 @@ export function buildPopover(
   ctx: RenderContext,
   labels: Labels = {},
   slots: PopoverSlots = {},
+  look: PopoverLook = {},
 ): PopoverParts {
   const { step, tour, actions } = ctx
   const options = tour.options ?? {}
-  const text: Required<Labels> = { ...DEFAULT_LABELS, ...options.labels, ...labels }
+  // A theme may set the counter's format; a tour's own label still wins.
+  const text: Required<Labels> = {
+    ...DEFAULT_LABELS,
+    ...(look.count === undefined ? {} : { progress: look.count }),
+    ...options.labels,
+    ...labels,
+  }
   const buttons = step.buttons ?? {}
   const id = `docent-${tour.id}-${step.id}`
 
@@ -136,6 +168,16 @@ export function buildPopover(
     title.textContent = step.title
     titleNode = title
     el.setAttribute('aria-labelledby', title.id)
+    // An eyebrow turns the title into a stacked pair; without one the heading
+    // stays on its own, so existing layouts are untouched.
+    const eyebrow = eyebrowText(look, ctx)
+    if (eyebrow) {
+      const group = h(doc, 'div', 'titles', 'titles')
+      const line = h(doc, 'p', 'eyebrow', 'eyebrow')
+      line.textContent = eyebrow
+      group.append(line, title)
+      titleNode = group
+    }
   }
   header.appendChild(slot(doc, 'title', titleNode))
   let closeNode: Node | undefined
@@ -176,15 +218,35 @@ export function buildPopover(
   // Footer: progress + buttons
   const footer = h(doc, 'div', 'footer', 'footer')
   const progress = h(doc, 'div', 'progress', 'progress')
-  if (options.showProgress !== false) {
-    // A slim meter plus the count; the meter is decorative, the text is read out.
-    const meter = h(doc, 'span', 'meter', 'meter')
-    meter.setAttribute('aria-hidden', 'true')
-    progress.style.setProperty('--docent-step', String(ctx.progress.current))
-    progress.style.setProperty('--docent-steps', String(Math.max(1, ctx.progress.total)))
-    const count = h(doc, 'span', 'count', 'count')
-    count.textContent = formatProgress(text.progress, ctx.progress.current, ctx.progress.total)
-    progress.append(meter, count)
+  const style = look.progress ?? 'meter'
+  if (options.showProgress !== false && style !== 'none') {
+    const { current, total } = ctx.progress
+    const label = formatProgress(text.progress, current, total)
+    progress.setAttribute('data-progress', style)
+    progress.style.setProperty('--docent-step', String(current))
+    progress.style.setProperty('--docent-steps', String(Math.max(1, total)))
+    // Drawn parts are decorative; the count is what a screen reader reads out.
+    if (style === 'meter') {
+      const meter = h(doc, 'span', 'meter', 'meter')
+      meter.setAttribute('aria-hidden', 'true')
+      progress.appendChild(meter)
+    }
+    if (style === 'dots') progress.setAttribute('aria-label', label)
+    else {
+      const count = h(doc, 'span', 'count', 'count')
+      count.textContent = label
+      progress.appendChild(count)
+    }
+    if (style === 'ticks' || style === 'dots') {
+      const marks = h(doc, 'span', 'marks', 'marks')
+      marks.setAttribute('aria-hidden', 'true')
+      for (let i = 1; i <= total; i++) {
+        const mark = doc.createElement('i')
+        if (i <= current) mark.dataset.done = ''
+        marks.appendChild(mark)
+      }
+      progress.appendChild(marks)
+    }
   }
   footer.appendChild(slot(doc, 'progress', progress))
 

@@ -1,15 +1,8 @@
-/**
- * Every tour Ledgerline ships, as data. Nothing here touches React — the same
- * JSON would drive the Vue app, a native client, or the hosted builder.
- */
+/** Ledgerline's tours, as data. Nothing here touches React. */
 
 import { defineTour } from '@docentjs/react'
 
-/**
- * First run. The manager starts it by itself, once per person, and the tour
- * hands control to the user for the two steps that matter: searching, and
- * raising an invoice.
- */
+/** First run. Starts itself, once per person, and hands over for search and new-invoice. */
 export const onboardingTour = defineTour({
   id: 'ledgerline-onboarding',
   version: 3,
@@ -81,7 +74,7 @@ export const onboardingTour = defineTour({
       title: 'Totals as you type',
       body: 'Tax and retainer credits are applied live, so the number you send is the number you agreed.',
       placement: 'left',
-      // The drawer mounts only after the click above, so wait for it.
+      // The drawer mounts only after the click above.
       onMissing: 'wait',
       waitFor: 3000,
     },
@@ -105,10 +98,7 @@ export const onboardingTour = defineTour({
   ],
 })
 
-/**
- * A light touch after the user sends a reminder: no scrim, the page stays
- * clickable, and a drawn curve points at what changed.
- */
+/** After a reminder. No scrim, so the page stays usable. */
 export const remindersTour = defineTour({
   id: 'ledgerline-reminders',
   version: 1,
@@ -134,15 +124,12 @@ export const remindersTour = defineTour({
   ],
 })
 
-/**
- * A release note. `announcement` is a built-in look: the page blurs away,
- * nothing points anywhere, and the card is wider — reading, not doing.
- */
+/** A release note: reading, not doing. */
 export const releaseTour = defineTour({
   id: 'ledgerline-release-14',
   version: 1,
   name: 'What changed in 14',
-  // Only owners on a paid plan care about the statement import.
+  // Owners on a paid plan only.
   conditions: [
     { type: 'trait', key: 'role', op: 'eq', value: 'owner' },
     { type: 'trait', key: 'plan', op: 'in', value: ['studio', 'agency'] },
@@ -168,11 +155,7 @@ export const releaseTour = defineTour({
   ],
 })
 
-/**
- * Drawn by the app rather than the library: a React card with a face, a
- * keyboard hint and our own progress rail. The overlay, spotlight,
- * positioning and keys still come from Docent.
- */
+/** Drawn by a React component (headless). Overlay, spotlight, positioning and keys stay. */
 export const reconcileTour = defineTour({
   id: 'ledgerline-reconcile',
   version: 1,

@@ -155,6 +155,39 @@ describe('DomRenderer', () => {
     r.hide()
   })
 
+  it('takes a theme object as the template, which is how one is installed', () => {
+    document.body.innerHTML = '<button id="target">go</button>'
+    const theme = {
+      name: 'Ledger',
+      theme: { accent: 'rebeccapurple' },
+      eyebrow: '{tour}',
+      progress: 'ticks' as const,
+      count: '{current2} / {total2}',
+    }
+    const r = new DomRenderer({ template: theme })
+    const tour = { ...ctx().tour, name: 'First run' }
+    r.show({ ...ctx(), tour, progress: { current: 2, total: 9 } })
+    expect(shadow().querySelector('.eyebrow')?.textContent).toBe('First run')
+    expect(shadow().querySelector('.count')?.textContent).toBe('02 / 09')
+    expect(shadow().querySelectorAll('.marks i')).toHaveLength(9)
+    // The tour sets its own accent, and a tour outranks the installed theme.
+    expect(host()?.style.getPropertyValue('--docent-accent')).toBe('tomato')
+    r.hide()
+  })
+
+  it("lets a tour override the theme's look", () => {
+    document.body.innerHTML = '<button id="target">go</button>'
+    const r = new DomRenderer({ template: { progress: 'ticks', eyebrow: 'Docent' } })
+    const base = ctx()
+    r.show({
+      ...base,
+      tour: { ...base.tour, options: { ...base.tour.options, progress: 'dots', eyebrow: 'New' } },
+    })
+    expect(shadow().querySelector('.progress')?.getAttribute('data-progress')).toBe('dots')
+    expect(shadow().querySelector('.eyebrow')?.textContent).toBe('New')
+    r.hide()
+  })
+
   it('gives number tokens their unit and picks readable text for a light accent', () => {
     const r = new DomRenderer({ theme: { radius: 12, width: 300, duration: 180 } })
     r.show(ctx({ tour: { ...ctx().tour, options: { theme: { accent: 'rgb(250, 204, 21)' } } } }))

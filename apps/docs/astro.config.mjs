@@ -11,7 +11,7 @@ export default defineConfig({
         starlightLlmsTxt({
           projectName: 'Docent',
           description:
-            'Docent is a guided product tour library for the web: it dims the page, spotlights one element, and explains it in a small popover. A tour is a JSON document, so tours can be written by hand, generated, stored in a repo or served from an API. The engine (@docentjs/core) has no DOM code; the web renderer (@docentjs/dom) draws, positions and handles keyboard and focus; thin adapters exist for React, Vue and Svelte. Everything visual is data: arrows, spotlight shape and ring, overlay style, theme tokens and presets.',
+            'Docent is a guided product tour library for the web: it dims the page, spotlights one element, and explains it in a small popover. A tour is a JSON document, so tours can be written by hand, generated, stored in a repo or served from an API. The engine (@docentjs/core) has no DOM code; the web renderer (@docentjs/dom) draws, positions and handles keyboard and focus; thin adapters exist for React, Vue and Svelte. Everything visual is data: arrows, spotlight shape and ring, overlay style, the step counter, the line above the title, theme tokens and presets, so a whole look is one JSON file.',
           details: [
             '## Working with tours',
             '',
@@ -20,7 +20,8 @@ export default defineConfig({
             '- Check tour files from a terminal or CI with `npx @docentjs/cli validate "tours/*.json"`; it exits 1 on errors and `--json` gives machine-readable output.',
             "- Check a tour before shipping it: `import { validateTour } from '@docentjs/dom/validate'`. It reports unknown values, misspelled fields, wrong types and duplicate step ids, each with a path such as `steps[2].arrow` and the value that was probably meant. `createTour` and `createDocent` run the same check automatically in development.",
             '- Prefer `target: { name: "save" }` with `data-docent="save"` in the markup over CSS selectors: names survive redesigns.',
-            '- Visual changes belong in the tour JSON (`options.theme`, `options.arrow`, `options.spotlight`, `options.overlay`, `options.appearance`), not in CSS, so they travel with the tour.',
+            '- Visual changes belong in the tour JSON (`options.theme`, `options.arrow`, `options.progress`, `options.eyebrow`, `options.spotlight`, `options.overlay`, `options.appearance`), not in CSS, so they travel with the tour.',
+            '- A whole look is one JSON file: a theme. Install it with `renderer: { template: theme }`. Ready-made ones are at https://docentjs.dev/customize/themes/. Reach for `slots` (functions) only when no field covers what is needed, because a look with functions in it can no longer be published or edited as data.',
           ].join('\n'),
           optionalLinks: [
             {
@@ -102,6 +103,7 @@ export default defineConfig({
         {
           label: 'Customize',
           items: [
+            { slug: 'customize/themes' },
             { slug: 'customize/theming' },
             { slug: 'customize/arrows-and-spotlight' },
             { slug: 'customize/slots-and-templates' },

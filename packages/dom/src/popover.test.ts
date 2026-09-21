@@ -123,3 +123,71 @@ describe('formatProgress', () => {
     expect(formatProgress('{current} of {total}', 2, 5)).toBe('2 of 5')
   })
 })
+
+describe('eyebrow and progress styles', () => {
+  it('puts an eyebrow above the title and fills in the tour name', () => {
+    const ctx = context({ tour: { ...context().tour, name: 'First run' } })
+    const { el } = buildPopover(document, ctx, {}, {}, { eyebrow: '{tour}' })
+    expect(el.querySelector('.eyebrow')?.textContent).toBe('First run')
+    // The heading keeps its id, so the dialog is still labelled by it.
+    expect(el.getAttribute('aria-labelledby')).toBe(el.querySelector('.title')?.id)
+    expect(el.querySelector('.titles .title')?.textContent).toBe('Hello')
+  })
+
+  it('leaves the heading alone when there is no eyebrow', () => {
+    const { el } = buildPopover(document, context())
+    expect(el.querySelector('.titles')).toBeNull()
+    expect(el.querySelector('.header .title')).not.toBeNull()
+  })
+
+  it('lets a step override or remove the tour eyebrow', () => {
+    const override = buildPopover(
+      document,
+      context({}, { eyebrow: 'New' }),
+      {},
+      {},
+      {
+        eyebrow: 'Docent',
+      },
+    )
+    expect(override.el.querySelector('.eyebrow')?.textContent).toBe('New')
+    const removed = buildPopover(
+      document,
+      context({}, { eyebrow: '' }),
+      {},
+      {},
+      {
+        eyebrow: 'Docent',
+      },
+    )
+    expect(removed.el.querySelector('.eyebrow')).toBeNull()
+  })
+
+  it.each([
+    ['meter', 1, 0, true],
+    ['count', 0, 0, true],
+    ['ticks', 0, 3, true],
+    ['dots', 0, 3, false],
+    ['none', 0, 0, false],
+  ] as const)('draws %s progress', (style, meters, marks, counted) => {
+    const { el } = buildPopover(document, context(), {}, {}, { progress: style })
+    const progress = el.querySelector('.progress') as HTMLElement
+    expect(progress.querySelectorAll('.meter')).toHaveLength(meters)
+    expect(progress.querySelectorAll('.marks i')).toHaveLength(marks)
+    expect(progress.querySelector('.count') !== null).toBe(counted)
+    // Dots carry no text, so the count is read from a label instead.
+    if (style === 'dots') expect(progress.getAttribute('aria-label')).toBe('1 of 3')
+  })
+
+  it('marks the steps already taken', () => {
+    const ctx = context({ progress: { current: 2, total: 4 } })
+    const { el } = buildPopover(document, ctx, {}, {}, { progress: 'ticks' })
+    const marks = [...el.querySelectorAll('.marks i')].map((m) => m.hasAttribute('data-done'))
+    expect(marks).toEqual([true, true, false, false])
+  })
+
+  it('pads the count to two digits on request', () => {
+    expect(formatProgress('{current2} / {total2}', 3, 12)).toBe('03 / 12')
+    expect(formatProgress('{current} of {total}', 3, 12)).toBe('3 of 12')
+  })
+})
