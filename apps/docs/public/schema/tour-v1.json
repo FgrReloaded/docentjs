@@ -301,7 +301,7 @@
                 },
                 "overlay": {
                   "type": "string",
-                  "description": "Backdrop colour. Prefer `options.overlay.color`.",
+                  "description": "Backdrop colour. Prefer `overlay.color`, next to the other scrim settings.",
                   "deprecated": true
                 },
                 "overlayOpacity": {
@@ -313,7 +313,7 @@
                       "type": "number"
                     }
                   ],
-                  "description": "Backdrop opacity, 0 to 1. Prefer `options.overlay.opacity`.",
+                  "description": "Backdrop opacity, 0 to 1. Prefer `overlay.opacity`, next to the other scrim settings.",
                   "deprecated": true
                 },
                 "duration": {
@@ -1230,7 +1230,7 @@
         },
         "overlay": {
           "type": "string",
-          "description": "Backdrop colour. Prefer `options.overlay.color`.",
+          "description": "Backdrop colour. Prefer `overlay.color`, next to the other scrim settings.",
           "deprecated": true
         },
         "overlayOpacity": {
@@ -1242,7 +1242,7 @@
               "type": "number"
             }
           ],
-          "description": "Backdrop opacity, 0 to 1. Prefer `options.overlay.opacity`.",
+          "description": "Backdrop opacity, 0 to 1. Prefer `overlay.opacity`, next to the other scrim settings.",
           "deprecated": true
         },
         "duration": {

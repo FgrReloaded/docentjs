@@ -524,7 +524,8 @@ starlight-tabs [role="tab"][aria-selected="true"] {
   background-position: 9px 9px;
 }
 .demo-stage > .row,
-.demo .row {
+.demo .row,
+.theme .row {
   display: flex;
   flex-wrap: wrap;
   gap: var(--dc-space-3);
@@ -533,7 +534,8 @@ starlight-tabs [role="tab"][aria-selected="true"] {
 
 /* Buttons: ink primary, hairline secondary. Shared by demos and the home page. */
 .dc-btn,
-.demo button {
+.demo button,
+.theme button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -553,31 +555,37 @@ starlight-tabs [role="tab"][aria-selected="true"] {
     transform 120ms var(--dc-ease);
 }
 .dc-btn:hover,
-.demo button:hover {
+.demo button:hover,
+.theme button:hover {
   border-color: var(--sl-color-gray-4);
 }
 .dc-btn:active,
-.demo button:active {
+.demo button:active,
+.theme button:active {
   transform: translateY(1px);
 }
 .dc-btn.primary,
-.demo button.primary {
+.demo button.primary,
+.theme button.primary {
   border-color: var(--dc-ink);
   background: var(--dc-ink);
   color: var(--dc-ink-contrast);
 }
 .dc-btn.primary:hover,
-.demo button.primary:hover {
+.demo button.primary:hover,
+.theme button.primary:hover {
   background: color-mix(in oklch, var(--dc-ink) 86%, var(--sl-color-accent));
   border-color: color-mix(in oklch, var(--dc-ink) 86%, var(--sl-color-accent));
 }
-.demo button.primary {
+.demo button.primary,
+.theme-bar button.primary {
   height: 2rem;
   padding: 0 0.8rem;
   font-size: 0.8125rem;
 }
 .dc-btn svg,
-.demo button svg {
+.demo button svg,
+.theme button svg {
   width: 0.85em;
   height: 0.85em;
 }
@@ -667,6 +675,28 @@ starlight-tabs [role="tab"][aria-selected="true"] {
   background-image: radial-gradient(var(--dc-dot) 1px, transparent 1.2px);
   background-size: 18px 18px;
   background-position: 9px 9px;
+}
+.theme-install {
+  display: flex;
+  align-items: center;
+  gap: var(--dc-space-3);
+  padding: 0.55rem 0.75rem 0.55rem 1rem;
+  border-top: 1px solid var(--sl-color-hairline);
+  background: var(--sl-color-black);
+}
+.theme-install > code {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  color: var(--sl-color-white);
+  background: none;
+}
+.theme-install > button {
+  height: 1.75rem;
+  padding: 0 0.6rem;
+  font-size: 0.75rem;
 }
 .theme-json {
   border-top: 1px solid var(--sl-color-hairline);

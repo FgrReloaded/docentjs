@@ -1,6 +1,6 @@
 ---
 title: Themes
-description: Install a ready-made look by copying one JSON file. No code, no CSS, nothing to wire up.
+description: Install a ready-made look with one command. A theme is one JSON file, so there is nothing else to wire up.
 ---
 
 import { Aside, Steps, Tabs, TabItem } from '@astrojs/starlight/components'
@@ -10,14 +10,22 @@ A theme is one JSON file. It carries colors, spacing, the shape of the progress
 counter, the arrow, the spotlight and the scrim — everything about how a tour
 looks, and nothing about what it does.
 
-Because it is only data, you install it by copying it. There is no package to
-add, no build step, and nothing to keep in sync with your framework.
+Because it is only data, installing one writes one file into your project. There
+is no package to add at runtime, no build step, and nothing to keep in sync with
+your framework.
 
 ## Install
 
 <Steps>
 
-1. **Copy a theme** from the gallery below, into your project as `docent-theme.json`.
+1. **Add a theme.** Pick one from the [gallery](#the-gallery) below:
+
+   ```sh
+   npx @docentjs/cli theme add ledger
+   ```
+
+   This writes `docent-theme.json`, after checking it. Use `--out` to put it
+   somewhere else, and `docent theme list` to see every theme.
 
 2. **Hand it to the renderer.** One line, wherever you already set up Docent:
 
@@ -61,6 +69,18 @@ add, no build step, and nothing to keep in sync with your framework.
 3. **That is it.** Every tour in the app now uses the theme.
 
 </Steps>
+
+### From anywhere
+
+A theme is just a URL away, so anyone can publish one. The CLI checks it before
+writing anything, and refuses a file that is not a valid theme:
+
+```sh
+npx @docentjs/cli theme add https://example.com/my-theme.json
+```
+
+Prefer not to use the CLI? Copy the JSON from any card below into your project
+instead. It is the same file.
 
 <Aside type="tip" title="Several themes at once">
 Register them by name and let each tour choose: `renderer: { templates: { calm, loud } }`,

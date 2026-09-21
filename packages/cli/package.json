@@ -1,7 +1,7 @@
 {
   "name": "@docentjs/cli",
   "version": "0.8.0",
-  "description": "Command line tools for Docent: check tour files and print the tour JSON Schema.",
+  "description": "Command line tools for Docent: check tour files, print the tour JSON Schema, and install themes.",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -17,6 +17,7 @@
     "guided-tour",
     "onboarding",
     "cli",
+    "themes",
     "docent"
   ],
   "type": "module",

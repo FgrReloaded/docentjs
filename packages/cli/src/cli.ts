@@ -1,21 +1,24 @@
 #!/usr/bin/env node
 /**
- * `docent` — check tour files without a browser.
+ * `docent` — check tour files and install themes, without a browser.
  *
- * Tours are data, so they can be checked in a script, in CI, or by a tool
- * that writes them. This reports the same problems the library reports in
- * development, with the file and the path inside it.
+ * Tours and themes are data, so they can be checked in a script, in CI, or by
+ * a tool that writes them. This reports the same problems the library reports
+ * in development, with the file and the path inside it.
  */
 
 import { glob, readFile, writeFile } from 'node:fs/promises'
 import { argv, exit, stdout } from 'node:process'
 import { formatIssues, type TourIssue, tourJsonSchema, validateTour } from '@docentjs/core/validate'
+import { themeCommand } from './theme'
 
-const HELP = `docent — tools for Docent tour files
+const HELP = `docent — tools for Docent tours and themes
 
 Usage
   docent validate <files...>   Check tour files against the schema
   docent schema [file]         Print the tour JSON Schema, or write it to a file
+  docent theme list            List the ready-made themes
+  docent theme add <name>      Install a theme into your project
 
 Options
   --json          Report as JSON, for other tools to read
@@ -27,6 +30,7 @@ Examples
   docent validate tours/*.json
   docent validate tours/welcome.tour.json --json
   docent schema tour-schema.json
+  docent theme add ledger
 `
 
 interface FileReport {
@@ -37,6 +41,7 @@ interface FileReport {
 }
 
 async function main(args: string[]): Promise<number> {
+  if (args[0] === 'theme') return themeCommand(args.slice(1))
   const flags = new Set(args.filter((a) => a.startsWith('-')))
   const rest = args.filter((a) => !a.startsWith('-'))
   const [command, ...paths] = rest

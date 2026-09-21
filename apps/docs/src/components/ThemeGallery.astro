@@ -59,7 +59,7 @@ const tourFor = (slug: string, name: string) => ({
           <span class="theme-name">{theme.name ?? slug}</span>
           <span class="theme-facts">
             {[
-              theme.progress ? `${theme.progress} progress` : null,
+              theme.progress === 'none' ? 'no progress' : `${theme.progress ?? 'meter'} progress`,
               theme.eyebrow ? 'eyebrow' : null,
               theme.arrow ? `${theme.arrow} arrow` : null,
               theme.overlay?.style === 'none' ? 'no scrim' : null,
@@ -86,10 +86,15 @@ const tourFor = (slug: string, name: string) => ({
           </div>
         </div>
 
+        <div class="theme-install">
+          <code>npx @docentjs/cli theme add {slug}</code>
+          <button type="button" data-copy={`npx @docentjs/cli theme add ${slug}`}>Copy</button>
+        </div>
+
         <details class="theme-json">
           <summary>
             <span>{slug}.json</span>
-            <button type="button" data-copy={slug}>Copy</button>
+            <button type="button" data-copy="json">Copy</button>
           </summary>
           <pre><code>{json}</code></pre>
         </details>
@@ -120,8 +125,12 @@ const tourFor = (slug: string, name: string) => ({
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
     button.addEventListener('click', async (event) => {
       event.preventDefault()
-      const json = button.closest('.theme')?.querySelector('code')?.textContent ?? ''
-      await navigator.clipboard.writeText(json)
+      // The install command carries its own text; the JSON is read from the card.
+      const text =
+        button.dataset.copy === 'json'
+          ? (button.closest('.theme')?.querySelector('pre code')?.textContent ?? '')
+          : (button.dataset.copy ?? '')
+      await navigator.clipboard.writeText(text)
       const was = button.textContent
       button.textContent = 'Copied'
       setTimeout(() => {

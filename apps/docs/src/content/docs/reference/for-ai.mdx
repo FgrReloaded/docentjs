@@ -50,6 +50,6 @@ These are the habits that keep generated tours working:
 
 - Target elements by name, with `data-docent="save"` in the markup and `target: { name: 'save' }` in the tour. Generated CSS selectors break at the next redesign.
 - Keep visual choices in the tour JSON, through `theme`, `arrow`, `progress`, `eyebrow`, `spotlight`, `overlay` and `appearance`, rather than in stylesheets. They travel with the tour.
-- For a whole look, write a [theme](/customize/themes/): one JSON file, installed with `renderer: { template: theme }`. Slots take functions, so a look that uses them can no longer be published or edited as data.
+- For a whole look, use a [theme](/customize/themes/): one JSON file. `npx @docentjs/cli theme add <name>` writes one after checking it; then `renderer: { template: theme }`. Slots take functions, so a look that uses them can no longer be published or edited as data.
 - One idea per step. A step that needs three sentences is usually two steps.
 - Use `onMissing: 'wait'` for anything that renders late, such as a menu or a list from an API.

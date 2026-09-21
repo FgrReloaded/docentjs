@@ -8,7 +8,15 @@
  */
 
 /** Named specs that `{ kind: 'ref' }` can point at, so conditions can nest. */
-export type SpecName = 'tour' | 'step' | 'target' | 'advance' | 'trigger' | 'condition' | 'theme'
+export type SpecName =
+  | 'tour'
+  | 'step'
+  | 'target'
+  | 'advance'
+  | 'trigger'
+  | 'condition'
+  | 'theme'
+  | 'themeFile'
 
 export type Spec =
   | { kind: 'string'; doc?: string }
@@ -281,9 +289,11 @@ const theme: Spec = {
     font: field(str, "Defaults to the page's own font."),
     width: field(themeValue, 'Popover width. A number means px.'),
     padding: field(themeValue, 'Padding inside the popover. A number means px.'),
-    overlay: field(str, 'Backdrop colour.', { deprecated: 'Prefer `options.overlay.color`.' }),
+    overlay: field(str, 'Backdrop colour.', {
+      deprecated: 'Prefer `overlay.color`, next to the other scrim settings.',
+    }),
     overlayOpacity: field(themeValue, 'Backdrop opacity, 0 to 1.', {
-      deprecated: 'Prefer `options.overlay.opacity`.',
+      deprecated: 'Prefer `overlay.opacity`, next to the other scrim settings.',
     }),
     duration: field(themeValue, 'Transition time. A number means ms.'),
     zIndex: field(themeValue),
@@ -425,6 +435,30 @@ const tour: Spec = {
   },
 }
 
+/**
+ * A theme file: everything about how tours look, as data, installable by
+ * copying one file. `theme` above is only its colour and size tokens.
+ */
+const themeFile: Spec = {
+  kind: 'object',
+  doc: 'How tours look: tokens, the step counter, the arrow, the spotlight and the scrim.',
+  fields: {
+    $schema: field(str, 'Optional link to a schema, for editors.'),
+    name: field(str, 'Shown in a gallery or a picker.'),
+    theme: field(themeSpec),
+    eyebrow: field(str, "A small line above every title. `{tour}` becomes the tour's name."),
+    progress: field({ kind: 'enum', values: PROGRESS_STYLES }, 'How the step counter is drawn.'),
+    count: field(
+      str,
+      'Text of the step counter: `{current}`, `{total}`, `{current2}`, `{total2}`.',
+    ),
+    arrow: field({ kind: 'enum', values: ARROW_STYLES }),
+    spotlight: field(spotlight),
+    overlay: field(overlay),
+    css: field(str, 'Extra CSS, scoped to the popover.'),
+  },
+}
+
 export const SPECS: Record<SpecName, Spec> = {
   tour,
   step,
@@ -433,4 +467,5 @@ export const SPECS: Record<SpecName, Spec> = {
   trigger,
   condition,
   theme,
+  themeFile,
 }

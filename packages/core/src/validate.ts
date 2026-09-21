@@ -21,5 +21,6 @@ export {
   nearest,
   type TourIssue,
   type ValidateOptions,
+  validateTheme,
   validateTour,
 } from './schema/validate'

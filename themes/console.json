@@ -8,8 +8,6 @@
     "accentForeground": "oklch(19% 0.04 60)",
     "connector": "oklch(74% 0.165 58)",
     "ring": "oklch(74% 0.165 58)",
-    "overlay": "oklch(12% 0.014 60)",
-    "overlayOpacity": 0.66,
     "radius": 8,
     "width": 344,
     "padding": "16px 16px 12px",
@@ -24,6 +22,10 @@
     "padding": 8,
     "radius": 6,
     "animate": true
+  },
+  "overlay": {
+    "color": "oklch(12% 0.014 60)",
+    "opacity": 0.66
   },
   "css": ".count { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.02em; } .button { border-radius: 6px; }"
 }

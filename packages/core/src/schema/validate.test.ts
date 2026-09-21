@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { defineTour } from '../define'
-import { formatIssues, isValidTour, validateTour } from './validate'
+import { formatIssues, isValidTour, validateTheme, validateTour } from './validate'
 
 const valid = defineTour({
   id: 'welcome',
@@ -99,7 +99,7 @@ describe('validateTour', () => {
     expect(issues).toContainEqual({
       level: 'warning',
       path: 'options.theme.overlayOpacity',
-      message: 'Prefer `options.overlay.opacity`.',
+      message: 'Prefer `overlay.opacity`, next to the other scrim settings.',
     })
   })
 
@@ -118,5 +118,41 @@ describe('validateTour', () => {
     expect(formatIssues(issues)).toBe(
       '✗ steps[0].arrow: "curvy" is not one of: caret, none, line, dashed, dotted, curve, curve-dashed, squiggle, loop, elbow, sketch, pin. Did you mean "curve"?',
     )
+  })
+})
+
+describe('validateTheme', () => {
+  it('accepts a theme made only of known fields', () => {
+    const theme = {
+      name: 'Ledger',
+      theme: { accent: '#0d9488', radius: 12, padding: '18px' },
+      eyebrow: '{tour}',
+      progress: 'ticks',
+      count: '{current2} / {total2}',
+      arrow: 'curve',
+      spotlight: { ring: 'glow', padding: 6 },
+      overlay: { style: 'none' },
+      css: '.title { font-size: 20px }',
+    }
+    expect(validateTheme(theme)).toEqual([])
+  })
+
+  it('says what was probably meant', () => {
+    const issues = validateTheme({ progress: 'tick', arrow: 'curvy' })
+    expect(issues.map((i) => [i.path, i.suggestion])).toEqual([
+      ['progress', 'ticks'],
+      ['arrow', 'curve'],
+    ])
+  })
+
+  it('catches a misspelled field and a token of the wrong kind', () => {
+    const issues = validateTheme({ eyebrw: '{tour}', theme: { radius: true } })
+    expect(issues.some((i) => i.path === 'eyebrw')).toBe(true)
+    expect(issues.some((i) => i.path === 'theme.radius' && i.level === 'error')).toBe(true)
+  })
+
+  it('flags CSS that loads from elsewhere, without refusing it', () => {
+    const issues = validateTheme({ css: '@import url(https://example.com/x.css);' })
+    expect(issues).toEqual([expect.objectContaining({ level: 'warning', path: 'css' })])
   })
 })

@@ -21,7 +21,7 @@ export default defineConfig({
             "- Check a tour before shipping it: `import { validateTour } from '@docentjs/dom/validate'`. It reports unknown values, misspelled fields, wrong types and duplicate step ids, each with a path such as `steps[2].arrow` and the value that was probably meant. `createTour` and `createDocent` run the same check automatically in development.",
             '- Prefer `target: { name: "save" }` with `data-docent="save"` in the markup over CSS selectors: names survive redesigns.',
             '- Visual changes belong in the tour JSON (`options.theme`, `options.arrow`, `options.progress`, `options.eyebrow`, `options.spotlight`, `options.overlay`, `options.appearance`), not in CSS, so they travel with the tour.',
-            '- A whole look is one JSON file: a theme. Install it with `renderer: { template: theme }`. Ready-made ones are at https://docentjs.dev/customize/themes/. Reach for `slots` (functions) only when no field covers what is needed, because a look with functions in it can no longer be published or edited as data.',
+            '- A whole look is one JSON file: a theme. Add one with `npx @docentjs/cli theme add <name>` (or a URL), then `renderer: { template: theme }`. Ready-made ones are at https://docentjs.dev/customize/themes/. Reach for `slots` (functions) only when no field covers what is needed, because a look with functions in it can no longer be published or edited as data.',
           ].join('\n'),
           optionalLinks: [
             {

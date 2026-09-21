@@ -38,7 +38,11 @@ It starts tours from their `trigger` (page load, route, element, event), checks 
 
 ## Customize
 
-A whole look is one JSON file — a theme. Install it in a line:
+A whole look is one JSON file — a theme. Add one, then pass it in:
+
+```sh
+npx @docentjs/cli theme add ledger
+```
 
 ```ts
 import theme from './docent-theme.json'

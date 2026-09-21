@@ -51,6 +51,23 @@ export function validateTour(tour: unknown, options: ValidateOptions = {}): Tour
   return issues
 }
 
+/**
+ * Check a theme file. A theme is data, but its `css` runs in the reader's
+ * page, so CSS that loads from elsewhere is flagged for a second look.
+ */
+export function validateTheme(theme: unknown, options: ValidateOptions = {}): TourIssue[] {
+  const issues: TourIssue[] = []
+  check(theme, { kind: 'ref', name: 'themeFile' }, '', issues, options.unknownFields !== false)
+  if (isObject(theme) && typeof theme.css === 'string' && /@import|url\(/i.test(theme.css)) {
+    issues.push({
+      level: 'warning',
+      path: 'css',
+      message: 'Loads something from elsewhere (@import or url()). Check where it points.',
+    })
+  }
+  return issues
+}
+
 /** True when the tour matches the schema. */
 export function isValidTour(tour: unknown): boolean {
   return validateTour(tour).every((issue) => issue.level !== 'error')

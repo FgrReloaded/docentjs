@@ -8,8 +8,6 @@
     "accentForeground": "oklch(98% 0.012 155)",
     "connector": "oklch(42% 0.082 155)",
     "ring": "oklch(98% 0.01 95)",
-    "overlay": "oklch(32% 0.03 95)",
-    "overlayOpacity": 0.44,
     "radius": 12,
     "width": 352,
     "padding": "18px 18px 14px",
@@ -23,5 +21,9 @@
     "padding": 10,
     "radius": 10,
     "animate": true
+  },
+  "overlay": {
+    "color": "oklch(32% 0.03 95)",
+    "opacity": 0.44
   }
 }

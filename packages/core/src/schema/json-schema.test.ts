@@ -20,6 +20,6 @@ describe('tour JSON Schema', () => {
   it('marks deprecated tokens and carries their advice', () => {
     const theme = tourJsonSchema().$defs as Json
     expect(theme.theme.properties.overlayOpacity.deprecated).toBe(true)
-    expect(theme.theme.properties.overlayOpacity.description).toContain('options.overlay.opacity')
+    expect(theme.theme.properties.overlayOpacity.description).toContain('overlay.opacity')
   })
 })

@@ -8,13 +8,19 @@
     "accentForeground": "oklch(13% 0.01 285)",
     "connector": "oklch(90% 0.18 100)",
     "ring": "oklch(90% 0.18 100)",
-    "overlayOpacity": 0.8,
     "radius": 4,
     "width": 340,
     "padding": "18px",
     "shadow": "none"
   },
   "progress": "ticks",
-  "spotlight": { "padding": 6, "radius": 2, "ring": "solid" },
+  "spotlight": {
+    "padding": 6,
+    "radius": 2,
+    "ring": "solid"
+  },
+  "overlay": {
+    "opacity": 0.8
+  },
   "css": ".popover { box-shadow: 0 0 0 2px var(--docent-accent); } .marks i { height: 3px; }"
 }

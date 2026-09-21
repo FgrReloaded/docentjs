@@ -8,8 +8,6 @@
     "accentForeground": "oklch(14.5% 0.008 265)",
     "connector": "oklch(68% 0.13 48)",
     "ring": "oklch(68% 0.13 48)",
-    "overlay": "oklch(10% 0.01 265)",
-    "overlayOpacity": 0.68,
     "radius": 10,
     "width": 340,
     "padding": "16px 16px 12px",
@@ -19,5 +17,14 @@
   "eyebrow": "{tour}",
   "progress": "dots",
   "arrow": "curve",
-  "spotlight": { "padding": 8, "radius": 9, "ring": "glow", "animate": true }
+  "spotlight": {
+    "padding": 8,
+    "radius": 9,
+    "ring": "glow",
+    "animate": true
+  },
+  "overlay": {
+    "color": "oklch(10% 0.01 265)",
+    "opacity": 0.68
+  }
 }

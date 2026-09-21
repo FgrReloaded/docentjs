@@ -15,7 +15,8 @@ type Json = Record<string, unknown>
 export function tourJsonSchema(): Json {
   const definitions: Json = {}
   for (const name of Object.keys(SPECS) as SpecName[]) {
-    if (name === 'tour') continue
+    // The tour is the document itself; a theme file is a different document.
+    if (name === 'tour' || name === 'themeFile') continue
     definitions[name] = convert(SPECS[name])
   }
   return {

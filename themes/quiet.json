@@ -8,12 +8,17 @@
     "radius": 8,
     "width": 300,
     "padding": "14px 16px 12px",
-    "shadow": "0 1px 2px oklch(23% 0.02 285 / 0.08), 0 6px 16px -6px oklch(23% 0.02 285 / 0.14)",
-    "overlayOpacity": 0.3
+    "shadow": "0 1px 2px oklch(23% 0.02 285 / 0.08), 0 6px 16px -6px oklch(23% 0.02 285 / 0.14)"
   },
   "progress": "none",
   "arrow": "curve",
-  "overlay": { "style": "none" },
-  "spotlight": { "ring": "glow", "padding": 6, "radius": 8 },
+  "spotlight": {
+    "ring": "glow",
+    "padding": 6,
+    "radius": 8
+  },
+  "overlay": {
+    "style": "none"
+  },
   "css": ".title { font-size: 16px; }"
 }
