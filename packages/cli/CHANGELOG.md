@@ -1,5 +1,12 @@
 # @docentjs/cli
 
+## 0.8.0
+
+### Patch Changes
+
+- Updated dependencies [eeaa8a4]
+  - @docentjs/core@0.8.0
+
 ## 0.7.1
 
 ### Patch Changes
