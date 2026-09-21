@@ -991,9 +991,16 @@ kbd {
 /* ------------------------------------------------- slotted popover content
  * Projected into the built-in popover through named slots. It lives in the
  * page's DOM, so these are ordinary page styles.
+ *
+ * Slotted nodes replace the popover's own header/footer children, so they have
+ * to claim the space those children did: the title takes the row so the close
+ * button stays hard right, and the counter takes the rest so the buttons never
+ * ride over it.
  */
 
 .tp-title {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -1027,6 +1034,7 @@ kbd {
 }
 
 .tp-progress {
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -1046,10 +1054,14 @@ kbd {
   display: flex;
   gap: 3px;
   flex: 1;
+  min-width: 0;
 }
 
+/* Ticks give up width evenly on a long tour rather than pushing the footer. */
 .tp-tick {
-  width: 8px;
+  flex: 1 1 8px;
+  min-width: 0;
+  max-width: 8px;
   height: 2px;
   border-radius: 999px;
   background: var(--rule-strong);

@@ -82,7 +82,10 @@ const ledgerline: PopoverTemplate = {
   css: `
     .popover { padding: 18px 18px 14px; }
     .body { margin-top: 8px; }
-    .footer { margin-top: 18px; }
+    /* A long tour's counter needs the whole width; let it take its own row
+       when the buttons leave it nothing, instead of running under them. */
+    .footer { margin-top: 18px; flex-wrap: wrap; row-gap: 12px; }
+    .buttons { margin-left: auto; }
   `,
 }
 
