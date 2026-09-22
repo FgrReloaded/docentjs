@@ -1,0 +1,68 @@
+name: Bug report
+description: Something does not behave the way the docs say it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. For anything security-related, please follow
+        [SECURITY.md](https://github.com/FgrReloaded/docentjs/blob/main/SECURITY.md) instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: tour
+    attributes:
+      label: The tour
+      description: The tour JSON, or the smallest part of it that still shows the problem.
+      render: json
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: A link to a minimal reproduction (StackBlitz, CodeSandbox, a repo) is the fastest route to a fix.
+      placeholder: |
+        1. Start the tour with …
+        2. Scroll to …
+        3. The popover …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Which `@docentjs/*` version? One version covers every package.
+      placeholder: "0.9.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      multiple: true
+      options:
+        - "@docentjs/dom"
+        - "@docentjs/core"
+        - "@docentjs/react"
+        - "@docentjs/vue"
+        - "@docentjs/svelte"
+        - "@docentjs/devtools"
+        - "@docentjs/cli"
+        - Documentation site
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and OS
+      placeholder: Safari 18, iOS 18
+  - type: textarea
+    id: validate
+    attributes:
+      label: Checker output
+      description: Optional. Output of `npx @docentjs/cli validate "your-tour.json"`.
+      render: shell
