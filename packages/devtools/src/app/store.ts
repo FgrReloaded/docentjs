@@ -2,7 +2,8 @@
  * Devtools state. Signals, so any component that reads a value re-renders
  * when it changes. Tours come from the manager; unsaved edits live in
  * `drafts` and are pushed to the manager (live preview) after a short pause.
- * Drafts are also kept in localStorage and restored on the next load.
+ * Drafts are also kept in localStorage and restored on the next load, unless
+ * `persist` is off.
  */
 
 import type { Docent, DocentEvent, DocentState, Tour } from '@docentjs/core'
@@ -35,7 +36,7 @@ interface Prefs {
 /** Below this width a side panel would cover the whole page, so the panel docks at the bottom. */
 export const NARROW_WIDTH = 640
 
-const isNarrow = () => typeof window !== 'undefined' && window.innerWidth < NARROW_WIDTH
+const isNarrow = (win: Window | undefined) => win !== undefined && win.innerWidth < NARROW_WIDTH
 
 const PREFS_KEY = 'docent-devtools'
 const MAX_EVENTS = 300
@@ -60,10 +61,16 @@ export interface StoreOptions {
   highlight: (el: Element | null) => void
   /** Let the developer click an element on the page. Resolves null when cancelled. */
   pick: () => Promise<Element | null>
+  /** Keep preferences and unsaved edits in localStorage. Default true. */
+  persist?: boolean
+  /** The window the panel lives in. Default: the global one. */
+  window?: Window
 }
 
 export function createStore(docent: Docent, options: StoreOptions) {
-  const prefs = loadPrefs()
+  const persist = options.persist !== false
+  const win = options.window ?? (typeof window === 'undefined' ? undefined : window)
+  const prefs = persist ? loadPrefs() : {}
   const open = signal(options.open ?? prefs.open ?? false)
   const dock = signal<Dock>(prefs.dock ?? 'right')
   const sideSize = signal(
@@ -72,7 +79,7 @@ export function createStore(docent: Docent, options: StoreOptions) {
   const bottomSize = signal(
     prefs.bottomSize ?? (prefs.dock === 'bottom' ? prefs.size : undefined) ?? 340,
   )
-  const narrow = signal(isNarrow())
+  const narrow = signal(isNarrow(win))
   /** Where the panel actually sits: the chosen dock, or the bottom on narrow screens. */
   const layout = computed<Dock>(() => (narrow.value ? 'bottom' : dock.value))
   const size = computed(() => (layout.value === 'bottom' ? bottomSize.value : sideSize.value))
@@ -89,7 +96,7 @@ export function createStore(docent: Docent, options: StoreOptions) {
   const mountedAt = Date.now()
   const originals = new Map<string, Tour>()
   /** Drafts from earlier sessions, until their tour shows up in the manager. */
-  const saved: SavedDrafts = loadDrafts()
+  const saved: SavedDrafts = persist ? loadDrafts() : {}
   /** Code version (stable JSON) each draft started from. */
   const bases = new Map<string, string>()
   const draftTimes = new Map<string, number>()
@@ -130,34 +137,36 @@ export function createStore(docent: Docent, options: StoreOptions) {
     }
   }
 
-  cleanups.push(
-    effect(() => {
-      savePrefs({
-        open: open.value,
-        dock: dock.value,
-        sideSize: sideSize.value,
-        bottomSize: bottomSize.value,
-        tab: tab.value,
-      })
-    }),
-  )
-  cleanups.push(
-    effect(() => {
-      const current = drafts.value
-      // Drafts for tours this page has not registered (yet) are kept as they were.
-      const out: SavedDrafts = { ...saved }
-      for (const [id, tour] of Object.entries(current)) {
-        const original = originals.get(id)
-        if (!original || tour === original) continue
-        out[id] = {
-          tour,
-          base: bases.get(id) ?? stableJson(original),
-          at: draftTimes.get(id) ?? Date.now(),
+  if (persist)
+    cleanups.push(
+      effect(() => {
+        savePrefs({
+          open: open.value,
+          dock: dock.value,
+          sideSize: sideSize.value,
+          bottomSize: bottomSize.value,
+          tab: tab.value,
+        })
+      }),
+    )
+  if (persist)
+    cleanups.push(
+      effect(() => {
+        const current = drafts.value
+        // Drafts for tours this page has not registered (yet) are kept as they were.
+        const out: SavedDrafts = { ...saved }
+        for (const [id, tour] of Object.entries(current)) {
+          const original = originals.get(id)
+          if (!original || tour === original) continue
+          out[id] = {
+            tour,
+            base: bases.get(id) ?? stableJson(original),
+            at: draftTimes.get(id) ?? Date.now(),
+          }
         }
-      }
-      saveDrafts(out)
-    }),
-  )
+        saveDrafts(out)
+      }),
+    )
   cleanups.push(
     docent.subscribe((s) => {
       state.value = s
@@ -181,13 +190,13 @@ export function createStore(docent: Docent, options: StoreOptions) {
   }, 1000)
   cleanups.push(() => clearInterval(timer))
   const onResize = () => {
-    narrow.value = isNarrow()
+    narrow.value = isNarrow(win)
   }
-  window.addEventListener('resize', onResize)
-  cleanups.push(() => window.removeEventListener('resize', onResize))
+  win?.addEventListener('resize', onResize)
+  cleanups.push(() => win?.removeEventListener('resize', onResize))
   const onRoute = () => tick.value++
-  window.addEventListener('popstate', onRoute)
-  cleanups.push(() => window.removeEventListener('popstate', onRoute))
+  win?.addEventListener('popstate', onRoute)
+  cleanups.push(() => win?.removeEventListener('popstate', onRoute))
   void docent.ready.then(refreshTours)
 
   let commitTimer: ReturnType<typeof setTimeout> | undefined

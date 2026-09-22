@@ -20,6 +20,12 @@ export interface MountOptions {
     | { key: string; altKey?: boolean; shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean }
   /** Document to mount into. */
   document?: Document
+  /**
+   * Keep the panel's preferences and unsaved edits in localStorage, and
+   * restore them on the next load. Default true. Turn it off for demos and
+   * embedded previews that should start the same way every time.
+   */
+  persist?: boolean
 }
 
 /**
@@ -65,6 +71,8 @@ export function mount(docent: Docent, options: MountOptions = {}): () => void {
 
   const store = createStore(docent, {
     ...(options.open === undefined ? {} : { open: options.open }),
+    ...(options.persist === undefined ? {} : { persist: options.persist }),
+    ...(doc.defaultView ? { window: doc.defaultView } : {}),
     highlight,
     pick: () => pickElement({ doc, ignore: () => [host, outline], highlight }),
   })

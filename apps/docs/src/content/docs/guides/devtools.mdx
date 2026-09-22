@@ -124,5 +124,7 @@ Play a tour to record it. The tab shows the time to show each step, how often th
 const unmount = mount(docent, {
   open: true,                                   // start open (otherwise remembered per tab)
   shortcut: { key: 'k', ctrlKey: true },        // or false to disable
+  persist: false,                               // don't keep preferences or edits in localStorage
+  document: iframe.contentDocument,             // mount into another document
 })
 ```

@@ -1,0 +1,507 @@
+---
+/**
+ * A tour being edited on its own, with the real library redrawing the step
+ * after every change. Two views, picked with a switch: the tour's JSON file,
+ * or the real devtools panel driven by a drawn pointer (loaded on first use).
+ * Decorative: it plays by itself, takes no input and never takes focus. Each
+ * preview is an iframe so the overlay stays inside it.
+ */
+
+// Editable values are {name} holes; the script types into them.
+const lines = [
+  '{',
+  '  <k>"id"</k>: <s>"welcome"</s>,',
+  '  <k>"options"</k>: {',
+  '    <k>"arrow"</k>: <s>"{arrow}"</s>,',
+  '    <k>"spotlight"</k>: { <k>"shape"</k>: <s>"{shape}"</s>, <k>"ring"</k>: <s>"{ring}"</s> },',
+  '    <k>"progress"</k>: <s>"{progress}"</s>,',
+  '    <k>"theme"</k>: { <k>"preset"</k>: <s>"{preset}"</s>, <k>"width"</k>: <n>260</n> }',
+  '  },',
+  '  <k>"steps"</k>: [',
+  '    { <k>"id"</k>: <s>"hello"</s> <f>…</f> },',
+  '    {',
+  '      <k>"id"</k>: <s>"invite"</s>,',
+  '      <k>"target"</k>: { <k>"name"</k>: <s>"{target}"</s> },',
+  '      <k>"title"</k>: <s>"{title}"</s>,',
+  '      <k>"body"</k>: <s>"{body}"</s>,',
+  '      <k>"placement"</k>: <s>"{placement}"</s>',
+  '    },',
+  '    { <k>"id"</k>: <s>"done"</s> <f>…</f> }',
+  '  ]',
+  '}',
+]
+const html = lines.map((line) =>
+  line
+    .replace(/<k>/g, '<span class="le-k">')
+    .replace(/<s>/g, '<span class="le-s">')
+    .replace(/<n>/g, '<span class="le-n">')
+    .replace(/<f>/g, '<span class="le-fold">')
+    .replace(/<\/[ksnf]>/g, '</span>')
+    .replace(/\{(\w+)\}/g, '<span class="le-v" data-v="$1"></span>'),
+)
+---
+
+<section class="home-section not-content">
+  <div class="le-head">
+    <div class="section-head">
+      <p class="section-kicker">Live</p>
+      <h2 class="section-title">Change a value. The tour follows.</h2>
+      <p class="section-lede">
+        Below, a tour is being edited on its own and the real library redraws the step after each
+        change: the arrow, the spotlight, the theme, even which element it points at. Watch it as
+        the file, or as the devtools panel you would use in your own app.
+      </p>
+    </div>
+    <div class="le-switch" role="group" aria-label="Show the edits as">
+      <button type="button" aria-pressed="true" data-le-view="file">Tour file</button>
+      <button type="button" aria-pressed="false" data-le-view="devtools">Devtools</button>
+      <span class="le-switch-thumb" aria-hidden="true"></span>
+    </div>
+  </div>
+
+  <p class="sr-only">
+    An animation of a tour being edited, either as its JSON file or in the Docent devtools panel,
+    with a preview that updates after each change.
+  </p>
+  <div class="le" data-live-edit data-view="file" aria-hidden="true">
+    <div class="le-window">
+      <div class="le-view" data-view="file">
+        <div class="le-bar">
+          <span class="le-tab">welcome.tour.json</span>
+          <span class="le-tab ghost">Preview</span>
+          <span class="le-status" data-le-status>Checked · no problems</span>
+          <span class="le-auto"><i></i>Playing on its own</span>
+        </div>
+        <div class="le-panes">
+          <div class="le-editor">
+            <ol class="le-code" data-le-code>
+              {html.map((l) => <li set:html={l} />)}
+            </ol>
+          </div>
+          <div class="le-preview">
+            <iframe title="Tour preview" tabindex="-1" inert data-le-frame="file"></iframe>
+          </div>
+        </div>
+      </div>
+      <div class="le-view" data-view="devtools">
+        <div class="le-bar">
+          <span class="le-tab">localhost:5173 · Northwind</span>
+          <span class="le-status">Devtools · Edit tab</span>
+          <span class="le-auto"><i></i>Playing on its own</span>
+        </div>
+        <div class="le-devtools">
+          <iframe title="Devtools preview" tabindex="-1" inert data-le-frame="devtools"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  import type { Tour } from '@docentjs/core'
+  import { createTour } from '@docentjs/dom'
+  import { validateTour } from '@docentjs/dom/validate'
+
+  type Values = Record<string, string>
+
+  const START: Values = {
+    arrow: 'caret',
+    shape: 'rounded',
+    ring: 'hairline',
+    progress: 'meter',
+    preset: 'light',
+    target: 'invite',
+    title: 'Invite your team',
+    body: 'One click, and they see what you see.',
+    placement: 'bottom',
+  }
+  // The edits, in order. Each one is typed, then applied.
+  const EDITS: [string, string][] = [
+    ['arrow', 'curve'],
+    ['shape', 'pill'],
+    ['ring', 'pulse'],
+    ['title', 'Bring your team in'],
+    ['preset', 'dark'],
+    ['progress', 'dots'],
+    ['placement', 'left'],
+    ['target', 'export'],
+    ['title', 'Share this report'],
+  ]
+
+  const build = (v: Values, theme = true): Tour => ({
+    id: 'welcome',
+    options: {
+      arrow: v.arrow as never,
+      spotlight: { shape: v.shape as never, ring: v.ring as never },
+      progress: v.progress as never,
+      ...(theme ? { theme: { preset: v.preset as never, width: 260 } } : {}),
+    },
+    steps: [
+      { id: 'hello', title: 'Welcome' },
+      {
+        id: 'invite',
+        target: { name: v.target },
+        title: v.title,
+        body: v.body,
+        placement: v.placement as never,
+      },
+      { id: 'done', title: 'Done' },
+    ],
+  })
+
+  const APP = `<!doctype html><html><head><meta charset="utf-8"><style>
+    :root { --bg: oklch(99% 0.003 250); --side: oklch(97% 0.004 250); --ink: oklch(24% 0.02 250); --muted: oklch(52% 0.015 250); --line: oklch(91% 0.006 250); --chip: oklch(95% 0.006 250); color-scheme: light; }
+    :root[data-theme="dark"] { --bg: oklch(21% 0.01 250); --side: oklch(19% 0.01 250); --ink: oklch(94% 0.005 250); --muted: oklch(68% 0.012 250); --line: oklch(29% 0.012 250); --chip: oklch(26% 0.012 250); color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; }
+    body { background: var(--bg); color: var(--ink); font: 13px/1.4 system-ui, sans-serif; }
+    header { display: flex; align-items: center; gap: 12px; height: 52px; padding: 0 18px; border-bottom: 1px solid var(--line); }
+    .brand { display: flex; align-items: center; gap: 8px; font-weight: 650; }
+    .brand i { width: 14px; height: 14px; border-radius: 4px; background: oklch(64% 0.13 250); }
+    nav { display: flex; gap: 14px; margin-left: 12px; color: var(--muted); }
+    nav b { color: var(--ink); font-weight: 600; }
+    .sp { flex: 1; }
+    button { font: inherit; font-size: 12px; font-weight: 600; height: 30px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+    button.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    main { padding: 22px 18px; }
+    h1 { margin: 0; font-size: 17px; font-weight: 650; }
+    .sub { margin: 2px 0 16px; color: var(--muted); font-size: 12px; }
+    .row { display: grid; grid-template-columns: 1fr 90px 70px; align-items: center; padding: 11px 2px; border-bottom: 1px solid var(--line); }
+    .row span:nth-child(2) { color: var(--muted); }
+    em { justify-self: start; font-style: normal; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--chip); color: var(--muted); }
+    em.on { background: oklch(70% 0.12 160 / 0.16); color: oklch(52% 0.11 160); }
+    @media (max-width: 520px) { nav, .row span:nth-child(2) { display: none; } .row { grid-template-columns: 1fr 70px; } header { gap: 8px; padding: 0 12px; } main { padding: 18px 12px; } }
+  </style></head><body>
+    <header>
+      <span class="brand"><i></i>Northwind</span>
+      <nav><b>Projects</b><span>Reports</span><span>Team</span></nav>
+      <span class="sp"></span>
+      <button data-docent="export">Export</button>
+      <button class="primary" data-docent="invite">Invite</button>
+    </header>
+    <main>
+      <h1>Projects</h1>
+      <p class="sub">6 active · 2 due this week</p>
+      <div class="row"><span>Website refresh</span><span>Design</span><em class="on">Active</em></div>
+      <div class="row"><span>Billing migration</span><span>Platform</span><em class="on">Active</em></div>
+      <div class="row"><span>Q3 onboarding</span><span>Growth</span><em>Review</em></div>
+      <div class="row"><span>Mobile app 2.0</span><span>Product</span><em>Planned</em></div>
+      <div class="row"><span>Help center</span><span>Support</span><em>Planned</em></div>
+    </main>
+  </body></html>`
+
+  // The devtools view drives the real panel with a pointer drawn on top.
+  const CURSOR_CSS = `
+    [data-le-cursor] { position: fixed; left: 0; top: 0; z-index: 2147483647; width: 18px; height: 18px; pointer-events: none;
+      transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1); filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.35)); }
+    [data-le-cursor]::after { content: ""; position: absolute; left: -9px; top: -9px; width: 18px; height: 18px; border-radius: 50%;
+      border: 2px solid oklch(72% 0.13 290); opacity: 0; }
+    [data-le-cursor].click::after { animation: le-click 450ms cubic-bezier(0.22, 1, 0.36, 1); }
+    @keyframes le-click { from { opacity: 1; transform: scale(0.4); } to { opacity: 0; transform: scale(1.6); } }
+    body.with-devtools { padding-right: 420px; }
+    body.with-devtools:not(.narrow) .sp { flex: 0 0 28px; }
+    body.with-devtools.narrow { padding-right: 0; }`
+  const CURSOR_SVG =
+    '<svg viewBox="0 0 18 18" width="18" height="18"><path d="M2 1.5v13.2l3.6-3.4 2.3 5.2 2.4-1-2.3-5.1h5z" fill="white" stroke="black" stroke-width="1.1" stroke-linejoin="round"/></svg>'
+
+  const root = document.querySelector<HTMLElement>('[data-live-edit]')
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches
+  const noStorage = { get: () => null, set: () => {}, remove: () => {} }
+
+  if (root) {
+    // ------------------------------------------------------------ pacing
+    // Each view plays only while it is shown, on screen, in a visible tab.
+    let view: 'file' | 'devtools' = 'file'
+    let inView = false
+    const waiting = new Set<() => void>()
+    const wakeAll = () => {
+      for (const w of waiting) w()
+      waiting.clear()
+    }
+    new IntersectionObserver(([entry]) => {
+      inView = entry?.isIntersecting ?? false
+      if (inView) root.classList.add('in')
+      wakeAll()
+    }).observe(root)
+    document.addEventListener('visibilitychange', wakeAll)
+    const sleeper = (name: typeof view) => async (ms: number) => {
+      await new Promise((r) => setTimeout(r, ms))
+      while (!(inView && !document.hidden && view === name))
+        await new Promise<void>((r) => waiting.add(r))
+    }
+
+    // Load the mock app into a frame, keep it on the site's theme, and make
+    // sure nothing in it can take focus from the page.
+    const prepare = (frame: HTMLIFrameElement, extraCss = '') =>
+      new Promise<Document>((resolve) => {
+        frame.addEventListener(
+          'load',
+          () => {
+            const doc = frame.contentDocument as Document
+            const win = frame.contentWindow as Window & typeof globalThis
+            win.HTMLElement.prototype.focus = () => {}
+            if (extraCss) {
+              const style = doc.createElement('style')
+              style.textContent = extraCss
+              doc.head.append(style)
+            }
+            const sync = () => {
+              doc.documentElement.dataset.theme = document.documentElement.dataset.theme ?? 'dark'
+            }
+            sync()
+            new MutationObserver(sync).observe(document.documentElement, {
+              attributes: true,
+              attributeFilter: ['data-theme'],
+            })
+            resolve(doc)
+          },
+          { once: true },
+        )
+        frame.srcdoc = APP
+      })
+
+    // ------------------------------------------------------------ switch
+    const switcher = document.querySelectorAll<HTMLButtonElement>('[data-le-view]')
+    let devtoolsStarted = false
+    for (const b of switcher) {
+      b.addEventListener('click', () => {
+        const next = b.dataset.leView === 'devtools' ? 'devtools' : 'file'
+        if (next === view) return
+        view = next
+        root.dataset.view = next
+        for (const x of switcher) x.setAttribute('aria-pressed', String(x === b))
+        if (next === 'devtools' && !devtoolsStarted) {
+          devtoolsStarted = true
+          void playDevtools()
+        }
+        wakeAll()
+      })
+    }
+
+    // --------------------------------------------------------- file view
+    const playFile = async () => {
+      const frame = root.querySelector<HTMLIFrameElement>('[data-le-frame="file"]')
+      const code = root.querySelector<HTMLElement>('[data-le-code]')
+      const status = root.querySelector<HTMLElement>('[data-le-status]')
+      if (!frame || !code) return
+      const sleep = sleeper('file')
+      const holes = new Map<string, HTMLElement>()
+      for (const el of code.querySelectorAll<HTMLElement>('[data-v]')) holes.set(el.dataset.v ?? '', el)
+      const caret = document.createElement('span')
+      caret.className = 'le-caret'
+      let values: Values = { ...START }
+      const paint = () => {
+        for (const [key, el] of holes) el.textContent = values[key] ?? ''
+      }
+      const setLine = (el: HTMLElement | null) => {
+        for (const li of code.querySelectorAll('.on')) li.classList.remove('on')
+        el?.closest('li')?.classList.add('on')
+      }
+      paint()
+
+      const doc = await prepare(frame)
+      const controller = createTour(build(values), {
+        renderer: { document: doc, sheetBreakpoint: 0 },
+        storage: noStorage,
+        followRoutes: false,
+      })
+      const apply = async () => {
+        const tour = build(values)
+        const problems = validateTour(tour).filter((i) => i.level === 'error').length
+        if (status) {
+          status.textContent = problems
+            ? `${problems} problem${problems > 1 ? 's' : ''}`
+            : 'Saved · checked, no problems'
+          status.classList.remove('flash')
+          void status.offsetWidth
+          status.classList.add('flash')
+        }
+        await controller.updateTour(tour)
+      }
+
+      if (still) {
+        // One settled frame instead of the loop.
+        for (const [key, to] of EDITS.slice(0, 5)) values[key] = to
+        paint()
+        await controller.start('invite')
+        await controller.updateTour(build(values))
+        return
+      }
+
+      await sleep(300)
+      await controller.start('invite')
+
+      const typeInto = async (key: string, to: string) => {
+        const el = holes.get(key)
+        if (!el) return
+        setLine(el)
+        el.after(caret)
+        await sleep(450)
+        el.classList.add('sel')
+        await sleep(420)
+        el.classList.remove('sel')
+        el.textContent = ''
+        caret.classList.add('typing')
+        await sleep(140)
+        for (const ch of to) {
+          el.textContent += ch
+          await sleep(34 + Math.random() * 46)
+        }
+        caret.classList.remove('typing')
+        await sleep(220)
+        values[key] = to
+        await apply()
+        await sleep(1500)
+      }
+
+      for (;;) {
+        for (const [key, to] of EDITS) await typeInto(key, to)
+        await sleep(2200)
+        root.classList.add('resetting')
+        await sleep(450)
+        values = { ...START }
+        paint()
+        caret.remove()
+        setLine(null)
+        if (status) status.textContent = 'Checked · no problems'
+        await controller.updateTour(build(values))
+        await sleep(200)
+        root.classList.remove('resetting')
+        await sleep(900)
+      }
+    }
+
+    // ----------------------------------------------------- devtools view
+    const playDevtools = async () => {
+      const frame = root.querySelector<HTMLIFrameElement>('[data-le-frame="devtools"]')
+      if (!frame) return
+      const sleep = sleeper('devtools')
+      const [doc, { createDocent }, { mount }] = await Promise.all([
+        prepare(frame, CURSOR_CSS),
+        import('@docentjs/dom'),
+        import('@docentjs/devtools'),
+      ])
+      const win = doc.defaultView as Window
+      const narrow = () => doc.body.classList.toggle('narrow', win.innerWidth < 640)
+      doc.body.classList.add('with-devtools')
+      narrow()
+      win.addEventListener('resize', narrow)
+
+      const docent = createDocent({
+        tours: [{ ...build(START, false), name: 'Welcome' }],
+        storage: noStorage,
+        renderer: { document: doc, sheetBreakpoint: 0 },
+      })
+      mount(docent, { document: doc, open: true, persist: false, shortcut: false })
+      await docent.ready
+      await docent.start('welcome', { at: 'invite' })
+
+      const panel = () =>
+        doc.querySelector('[data-docent-devtools]')?.shadowRoot ?? doc.createDocumentFragment()
+      const cursor = doc.createElement('div')
+      cursor.setAttribute('data-le-cursor', '')
+      cursor.innerHTML = CURSOR_SVG
+      doc.body.append(cursor)
+      let at = { x: win.innerWidth * 0.3, y: win.innerHeight * 0.6 }
+      cursor.style.transform = `translate(${at.x}px, ${at.y}px)`
+
+      const field = (label: string) =>
+        [...panel().querySelectorAll<HTMLElement>('.field')].find(
+          (f) => f.querySelector('.field-label')?.textContent === label,
+        )
+      const button = (match: (b: HTMLButtonElement) => boolean) =>
+        [...panel().querySelectorAll<HTMLButtonElement>('button, [role="tab"]')].find(match)
+      const waitFor = async <T,>(find: () => T | undefined | null): Promise<T> => {
+        for (;;) {
+          const found = find()
+          if (found) return found
+          await sleep(120)
+        }
+      }
+
+      // Scroll the panel (never the page) so the control sits in view.
+      const reveal = async (el: HTMLElement) => {
+        const body = panel().querySelector<HTMLElement>('.body')
+        if (!body || !body.contains(el)) return
+        const br = body.getBoundingClientRect()
+        const er = el.getBoundingClientRect()
+        if (er.top > br.top + 24 && er.bottom < br.bottom - 24) return
+        body.scrollTo({ top: body.scrollTop + er.top - br.top - br.height * 0.3, behavior: 'smooth' })
+        await sleep(520)
+      }
+      const pointAt = async (el: HTMLElement) => {
+        await reveal(el)
+        const r = el.getBoundingClientRect()
+        at = { x: r.left + Math.min(r.width * 0.3, 60), y: r.top + r.height * 0.6 }
+        cursor.style.transform = `translate(${at.x}px, ${at.y}px)`
+        await sleep(700)
+      }
+      const press = async (el: HTMLElement) => {
+        await pointAt(el)
+        cursor.classList.remove('click')
+        void cursor.offsetWidth
+        cursor.classList.add('click')
+        el.click()
+        await sleep(650)
+      }
+      const choose = async (label: string, value: string) => {
+        const select = await waitFor(() => field(label)?.querySelector('select'))
+        await pointAt(select)
+        cursor.classList.remove('click')
+        void cursor.offsetWidth
+        cursor.classList.add('click')
+        select.value = value
+        select.dispatchEvent(new Event('change', { bubbles: true }))
+        await sleep(1500)
+      }
+      const retype = async (find: () => HTMLInputElement | null | undefined, to: string) => {
+        const input = await waitFor(find)
+        await pointAt(input)
+        for (let n = input.value.length; n >= 0; n -= 2) {
+          input.value = input.value.slice(0, Math.max(0, n))
+          input.dispatchEvent(new Event('input', { bubbles: true }))
+          await sleep(22)
+        }
+        for (let i = 1; i <= to.length; i++) {
+          input.value = to.slice(0, i)
+          input.dispatchEvent(new Event('input', { bubbles: true }))
+          await sleep(40 + Math.random() * 45)
+        }
+        await sleep(1700)
+      }
+      const title = () => field('Title')?.querySelector('input')
+      const targetName = () =>
+        [...panel().querySelectorAll<HTMLElement>('.field')]
+          .find((f) => f.querySelector('.field-label')?.textContent === 'Target')
+          ?.querySelector<HTMLInputElement>('input.mono')
+
+      await sleep(700)
+      await press(await waitFor(() => button((b) => b.getAttribute('role') === 'tab' && b.textContent?.startsWith('Edit') === true)))
+      await press(
+        await waitFor(() =>
+          [...panel().querySelectorAll<HTMLElement>('.step-item')].find((s) =>
+            s.textContent?.includes('Invite your team'),
+          ),
+        ),
+      )
+      if (still) return
+
+      for (;;) {
+        await retype(title, 'Bring your team in')
+        await choose('Arrow', 'curve')
+        await choose('Spotlight shape', 'pill')
+        await choose('Ring', 'pulse')
+        await choose('Placement', 'left')
+        await press(await waitFor(() => button((b) => b.classList.contains('chip') && b.textContent === 'Dark')))
+        await sleep(900)
+        await retype(targetName, 'export')
+        await retype(title, 'Share this report')
+        await sleep(1600)
+        await press(await waitFor(() => button((b) => b.getAttribute('aria-label') === 'Discard edits')))
+        await sleep(1200)
+      }
+    }
+
+    void playFile()
+  }
+</script>

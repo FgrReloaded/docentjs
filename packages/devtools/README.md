@@ -67,6 +67,6 @@ Toggle the panel with the **Docent** button or **Alt+Shift+D**.
 
 The panel docks right, bottom or left and resizes. It is built with Preact, bundled inside the package, so your app needs no extra dependencies.
 
-`mount(docent, { open, shortcut })` returns a function that removes the panel.
+`mount(docent, { open, shortcut, persist, document })` returns a function that removes the panel. Set `persist: false` for demos and embedded previews that should start the same way every time: preferences and unsaved edits then stay out of localStorage.
 
 MIT

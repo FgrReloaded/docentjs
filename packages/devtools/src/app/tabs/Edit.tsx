@@ -340,7 +340,11 @@ function StepForm({ store, tour, step }: { store: Store; tour: Tour; step: Step 
         </Field>
       </div>
 
-      <TargetField store={store} target={step.target} onChange={(t) => set('target', t, true)} />
+      <TargetField
+        store={store}
+        target={step.target}
+        onChange={(t, immediate) => set('target', t, immediate)}
+      />
       <AdvanceField advance={step.advance} onChange={(a) => set('advance', a, true)} />
 
       <div class="grid2">
@@ -459,7 +463,8 @@ function TargetField({
 }: {
   store: Store
   target: Target | undefined
-  onChange: (t: Target | undefined) => void
+  /** `immediate` is false while typing, so a half-typed name does not skip the step. */
+  onChange: (t: Target | undefined, immediate: boolean) => void
 }) {
   const kind = targetKind(target)
   const [candidates, setCandidates] = useState<TargetCandidate[] | null>(null)
@@ -483,7 +488,7 @@ function TargetField({
     setSuggested(suggestName(el))
   }
   const use = (c: TargetCandidate) => {
-    onChange(c.kind === 'name' ? { name: c.value } : c.value)
+    onChange(c.kind === 'name' ? { name: c.value } : c.value, true)
     setCandidates(null)
   }
 
@@ -502,6 +507,7 @@ function TargetField({
                   : k === 'selector'
                     ? ''
                     : { selectors: [''] },
+              true,
             )
           }
           options={[
@@ -520,7 +526,7 @@ function TargetField({
           mono
           value={value}
           placeholder={kind === 'name' ? 'save-button' : '#save'}
-          onInput={(v) => onChange(kind === 'name' ? { name: v } : v)}
+          onInput={(v) => onChange(kind === 'name' ? { name: v } : v, false)}
         />
       )}
       {kind === 'advanced' && (
@@ -531,7 +537,7 @@ function TargetField({
             value={value}
             onChange={(e) => {
               try {
-                onChange(JSON.parse((e.target as HTMLTextAreaElement).value) as Target)
+                onChange(JSON.parse((e.target as HTMLTextAreaElement).value) as Target, true)
                 setJsonError('')
               } catch {
                 setJsonError('Not valid JSON')

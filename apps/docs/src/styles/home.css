@@ -1055,3 +1055,338 @@
   font-size: 0.85em;
   color: var(--sl-color-gray-1);
 }
+
+/* ------------------------------------------------------------ live edit */
+
+/* A tour file editing itself beside a real preview. Tilted back a little and
+   faded at the edges so it reads as footage, not as something to click. */
+.le {
+  perspective: 2200px;
+  margin-inline: -1rem;
+  padding: 0.5rem 1rem 0;
+  mask-image:
+    linear-gradient(to right, transparent, black 3%, black 97%, transparent),
+    linear-gradient(to bottom, black 78%, transparent);
+  mask-composite: intersect;
+  pointer-events: none;
+  user-select: none;
+}
+.le-window {
+  overflow: hidden;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 16px;
+  background: var(--dc-raised);
+  box-shadow: var(--dc-shadow);
+  transform-origin: 50% 0;
+  transform: rotateX(16deg) scale(0.97);
+  opacity: 0;
+  translate: 0 2.5rem;
+  transition:
+    opacity 700ms var(--dc-ease),
+    translate 900ms var(--dc-ease),
+    transform 1100ms var(--dc-ease);
+}
+.le.in .le-window {
+  opacity: 1;
+  translate: 0 0;
+  transform: rotateX(8deg) scale(1);
+}
+.le-bar {
+  display: flex;
+  align-items: stretch;
+  height: 2.5rem;
+  border-bottom: 1px solid var(--sl-color-hairline);
+  font-size: 0.75rem;
+}
+.le-tab {
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  border-right: 1px solid var(--sl-color-hairline);
+  color: var(--sl-color-gray-1);
+  font-family: var(--__sl-font-mono);
+  font-size: 0.6875rem;
+}
+.le-tab.ghost {
+  display: none;
+  color: var(--sl-color-gray-4);
+  font-family: var(--__sl-font);
+  font-size: 0.75rem;
+}
+.le-auto {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-left: auto;
+  padding: 0 1rem;
+  color: var(--sl-color-gray-4);
+}
+.le-auto i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--sl-color-accent);
+  animation: le-pulse 1.8s var(--dc-ease) infinite;
+}
+.le-panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  transition: opacity 400ms var(--dc-ease);
+}
+.le.resetting .le-panes {
+  opacity: 0;
+}
+.le-editor {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--dc-surface);
+}
+.le-code {
+  counter-reset: le;
+  margin: 0;
+  padding: 0.9rem 0;
+  list-style: none;
+  font: 0.72rem / 1.8 var(--__sl-font-mono);
+  color: var(--sl-color-gray-3);
+  white-space: pre;
+  overflow: hidden;
+}
+.le-code li {
+  counter-increment: le;
+  margin: 0;
+  padding-right: 1rem;
+  transition: background-color 250ms var(--dc-ease);
+}
+.le-code li::before {
+  content: counter(le);
+  display: inline-block;
+  width: 2.2rem;
+  margin-right: 0.9rem;
+  color: var(--sl-color-gray-5);
+  text-align: right;
+}
+.le-code li.on {
+  background: color-mix(in oklch, var(--sl-color-accent) 9%, transparent);
+}
+.le-code li.on::before {
+  color: var(--sl-color-gray-3);
+}
+.le-k {
+  color: var(--sl-color-accent);
+}
+.le-s,
+.le-n {
+  color: oklch(78% 0.08 75);
+}
+:root[data-theme="light"] .le-s,
+:root[data-theme="light"] .le-n {
+  color: oklch(52% 0.11 60);
+}
+.le-fold {
+  padding: 0 0.35em;
+  border-radius: 4px;
+  background: var(--sl-color-gray-6);
+  color: var(--sl-color-gray-4);
+}
+.le-v {
+  border-radius: 2px;
+  transition: background-color 150ms var(--dc-ease);
+}
+.le-v.sel {
+  background: color-mix(in oklch, var(--sl-color-accent) 32%, transparent);
+}
+.le-caret {
+  display: inline-block;
+  width: 1.5px;
+  height: 1.15em;
+  margin-left: 1px;
+  vertical-align: -0.2em;
+  background: var(--sl-color-white);
+  animation: le-blink 1s steps(1) infinite;
+}
+.le-caret.typing {
+  animation: none;
+}
+.le-status {
+  display: none;
+  align-items: center;
+  gap: 0.45rem;
+  margin-left: auto;
+  color: var(--sl-color-gray-3);
+}
+.le-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: oklch(68% 0.13 155);
+}
+.le-status.flash::before {
+  animation: le-ping 700ms var(--dc-ease);
+}
+.le-preview {
+  position: relative;
+  min-height: 24rem;
+  border-top: 1px solid var(--sl-color-hairline);
+}
+.le-preview iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+@media (min-width: 56rem) {
+  .le-panes {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  }
+  .le-preview {
+    border-top: 0;
+    border-left: 1px solid var(--sl-color-hairline);
+  }
+  .le-tab {
+    width: 47.5%;
+  }
+  .le-tab.ghost {
+    display: flex;
+    width: auto;
+    border-right: 0;
+  }
+  .le-status {
+    display: flex;
+  }
+  .le-status + .le-auto {
+    margin-left: 0;
+  }
+}
+@media (max-width: 40rem) {
+  .le-code {
+    font-size: 0.625rem;
+  }
+  .le-auto {
+    display: none;
+  }
+}
+@keyframes le-blink {
+  50% {
+    opacity: 0;
+  }
+}
+@keyframes le-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@keyframes le-ping {
+  from {
+    box-shadow: 0 0 0 0 oklch(68% 0.13 155 / 0.6);
+  }
+  to {
+    box-shadow: 0 0 0 7px oklch(68% 0.13 155 / 0);
+  }
+}
+
+/* The two ways to watch the edits: the file, or the devtools panel. */
+.le-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--dc-space-6);
+  margin-bottom: clamp(2rem, 4vw, 3.25rem);
+}
+.le-head .section-head {
+  margin-bottom: 0;
+}
+.le-switch {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 10px;
+  background: var(--dc-surface);
+}
+.le-switch button {
+  position: relative;
+  z-index: 1;
+  padding: 0.5rem 1rem;
+  border: 0;
+  background: none;
+  color: var(--sl-color-gray-3);
+  font: 540 0.8125rem / 1 var(--__sl-font);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 200ms var(--dc-ease);
+}
+.le-switch button:hover {
+  color: var(--sl-color-gray-1);
+}
+.le-switch button[aria-pressed="true"] {
+  color: var(--sl-color-white);
+}
+.le-switch button:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 1px;
+  border-radius: 7px;
+}
+.le-switch-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: 7px;
+  background: var(--dc-raised);
+  box-shadow:
+    0 0 0 1px var(--sl-color-hairline),
+    0 1px 2px oklch(10% 0.01 285 / 0.2);
+  transition: transform 380ms var(--dc-ease);
+}
+.le-switch:has([data-le-view="devtools"][aria-pressed="true"]) .le-switch-thumb {
+  transform: translateX(100%);
+}
+
+.le-window {
+  display: grid;
+}
+.le-view {
+  display: flex;
+  flex-direction: column;
+  grid-area: 1 / 1;
+  min-width: 0;
+  transition:
+    opacity 450ms var(--dc-ease),
+    transform 600ms var(--dc-ease),
+    visibility 0s;
+}
+.le-view > :last-child {
+  flex: 1;
+}
+.le[data-view="file"] .le-view[data-view="devtools"],
+.le[data-view="devtools"] .le-view[data-view="file"] {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(12px) scale(0.99);
+  transition:
+    opacity 300ms var(--dc-ease),
+    transform 300ms var(--dc-ease),
+    visibility 0s 300ms;
+}
+.le-devtools {
+  position: relative;
+  min-height: 30rem;
+}
+.le-devtools iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+@media (max-width: 40rem) {
+  .le-devtools {
+    min-height: 44rem;
+  }
+}

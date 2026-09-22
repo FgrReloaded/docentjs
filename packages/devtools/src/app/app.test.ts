@@ -62,6 +62,33 @@ function setup() {
 }
 
 describe('devtools panel', () => {
+  it('leaves localStorage alone when persist is off', async () => {
+    document.body.innerHTML = '<button data-docent="save">Save</button>'
+    const docent = createDocent({
+      storage: createMemoryStorage(),
+      tours: [defineTour({ id: 'demo', steps: [{ id: 'a', title: 'A' }] })],
+    })
+    localStorage.setItem('docent-devtools', JSON.stringify({ tab: 'perf' }))
+    const unmount = mount(docent, { open: true, persist: false })
+    await vi.waitFor(() => expect(panelText()).toContain('demo'))
+    // Saved preferences are not restored...
+    expect(shadow().querySelector('[role="tab"][aria-selected="true"]')?.textContent).toContain(
+      'Tours',
+    )
+    tab('Edit')
+    await vi.waitFor(() => expect(panelText()).toContain('Step · a'))
+    const title = Array.from(shadow().querySelectorAll('.field')).find((f) =>
+      f.textContent?.startsWith('Title'),
+    )
+    await type(title?.querySelector('input') as HTMLInputElement, 'Changed')
+    await vi.waitFor(() => expect(docent.getTours()[0]?.steps[0]?.title).toBe('Changed'))
+    // ...and nothing new is written.
+    expect(localStorage.getItem('docent-devtools')).toBe(JSON.stringify({ tab: 'perf' }))
+    expect(localStorage.length).toBe(1)
+    unmount()
+    await docent.destroy()
+  })
+
   it('lists tours with the reason they are not showing', async () => {
     const { docent, unmount } = setup()
     await vi.waitFor(() =>
@@ -109,6 +136,29 @@ describe('devtools panel', () => {
 
     button('Discard edits').click()
     await vi.waitFor(() => expect(popoverTitle()).toBe('Save'))
+    unmount()
+    await docent.destroy()
+  })
+
+  it('waits for a target name to be typed before the running step follows it', async () => {
+    const { docent, unmount } = setup()
+    document.body.insertAdjacentHTML('beforeend', '<button data-docent="share">Share</button>')
+    await docent.start('trial', { at: 'save' })
+    await vi.waitFor(() => expect(popoverTitle()).toBe('Save'))
+    tab('Edit')
+    await vi.waitFor(() => expect(panelText()).toContain('Step · hello'))
+    stepItem('Save').click()
+    await vi.waitFor(() => expect(panelText()).toContain('Step · save'))
+    const target = Array.from(shadow().querySelectorAll('.field'))
+      .find((f) => f.querySelector('.field-label')?.textContent === 'Target')
+      ?.querySelector('input') as HTMLInputElement
+    // Half-typed names match nothing; they must not skip the step.
+    for (const partial of ['s', 'sh', 'sha', 'shar', 'share']) await type(target, partial)
+    await vi.waitFor(() =>
+      expect(docent.getTours()[0]?.steps[1]?.target).toEqual({ name: 'share' }),
+    )
+    expect(docent.getState().active).toBe('trial')
+    expect(popoverTitle()).toBe('Save')
     unmount()
     await docent.destroy()
   })

@@ -53,6 +53,9 @@ importers:
       '@docentjs/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@docentjs/devtools':
+        specifier: workspace:*
+        version: link:../../packages/devtools
       '@docentjs/dom':
         specifier: workspace:*
         version: link:../../packages/dom
