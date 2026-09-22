@@ -88,7 +88,7 @@ defineTour({
 })
 ```
 
-The default is a small caret, a rounded spotlight with a hairline ring, and a dimmed page. Drawn arrows load on first use as a separate 1.8 kB chunk, so tours that keep the caret never download them.
+The default is a small caret, a rounded spotlight with a hairline ring, and a dimmed page. Drawn arrows load on first use as a separate 2 kB chunk, so tours that keep the caret never download them.
 
 ## Also
 

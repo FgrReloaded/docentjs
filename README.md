@@ -2,7 +2,7 @@
 
 Guided product tours for the web. Spotlight an element, explain it, move on.
 
-> Early scaffold. Nothing is published yet.
+Docs: [docentjs.dev](https://docentjs.dev)
 
 ## Packages
 
@@ -14,7 +14,7 @@ Guided product tours for the web. Spotlight an element, explain it, move on.
 | `@docentjs/vue` | Vue bindings. |
 | `@docentjs/svelte` | Svelte bindings. |
 | `@docentjs/devtools` | Development panel: why a tour is not showing, replay, simulate, target checks. |
-| `@docentjs/cli` | `docent validate` checks tour files; `docent schema` prints the JSON Schema. |
+| `@docentjs/cli` | `docent validate` checks tour files; `docent schema` prints the JSON Schema; `docent theme add` installs a theme. |
 
 ## Development
 

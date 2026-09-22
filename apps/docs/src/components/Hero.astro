@@ -1,17 +1,35 @@
 ---
 /**
  * Home page hero: the pitch on the left, and on the right a small product
- * mock with a still of a Docent step on it. "Play the tour" runs the real
- * library over the mock.
+ * mock, tilted in 3D, with a still of a Docent step on it and the step's JSON
+ * floating in front. "Play the tour" lays the mock flat and runs the real
+ * library over it.
  */
 const hero = Astro.locals.starlightRoute.entry.data.hero
 const title = hero?.title ?? 'Show people around your product.'
 const tagline = hero?.tagline ?? ''
+
+// The still's step as JSON, keys and strings tinted.
+const stepJson = JSON.stringify(
+  {
+    target: { name: 'hero-new' },
+    title: 'Create your first invoice',
+    placement: 'bottom-end',
+    spotlight: { shape: 'pill' },
+    arrow: 'curve',
+  },
+  null,
+  2,
+)
+  .replace(/\{\n\s+("\w+": "[^"]+")\n\s+\}/g, '{ $1 }')
+  .replace(/"([^"]+)"(:?)/g, (_, text, colon) =>
+    colon ? `<span class="k">"${text}"</span>:` : `<span class="v">"${text}"</span>`,
+  )
 ---
 
 <section class="hero not-content">
   <div class="hero-copy">
-    <p class="hero-eyebrow"><span>Open source</span><span>MIT</span><span>About 13 kB</span></p>
+    <p class="hero-eyebrow"><span>Open source</span><span>MIT</span><span>About 15 kB</span></p>
     <h1 class="hero-title" set:html={title} />
     <p class="hero-lede">{tagline}</p>
     <div class="hero-actions">
@@ -24,68 +42,85 @@ const tagline = hero?.tagline ?? ''
         Play the tour
       </button>
     </div>
-    <div class="install">
-      <span class="install-prompt" aria-hidden="true">$</span>
-      <code>pnpm add @docentjs/dom</code>
-      <button type="button" class="install-copy" data-copy="pnpm add @docentjs/dom" aria-label="Copy install command">
-        <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.3" /><path d="M10.5 3.5v-.4A1.6 1.6 0 0 0 8.9 1.5H4.1a1.6 1.6 0 0 0-1.6 1.6v4.8a1.6 1.6 0 0 0 1.6 1.6h.4" fill="none" stroke="currentColor" stroke-width="1.3" /></svg>
-        <span class="install-done">Copied</span>
-      </button>
+    <div class="install" data-install>
+      <div class="install-tabs" role="group" aria-label="Your stack">
+        <button type="button" aria-pressed="true" data-pkg="dom">JavaScript</button>
+        <button type="button" aria-pressed="false" data-pkg="react">React</button>
+        <button type="button" aria-pressed="false" data-pkg="vue">Vue</button>
+        <button type="button" aria-pressed="false" data-pkg="svelte">Svelte</button>
+        <span class="install-bar" aria-hidden="true"></span>
+      </div>
+      <div class="install-line">
+        <span class="install-prompt" aria-hidden="true">$</span>
+        <code>pnpm add <span class="install-pkg" data-pkg-name>@docentjs/dom</span></code>
+        <button type="button" class="install-copy" data-copy="pnpm add @docentjs/dom" aria-label="Copy install command">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.3" /><path d="M10.5 3.5v-.4A1.6 1.6 0 0 0 8.9 1.5H4.1a1.6 1.6 0 0 0-1.6 1.6v4.8a1.6 1.6 0 0 0 1.6 1.6h.4" fill="none" stroke="currentColor" stroke-width="1.3" /></svg>
+          <span class="install-done">Copied</span>
+        </button>
+      </div>
     </div>
   </div>
 
   <div class="hero-stage">
-    <div class="mock" data-mock>
-      <div class="mock-top">
-        <span class="mock-brand"><i></i>Ledger</span>
-        <span class="mock-search">Search invoices</span>
-        <span class="mock-avatar" data-docent="hero-avatar">AK</span>
-      </div>
-      <div class="mock-body">
-        <nav class="mock-nav" aria-hidden="true">
-          <span>Overview</span>
-          <span class="on" data-docent="hero-nav">Invoices</span>
-          <span>Customers</span>
-          <span>Reports</span>
-          <span>Settings</span>
-        </nav>
-        <div class="mock-main">
-          <div class="mock-head">
-            <div>
-              <p class="mock-h">Invoices</p>
-              <p class="mock-sub">April · 24 open</p>
-            </div>
-            <span class="mock-cta-wrap">
-              <span class="mock-cta" data-docent="hero-new">+ New invoice</span>
-              <svg class="poster-connector" viewBox="0 0 120 64" aria-hidden="true">
-                <path d="M22 62 C 30 30, 70 14, 96 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-                <path d="M88 4.5 L97 7.6 L90.5 14.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-              </svg>
-              <span class="poster-popover" aria-hidden="true">
-                <span class="pp-title">Create your first invoice</span>
-                <span class="pp-body">Pick a customer and add line items. You can send it now or keep a draft.</span>
-                <span class="pp-foot">
-                  <span class="pp-meter"><i></i></span>
-                  <span class="pp-count">2 of 5</span>
-                  <span class="pp-skip">Skip</span>
-                  <span class="pp-btn ghost">Back</span>
-                  <span class="pp-btn">Next →</span>
+    <div class="scene" data-scene>
+      <div class="rig">
+        <div class="rig-back" aria-hidden="true">
+          <i></i><i></i><i></i><i></i>
+        </div>
+        <div class="mock" data-mock>
+          <div class="mock-top">
+            <span class="mock-brand"><i></i>Ledger</span>
+            <span class="mock-search">Search invoices</span>
+            <span class="mock-avatar" data-docent="hero-avatar">AK</span>
+          </div>
+          <div class="mock-body">
+            <nav class="mock-nav" aria-hidden="true">
+              <span>Overview</span>
+              <span class="on" data-docent="hero-nav">Invoices</span>
+              <span>Customers</span>
+              <span>Reports</span>
+              <span>Settings</span>
+            </nav>
+            <div class="mock-main">
+              <div class="mock-head">
+                <div>
+                  <p class="mock-h">Invoices</p>
+                  <p class="mock-sub">April · 24 open</p>
+                </div>
+                <span class="mock-cta-wrap">
+                  <span class="mock-cta" data-docent="hero-new">+ New invoice</span>
+                  <svg class="poster-connector" viewBox="0 0 120 64" aria-hidden="true">
+                    <path d="M22 62 C 30 30, 70 14, 96 8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                    <path d="M88 4.5 L97 7.6 L90.5 14.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                  <span class="poster-popover" aria-hidden="true">
+                    <span class="pp-title">Create your first invoice</span>
+                    <span class="pp-body">Pick a customer and add line items. You can send it now or keep a draft.</span>
+                    <span class="pp-foot">
+                      <span class="pp-meter"><i></i></span>
+                      <span class="pp-count">2 of 5</span>
+                      <span class="pp-skip">Skip</span>
+                      <span class="pp-btn ghost">Back</span>
+                      <span class="pp-btn">Next →</span>
+                    </span>
+                  </span>
                 </span>
-              </span>
-            </span>
-          </div>
-          <div class="mock-stats" data-docent="hero-stats">
-            <div><b>$48,200</b><span>Outstanding</span></div>
-            <div><b>$12,940</b><span>Overdue</span></div>
-            <div><b>6 days</b><span>Average to pay</span></div>
-          </div>
-          <div class="mock-table" aria-hidden="true">
-            <div><span>Northwind Traders</span><span>$4,200</span><em class="paid">Paid</em></div>
-            <div><span>Globex</span><span>$1,860</span><em>Due</em></div>
-            <div><span>Initech</span><span>$9,400</span><em class="late">Overdue</em></div>
-            <div><span>Umbrella Co.</span><span>$2,150</span><em>Draft</em></div>
+              </div>
+              <div class="mock-stats" data-docent="hero-stats">
+                <div><b>$48,200</b><span>Outstanding</span></div>
+                <div><b>$12,940</b><span>Overdue</span></div>
+                <div><b>6 days</b><span>Average to pay</span></div>
+              </div>
+              <div class="mock-table" aria-hidden="true">
+                <div><span>Northwind Traders</span><span>$4,200</span><em class="paid">Paid</em></div>
+                <div><span>Globex</span><span>$1,860</span><em>Due</em></div>
+                <div><span>Initech</span><span>$9,400</span><em class="late">Overdue</em></div>
+                <div><span>Umbrella Co.</span><span>$2,150</span><em>Draft</em></div>
+              </div>
+            </div>
           </div>
         </div>
+        <pre class="rig-json" aria-hidden="true"><span class="j-file">welcome.tour.json · steps[1]</span><Fragment set:html={stepJson} /></pre>
       </div>
     </div>
     <p class="hero-note">A still of one step. <button type="button" class="linkish" data-hero-play>Play it live</button></p>
@@ -138,29 +173,102 @@ const tagline = hero?.tagline ?? ''
       {
         id: 'done',
         title: 'That is Docent',
-        body: 'About 13 kB, accessible, and yours to style. The guide has your first tour running in a few minutes.',
+        body: 'About 15 kB, accessible, and yours to style. The guide has your first tour running in a few minutes.',
       },
     ],
   })
 
   const mock = document.querySelector<HTMLElement>('[data-mock]')
+  const scene = document.querySelector<HTMLElement>('[data-scene]')
+  const still = matchMedia('(prefers-reduced-motion: reduce)')
   let controller: ReturnType<typeof createTour> | undefined
+  let pending: ReturnType<typeof setTimeout> | undefined
+
+  // The mock rests tilted in 3D. A tour measures real rects, so it lies flat
+  // first and the tour starts once it has settled.
+  const settle = (flat: boolean) => {
+    scene?.style.setProperty('--px', '0')
+    scene?.style.setProperty('--py', '0')
+    scene?.classList.toggle('flat', flat)
+    mock?.classList.toggle('playing', flat)
+  }
   const play = () => {
     controller?.destroy()
-    const isDark = document.documentElement.dataset.theme === 'dark'
-    controller = createTour(tour, {
-      renderer: isDark ? { theme: dark } : {},
-      storage: { get: () => null, set: () => {}, remove: () => {} },
-    })
-    mock?.classList.add('playing')
-    controller.subscribe((s) => {
-      if (s.status !== 'running' && s.status !== 'idle' && s.status !== 'paused') {
-        mock?.classList.remove('playing')
-      }
-    })
-    void controller.start()
+    clearTimeout(pending)
+    const wasFlat = scene?.classList.contains('flat')
+    settle(true)
+    pending = setTimeout(
+      () => {
+        const isDark = document.documentElement.dataset.theme === 'dark'
+        controller = createTour(tour, {
+          renderer: isDark ? { theme: dark } : {},
+          storage: { get: () => null, set: () => {}, remove: () => {} },
+        })
+        controller.subscribe((s) => {
+          if (s.status !== 'running' && s.status !== 'idle' && s.status !== 'paused') settle(false)
+        })
+        void controller.start()
+      },
+      still.matches || wasFlat ? 0 : 620,
+    )
   }
   for (const b of document.querySelectorAll('[data-hero-play]')) b.addEventListener('click', play)
+
+  // A few degrees of tilt toward the pointer, on devices that hover.
+  if (scene && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    scene.addEventListener('pointermove', (e) => {
+      if (still.matches || scene.classList.contains('flat')) return
+      const r = scene.getBoundingClientRect()
+      scene.style.setProperty('--px', (((e.clientX - r.left) / r.width) * 2 - 1).toFixed(3))
+      scene.style.setProperty('--py', (((e.clientY - r.top) / r.height) * 2 - 1).toFixed(3))
+    })
+    scene.addEventListener('pointerleave', () => {
+      scene.style.setProperty('--px', '0')
+      scene.style.setProperty('--py', '0')
+    })
+  }
+
+  // One package per stack: the framework packages bundle the renderer and the engine.
+  const install = document.querySelector<HTMLElement>('[data-install]')
+  const pkgName = install?.querySelector<HTMLElement>('[data-pkg-name]')
+  const copy = install?.querySelector<HTMLButtonElement>('[data-copy]')
+  const bar = install?.querySelector<HTMLElement>('.install-bar')
+  const tabs = [...(install?.querySelectorAll<HTMLButtonElement>('[data-pkg]') ?? [])]
+  const moveBar = (tab: HTMLElement) => {
+    bar?.style.setProperty('--x', `${tab.offsetLeft}px`)
+    bar?.style.setProperty('--w', `${tab.offsetWidth}`)
+  }
+  let wanted = pkgName?.textContent ?? ''
+  const pick = (tab: HTMLButtonElement) => {
+    const name = `@docentjs/${tab.dataset.pkg}`
+    for (const t of tabs) t.setAttribute('aria-pressed', String(t === tab))
+    moveBar(tab)
+    if (copy) copy.dataset.copy = `pnpm add ${name}`
+    if (!pkgName || wanted === name) return
+    wanted = name
+    if (still.matches) {
+      pkgName.textContent = name
+      return
+    }
+    pkgName.getAnimations().forEach((a) => a.cancel())
+    pkgName
+      .animate({ opacity: [1, 0], transform: ['none', 'translateY(-5px)'] }, { duration: 110, easing: 'ease-in' })
+      .finished.then(() => {
+        pkgName.textContent = wanted
+        pkgName.animate(
+          { opacity: [0, 1], transform: ['translateY(5px)', 'none'] },
+          { duration: 220, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+        )
+      })
+      .catch(() => {})
+  }
+  for (const t of tabs) t.addEventListener('click', () => pick(t))
+  const syncBar = () => {
+    const on = tabs.find((t) => t.getAttribute('aria-pressed') === 'true')
+    if (on) moveBar(on)
+  }
+  syncBar()
+  void document.fonts?.ready.then(syncBar)
 
   for (const b of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
     b.addEventListener('click', () => {

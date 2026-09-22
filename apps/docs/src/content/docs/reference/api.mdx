@@ -39,6 +39,10 @@ The web renderer, plus browser-ready versions of the engine's entry points.
 | `avoidOcclusion` | move the target out from under sticky headers (default `true`) |
 | `document` | render into another document, such as an iframe |
 
+### `@docentjs/dom/validate`
+
+The schema checks, for development and CI: `validateTour`, `validateTheme`, `isValidTour`, `formatIssues` and `tourJsonSchema`. Re-exported from `@docentjs/core/validate`; see [checking a tour](/reference/schema/#checking-a-tour).
+
 ### `@docentjs/dom/themes`
 
 The presets `light`, `dark`, `minimal` and `contrast`, and `presets`, all four by name.
@@ -131,8 +135,10 @@ npx @docentjs/cli validate "tours/*.json"
 | --- | --- |
 | `docent validate <files...>` | check tour files against the schema; exits 1 when anything is wrong |
 | `docent schema [file]` | print the tour JSON Schema, or write it to a file |
+| `docent theme list` | list the ready-made [themes](/customize/themes/) |
+| `docent theme add <name\|url>` | check a theme and write it to `docent-theme.json`; refuses one that is not valid |
 
-Options: `--json`, `--quiet`, `--allow-unknown`.
+Options for `validate`: `--json`, `--quiet`, `--allow-unknown`. For `theme add`: `--out <file>` to write elsewhere, `--force` to replace an existing file.
 
 ## Addresses
 

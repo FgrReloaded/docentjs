@@ -177,6 +177,6 @@ Besides the schema check, Docent warns in development when something would other
 
 The same rule applies: production builds contain neither the checks nor their messages.
 
-The validate function is exported from `@docentjs/core/validate` and re-exported from `@docentjs/dom/validate`. `isValidTour(tour)` returns a boolean, and `tourJsonSchema()` returns the JSON Schema published at [docentjs.dev/schema/tour-v1.json](https://docentjs.dev/schema/tour-v1.json).
+The validate function is exported from `@docentjs/core/validate` and re-exported from `@docentjs/dom/validate`. `isValidTour(tour)` returns a boolean, `validateTheme(theme)` runs the same checks on a [theme](/customize/themes/) file, and `tourJsonSchema()` returns the JSON Schema published at [docentjs.dev/schema/tour-v1.json](https://docentjs.dev/schema/tour-v1.json).
 
 The documentation is also published as plain text for AI tools: see [Using Docent with AI](/reference/for-ai/).

@@ -19,6 +19,7 @@
   gap: var(--dc-space-12);
   align-items: center;
   padding-block: clamp(2.5rem, 6vw, 5.5rem) clamp(3rem, 7vw, 6rem);
+  overflow-x: clip;
 }
 @media (min-width: 62rem) {
   .hero {
@@ -78,21 +79,70 @@
 }
 .install {
   display: inline-flex;
+  flex-direction: column;
+  margin-top: var(--dc-space-6);
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 12px;
+  background: var(--dc-surface);
+}
+.install-tabs {
+  position: relative;
+  display: flex;
+  gap: var(--dc-space-1);
+  padding: 0.35rem 0.5rem 0;
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+.install-tabs button {
+  padding: 0.35rem 0.45rem 0.5rem;
+  border: 0;
+  background: none;
+  color: var(--sl-color-gray-4);
+  font: 540 0.75rem / 1 var(--__sl-font);
+  cursor: pointer;
+  transition: color 160ms var(--dc-ease);
+}
+.install-tabs button:hover {
+  color: var(--sl-color-gray-2);
+}
+.install-tabs button[aria-pressed="true"] {
+  color: var(--sl-color-white);
+}
+.install-tabs button:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: -2px;
+  border-radius: 6px;
+}
+/* One pixel wide, scaled to the pressed tab so it glides without layout work. */
+.install-bar {
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 1px;
+  height: 1.5px;
+  background: var(--sl-color-white);
+  transform-origin: left;
+  transform: translateX(var(--x, 0.5rem)) scaleX(var(--w, 0));
+  transition: transform 320ms var(--dc-ease);
+}
+.install-line {
+  display: flex;
   align-items: center;
   gap: 0.65rem;
-  margin-top: var(--dc-space-6);
   padding: 0.3rem 0.35rem 0.3rem 0.9rem;
-  border: 1px solid var(--sl-color-hairline);
-  border-radius: 10px;
-  background: var(--dc-surface);
   font-family: var(--__sl-font-mono);
   font-size: 0.8125rem;
 }
 .install code {
+  flex: 1;
   color: var(--sl-color-gray-1);
   background: none;
   padding: 0;
   font: inherit;
+  white-space: nowrap;
+}
+.install-pkg {
+  display: inline-block;
+  min-width: 16ch;
 }
 .install-prompt {
   color: var(--sl-color-gray-4);
@@ -142,6 +192,152 @@
 
 .hero-stage {
   min-width: 0;
+}
+
+/*
+ * The stage: the mock rests tilted in 3D, a second screen sits behind it and
+ * the step's JSON floats in front. Everything hangs off --k (1 at rest, 0 flat,
+ * higher while it lands) so one transition moves every layer together.
+ */
+@property --k {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+@property --px {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --py {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --fade {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 16%;
+}
+.scene {
+  --amp: 1;
+  position: relative;
+  margin: -2.5rem -1.25rem -0.5rem -3.5rem;
+  padding: 2.5rem 1.25rem 0.5rem 3.5rem;
+  perspective: 1700px;
+  perspective-origin: 20% 30%;
+  mask-image: linear-gradient(to bottom, black calc(100% - var(--fade)), transparent);
+  transition:
+    --k 620ms var(--dc-ease),
+    --px 600ms var(--dc-ease),
+    --py 600ms var(--dc-ease),
+    --fade 500ms var(--dc-ease);
+  animation: scene-in 1200ms var(--dc-ease) backwards;
+}
+.scene.flat {
+  --k: 0;
+  --fade: 0%;
+}
+.rig {
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(calc(var(--k) * var(--amp) * 9deg - var(--py) * 2.5deg))
+    rotateY(calc(var(--k) * var(--amp) * -14deg + var(--px) * 3.5deg))
+    rotateZ(calc(var(--k) * var(--amp) * 2deg));
+}
+.rig-back {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 16px;
+  background: var(--dc-surface);
+  opacity: clamp(0, var(--k) * 0.75, 0.75);
+  transform: translate3d(calc(var(--k) * 2.4rem), calc(var(--k) * -2rem), calc(var(--k) * -110px));
+  pointer-events: none;
+}
+.rig-back i {
+  width: 2.2rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--sl-color-gray-6);
+}
+.rig-back i:first-child {
+  width: 0.45rem;
+  margin-right: auto;
+  background: var(--sl-color-accent);
+  opacity: 0.6;
+}
+.rig-json {
+  --j-bg: oklch(22% 0.02 285);
+  position: absolute;
+  left: -3rem;
+  bottom: 3.75rem;
+  margin: 0;
+  padding: 0.7rem 0.95rem 0.8rem;
+  border-radius: 12px;
+  background: var(--j-bg);
+  color: oklch(76% 0.012 285);
+  font: 0.65rem / 1.6 var(--__sl-font-mono);
+  white-space: pre;
+  box-shadow:
+    0 0 0 1px oklch(100% 0.004 285 / 0.07),
+    0 2px 6px oklch(12% 0.02 285 / 0.2),
+    0 28px 56px -18px oklch(12% 0.02 285 / 0.55);
+  opacity: clamp(0, var(--k), 1);
+  transform: translateZ(calc(var(--k) * 80px));
+  pointer-events: none;
+  animation: json-in 900ms 750ms var(--dc-ease) backwards;
+}
+:root:not([data-theme="light"]) .rig-json {
+  --j-bg: oklch(27% 0.018 285);
+}
+.rig-json .j-file {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: oklch(58% 0.014 285);
+  font-size: 0.625rem;
+  letter-spacing: 0.02em;
+}
+.rig-json .k {
+  color: oklch(79% 0.1 290);
+}
+.rig-json .v {
+  color: oklch(85% 0.07 80);
+}
+@keyframes scene-in {
+  from {
+    --k: 2.1;
+    opacity: 0;
+    translate: 0 2.5rem;
+  }
+}
+@keyframes json-in {
+  from {
+    opacity: 0;
+    translate: -0.75rem 1rem;
+  }
+}
+@media (max-width: 61.99rem) {
+  .scene {
+    --amp: 0.7;
+    margin-inline: -1rem;
+    padding-inline: 1rem;
+  }
+  .rig-json {
+    left: -0.25rem;
+  }
+}
+@media (max-width: 40rem) {
+  .scene {
+    --amp: 0.35;
+  }
+  .rig-json {
+    display: none;
+  }
 }
 .hero-note {
   margin: var(--dc-space-3) 0 0;
@@ -370,7 +566,7 @@
     0 0 0 1px oklch(98% 0.004 285 / 0.55),
     0 0 0 200vmax var(--scrim);
   pointer-events: none;
-  animation: dc-fade 600ms var(--dc-ease) both;
+  animation: dc-fade 600ms 450ms var(--dc-ease) both;
 }
 .poster-connector,
 .poster-popover {
@@ -414,7 +610,7 @@
     0 2px 4px oklch(20% 0.02 285 / 0.06),
     0 18px 40px -12px oklch(20% 0.02 285 / 0.3);
   text-align: left;
-  animation: dc-rise 700ms 150ms var(--dc-ease) both;
+  animation: dc-rise 700ms 600ms var(--dc-ease) both;
 }
 :root:not([data-theme="light"]) .poster-popover {
   --p-bg: oklch(25% 0.014 285);
@@ -515,6 +711,19 @@
 }
 
 /* --------------------------------------------------------------- sections */
+
+.section-lede a,
+.detail dd a {
+  color: var(--sl-color-accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, currentColor 35%, transparent);
+  text-underline-offset: 0.2em;
+  transition: text-decoration-color 150ms var(--dc-ease);
+}
+.section-lede a:hover,
+.detail dd a:hover {
+  text-decoration-color: currentColor;
+}
 
 .home-section {
   padding-block: clamp(3.5rem, 7vw, 6rem);
