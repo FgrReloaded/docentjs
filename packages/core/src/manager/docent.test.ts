@@ -18,9 +18,16 @@ function fakeEnv(route = '/') {
   const elements = new Set<string>()
   const routeListeners = new Set<() => void>()
   const watchers = new Map<string, Set<() => void>>()
+  const viewportListeners = new Set<() => void>()
   let current = route
+  let width = 1280
   const env: DocentEnvironment = {
     currentRoute: () => current,
+    viewportWidth: () => width,
+    onViewportChange: (l) => {
+      viewportListeners.add(l)
+      return () => viewportListeners.delete(l)
+    },
     onRouteChange: (l) => {
       routeListeners.add(l)
       return () => routeListeners.delete(l)
@@ -44,6 +51,10 @@ function fakeEnv(route = '/') {
     appear(k: string) {
       elements.add(k)
       for (const l of watchers.get(k) ?? []) l()
+    },
+    resize(to: number) {
+      width = to
+      for (const l of viewportListeners) l()
     },
   }
 }
@@ -268,6 +279,50 @@ describe('Docent eligibility', () => {
     await docent.reset('loop')
     await settle()
     expect(shown).toEqual(['loop:only', 'loop:only'])
+  })
+})
+
+describe('Docent viewport width', () => {
+  it('shows nothing below the manager minimum, and starts once the viewport grows', async () => {
+    const { docent, f, shown } = setup(
+      [oneStep('welcome', { trigger: { type: 'auto' } }), oneStep('help')],
+      { minViewportWidth: 768, connect: false },
+    )
+    f.resize(375)
+    docent.connect()
+    await settle()
+    expect(shown).toEqual([])
+    expect(docent.isEligible('welcome')).toBe(false)
+    expect(await docent.start('help')).toBe(false)
+    expect(shown).toEqual([])
+
+    f.resize(700)
+    await settle()
+    expect(shown).toEqual([])
+    f.resize(1024)
+    await settle()
+    expect(shown).toEqual(['welcome:only'])
+  })
+
+  it("applies a tour's own minimum on top of the manager's", async () => {
+    const { docent, f, shown } = setup(
+      [
+        oneStep('wide', {
+          trigger: { type: 'event', name: 'go' },
+          options: { minViewportWidth: 1400 },
+        }),
+        oneStep('any', { trigger: { type: 'event', name: 'go' } }),
+      ],
+      { connect: false },
+    )
+    docent.connect()
+    await settle()
+    expect(docent.isEligible('wide')).toBe(false)
+    docent.track('go')
+    await settle()
+    expect(shown).toEqual(['any:only'])
+    f.resize(1500)
+    expect(docent.isEligible('wide')).toBe(true)
   })
 })
 

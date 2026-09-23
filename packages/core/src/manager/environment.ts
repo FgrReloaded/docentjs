@@ -18,4 +18,8 @@ export interface DocentEnvironment {
    * immediately if it is already present. Returns an unsubscribe function.
    */
   watchTarget?(target: Target, listener: () => void): () => void
+  /** Viewport width in px, for `minViewportWidth`. Omit on platforms without one. */
+  viewportWidth?(): number | undefined
+  /** Call `listener` when the viewport is resized. Returns an unsubscribe function. */
+  onViewportChange?(listener: () => void): () => void
 }

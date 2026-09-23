@@ -31,6 +31,14 @@ export function createDomEnvironment(doc: Document = document): DocentEnvironmen
       }
     },
 
+    viewportWidth: () => win?.innerWidth,
+
+    onViewportChange(listener) {
+      if (!win) return () => {}
+      win.addEventListener('resize', listener)
+      return () => win.removeEventListener('resize', listener)
+    },
+
     hasTarget: (target: Target) => resolveTarget(target, doc) !== null,
 
     watchTarget(target, listener) {

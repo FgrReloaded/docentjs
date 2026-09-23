@@ -51,6 +51,7 @@ The guides explain each area with examples: [steps](/guides/steps/), [targets](/
 | `theme` | `ThemeSpec` | a preset name, tokens, or `{ preset, ...tokens }` |
 | `appearance` | `'light' \| 'dark' \| 'auto'` | `'light'`; `auto` follows the system setting |
 | `template` | `string` | a built-in look (`spotlight`, `hint`, `announcement`), a [theme](/customize/themes/), or a template the app registered |
+| `minViewportWidth` | `number` | – ; in px. Below this viewport width the tour never shows, e.g. `768` to skip phones |
 
 ## Step
 

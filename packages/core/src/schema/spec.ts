@@ -375,6 +375,10 @@ const options: Spec = {
       str,
       "A built-in look ('spotlight', 'hint' or 'announcement') or a template the app registered.",
     ),
+    minViewportWidth: field(
+      { kind: 'number', min: 0 },
+      'Do not show the tour below this viewport width, in px (e.g. 768 to skip phones).',
+    ),
   },
 }
 

@@ -47,6 +47,24 @@ describe('explainTour', () => {
     await d.destroy()
   })
 
+  it('blames the viewport when the window is narrower than minViewportWidth', async () => {
+    // jsdom's window is 1024px wide.
+    const d = manager(
+      defineTour({
+        id: 'wide',
+        trigger: { type: 'auto' },
+        options: { minViewportWidth: 1280 },
+        steps: [{ id: 's' }],
+      }),
+    )
+    await settle()
+    expect(d.getState().active).toBeNull()
+    const x = find(d, 'wide')
+    expect(x.verdict).toBe('blocked')
+    expect(x.summary).toBe('The viewport is narrower than minViewportWidth')
+    await d.destroy()
+  })
+
   it('reports running, manual, waiting and frequency-blocked tours', async () => {
     const d = manager(
       defineTour({ id: 'auto', trigger: { type: 'auto' }, steps: [{ id: 's' }] }),

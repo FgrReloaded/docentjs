@@ -46,6 +46,12 @@ export interface DocentOptions {
   createController: (tour: Tour, options: SharedControllerOptions) => TourController
   now?: () => number
   /**
+   * Show no tours while the viewport is narrower than this, in px: triggers do
+   * not fire and `start()` does nothing. For example `768` to skip phones.
+   * A tour's own `options.minViewportWidth` can raise it for that tour.
+   */
+  minViewportWidth?: number
+  /**
    * Start watching triggers right away. Default true. Framework bindings pass
    * `false` and call `connect()` / `disconnect()` from their mount lifecycle,
    * which keeps construction free of side effects (React StrictMode).
@@ -98,6 +104,8 @@ export class Docent {
   private connected = false
   /** Listening to routes, the source and triggers. */
   private attached = false
+  /** Last seen viewport width, to notice a tour becoming wide enough. */
+  private viewportWidth: number | undefined
 
   constructor(options: DocentOptions) {
     this.options = options
@@ -213,6 +221,12 @@ export class Docent {
       )
       return false
     }
+    if (!this.fitsViewport(tour)) {
+      devWarn(
+        `start("${tourId}"): the viewport is narrower than minViewportWidth (${this.minViewportWidth(tour)}px).`,
+      )
+      return false
+    }
     await this.stopActive()
     await this.run(tour, options.at, true)
     return true
@@ -223,6 +237,7 @@ export class Docent {
     const tour = this.tours.get(tourId)
     if (!tour) return false
     return (
+      this.fitsViewport(tour) &&
       shouldShow(tour, this.records.get(tourId) ?? null) &&
       evaluateAll(tour.conditions, this.getConditionEnv())
     )
@@ -308,6 +323,10 @@ export class Docent {
     if (this.env.onRouteChange) {
       this.cleanups.push(this.env.onRouteChange(() => this.armTriggers()))
     }
+    this.viewportWidth = this.env.viewportWidth?.()
+    if (this.env.onViewportChange) {
+      this.cleanups.push(this.env.onViewportChange(() => this.viewportChanged()))
+    }
     this.armTriggers()
   }
 
@@ -322,6 +341,40 @@ export class Docent {
       [...this.tours.keys()].map(async (id) => [id, await this.store.get(id)] as const),
     )
     this.records = new Map(entries)
+  }
+
+  // -------------------------------------------------------------------------
+  // Viewport
+  // -------------------------------------------------------------------------
+
+  /** The larger of the manager's and the tour's `minViewportWidth`, 0 when unset. */
+  private minViewportWidth(tour: Tour): number {
+    return Math.max(this.options.minViewportWidth ?? 0, tour.options?.minViewportWidth ?? 0)
+  }
+
+  private fitsViewport(tour: Tour): boolean {
+    const min = this.minViewportWidth(tour)
+    if (!min) return true
+    const width = this.env.viewportWidth?.()
+    return width === undefined || width >= min
+  }
+
+  /**
+   * Re-arm only when the viewport grows past some tour's minimum, so ordinary
+   * resizing does not restart trigger delays. A running tour is left alone.
+   */
+  private viewportChanged(): void {
+    const before = this.viewportWidth
+    const now = this.env.viewportWidth?.()
+    this.viewportWidth = now
+    if (before === undefined || now === undefined || now <= before) return
+    for (const tour of this.tours.values()) {
+      const min = this.minViewportWidth(tour)
+      if (min > before && min <= now) {
+        this.armTriggers()
+        return
+      }
+    }
   }
 
   // -------------------------------------------------------------------------

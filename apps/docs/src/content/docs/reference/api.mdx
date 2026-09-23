@@ -20,7 +20,7 @@ The web renderer, plus browser-ready versions of the engine's entry points.
 
 `createTour` options: everything in `ControllerOptions` below, plus `renderer` (renderer options) and `followRoutes`.
 
-`createDocent` options: `tours` (an array or a `TourSource`), `identity`, `storage`, `sink`, `hooks` keyed by tour id, `custom` predicates, `renderer`, `document`, and `connect` (`false` to start watching later with `connect()`).
+`createDocent` options: `tours` (an array or a `TourSource`), `identity`, `storage`, `sink`, `hooks` keyed by tour id, `custom` predicates, `minViewportWidth` (no tours below this width, in px), `renderer`, `document`, and `connect` (`false` to start watching later with `connect()`).
 
 ### Renderer options
 

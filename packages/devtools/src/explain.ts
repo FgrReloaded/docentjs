@@ -121,6 +121,13 @@ export function explainTour(docent: Docent, tour: Tour): TourExplanation {
     }
   }
   if (failed) return { ...base, verdict: 'blocked', summary: `Condition failed: ${failed.text}` }
+  // Frequency and conditions pass, so the manager's `minViewportWidth` is what blocks it.
+  if (!docent.isEligible(tour.id))
+    return {
+      ...base,
+      verdict: 'blocked',
+      summary: 'The viewport is narrower than minViewportWidth',
+    }
   if (trigger.holds === null) {
     return {
       ...base,

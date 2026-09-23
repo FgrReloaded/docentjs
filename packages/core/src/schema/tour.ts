@@ -372,6 +372,11 @@ export interface TourOptions {
   appearance?: Appearance
   /** Name of a template registered on the renderer (slots, css, theme). */
   template?: string
+  /**
+   * Do not show the tour while the viewport is narrower than this, in px,
+   * e.g. `768` to skip phones. Neither its trigger nor `start()` runs it.
+   */
+  minViewportWidth?: number
 }
 
 export interface Tour {

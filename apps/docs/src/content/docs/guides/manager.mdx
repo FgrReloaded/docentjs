@@ -92,6 +92,22 @@ Triggers are checked again whenever a tour ends. A tour with this condition star
 conditions: [{ type: 'tour', id: 'welcome', state: 'completed' }]
 ```
 
+## Small screens
+
+A tour made for a wide layout can point at elements that are hidden on a phone. Set `minViewportWidth` to show nothing below a width, in px:
+
+```ts
+createDocent({ tours, minViewportWidth: 768 })   // no tours on phones
+```
+
+Below that width no trigger fires and `docent.start()` does nothing. If the window later grows past it, triggers are checked again, so the tour can still start. A tour already running is not stopped when the window shrinks.
+
+To limit a single tour, put it in the tour's options instead. When both are set, the larger width wins.
+
+```ts
+options: { minViewportWidth: 1024 }
+```
+
 ## Client-side routers
 
 The manager notices navigation through `popstate`, `hashchange` and the Navigation API, which covers React Router, Vue Router, SvelteKit, Next.js and most others. If your router changes the URL without any of those, call `docent.refresh()` after each navigation.
@@ -129,7 +145,7 @@ In React, Vue and Svelte, use `useDocent` from the adapter instead of `createDoc
 | `activeController` | the running tour's controller, for fine control |
 | `destroy()` | stop watching and remove everything |
 
-`createDocent` also takes `storage`, `sink`, `custom` condition predicates, `hooks` keyed by tour id, and `renderer` options that apply to every tour.
+`createDocent` also takes `minViewportWidth`, `storage`, `sink`, `custom` condition predicates, `hooks` keyed by tour id, and `renderer` options that apply to every tour.
 
 <Aside type="tip">
 To see why a tour is or is not showing for the current user, open the [devtools](/guides/devtools/). Each tour gets a verdict and the exact reason, such as a failed condition with the user's real value.
