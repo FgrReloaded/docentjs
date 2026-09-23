@@ -1,5 +1,14 @@
 # @docentjs/devtools
 
+## 0.10.0
+
+### Patch Changes
+
+- 3a5e597: Add `minViewportWidth` to skip tours on small screens. Set it on `createDocent` for every tour or in a tour's `options` for one tour. Below that width, no trigger fires and `start()` does nothing. Triggers are checked again when the window grows past it. Devtools shows the viewport as the reason a tour is blocked.
+- Updated dependencies [3a5e597]
+  - @docentjs/core@0.10.0
+  - @docentjs/dom@0.10.0
+
 ## 0.9.0
 
 ### Minor Changes
