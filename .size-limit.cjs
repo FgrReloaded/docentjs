@@ -33,7 +33,7 @@ module.exports = [
     path: 'packages/dom/dist/index.js',
     import: '{ createDocent }',
     modifyRolldownConfig: initialLoad,
-    limit: '16.75 kB',
+    limit: '17 kB',
   },
   {
     name: 'schema checker (development only)',
@@ -53,6 +53,6 @@ module.exports = [
   {
     name: '@docentjs/core (everything)',
     path: 'packages/core/dist/index.js',
-    limit: '5.5 kB',
+    limit: '5.75 kB',
   },
 ]

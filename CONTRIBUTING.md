@@ -94,3 +94,7 @@ published from a pull request.
 Open an issue with a minimal reproduction: the tour JSON, what you expected, and what happened.
 `npx @docentjs/cli validate` output helps. For anything security-related, follow
 [SECURITY.md](SECURITY.md) instead of opening an issue.
+
+## Conduct
+
+Everyone taking part is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).

@@ -105,7 +105,8 @@ pnpm size          # bundle budgets
 - `examples/` holds vanilla, React, Vue and Svelte apps.
 
 [CONTRIBUTING.md](CONTRIBUTING.md) has the longer version, [RELEASING.md](RELEASING.md) explains how
-a release happens, and [SECURITY.md](SECURITY.md) is for reporting a vulnerability.
+a release happens, [SECURITY.md](SECURITY.md) is for reporting a vulnerability, and
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) covers how people treat each other here.
 
 ## License
 
