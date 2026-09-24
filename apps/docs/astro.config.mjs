@@ -55,6 +55,7 @@ export default defineConfig({
         './src/styles/home.css',
       ],
       components: {
+        Head: './src/components/PostHogHead.astro',
         Hero: './src/components/Hero.astro',
         PageTitle: './src/components/PageTitle.astro',
       },

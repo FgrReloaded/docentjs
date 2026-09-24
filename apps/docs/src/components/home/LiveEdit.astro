@@ -268,6 +268,7 @@ const html = lines.map((line) =>
         const next = b.dataset.leView === 'devtools' ? 'devtools' : 'file'
         if (next === view) return
         view = next
+        window.posthog?.capture('live_editor_view_changed', { view: next })
         root.dataset.view = next
         for (const x of switcher) x.setAttribute('aria-pressed', String(x === b))
         if (next === 'devtools' && !devtoolsStarted) {

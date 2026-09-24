@@ -48,6 +48,9 @@ const id = `demo-${tour.id}`
       storage: { get: () => null, set: () => {}, remove: () => {} },
       sink: { emit: (e) => console.debug('[docent]', e.type, e.stepId ?? '') },
     })
-    box.querySelector('[data-start]')?.addEventListener('click', () => controller.start())
+    box.querySelector('[data-start]')?.addEventListener('click', () => {
+      window.posthog?.capture('documentation_demo_started', { tour_id: tour.id })
+      controller.start()
+    })
   }
 </script>

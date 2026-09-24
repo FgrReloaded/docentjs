@@ -193,6 +193,7 @@ const stepJson = JSON.stringify(
     mock?.classList.toggle('playing', flat)
   }
   const play = () => {
+    window.posthog?.capture('hero_tour_started', { tour_id: tour.id })
     controller?.destroy()
     clearTimeout(pending)
     const wasFlat = scene?.classList.contains('flat')
@@ -241,6 +242,7 @@ const stepJson = JSON.stringify(
   let wanted = pkgName?.textContent ?? ''
   const pick = (tab: HTMLButtonElement) => {
     const name = `@docentjs/${tab.dataset.pkg}`
+    window.posthog?.capture('installation_package_selected', { package: name })
     for (const t of tabs) t.setAttribute('aria-pressed', String(t === tab))
     moveBar(tab)
     if (copy) copy.dataset.copy = `pnpm add ${name}`
@@ -273,6 +275,7 @@ const stepJson = JSON.stringify(
   for (const b of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
     b.addEventListener('click', () => {
       void navigator.clipboard?.writeText(b.dataset.copy ?? '').then(() => {
+        window.posthog?.capture('installation_command_copied', { package: wanted })
         b.classList.add('done')
         setTimeout(() => b.classList.remove('done'), 1400)
       })

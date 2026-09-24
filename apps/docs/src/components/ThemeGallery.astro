@@ -119,7 +119,10 @@ const tourFor = (slug: string, name: string) => ({
     })
     document
       .querySelector(`[data-theme-start="${slug}"]`)
-      ?.addEventListener('click', () => controller.start())
+      ?.addEventListener('click', () => {
+        window.posthog?.capture('theme_preview_started', { theme: slug })
+        controller.start()
+      })
   }
 
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy]')) {
@@ -131,6 +134,10 @@ const tourFor = (slug: string, name: string) => ({
           ? (button.closest('.theme')?.querySelector('pre code')?.textContent ?? '')
           : (button.dataset.copy ?? '')
       await navigator.clipboard.writeText(text)
+      window.posthog?.capture('theme_content_copied', {
+        content_type: button.dataset.copy === 'json' ? 'json' : 'install_command',
+        theme: button.closest<HTMLElement>('.theme')?.id,
+      })
       const was = button.textContent
       button.textContent = 'Copied'
       setTimeout(() => {

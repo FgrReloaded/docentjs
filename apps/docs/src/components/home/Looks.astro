@@ -126,10 +126,18 @@ const groups = [
     void controller.start()
   }
 
-  form?.addEventListener('change', () => {
+  form?.addEventListener('change', (event) => {
+    const input = event.target as HTMLInputElement
+    window.posthog?.capture('tour_appearance_updated', {
+      control: input.name,
+      value: input.value,
+    })
     show()
     play()
   })
-  document.querySelector('[data-looks-play]')?.addEventListener('click', play)
+  document.querySelector('[data-looks-play]')?.addEventListener('click', () => {
+    window.posthog?.capture('tour_appearance_previewed')
+    play()
+  })
   show()
 </script>
