@@ -634,6 +634,87 @@ starlight-tabs [role="tab"][aria-selected="true"] {
 
 /* ------------------------------------------------------------ theme gallery */
 
+.examples {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--dc-space-6);
+  margin-block: var(--dc-space-8);
+}
+.example {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 14px;
+  background: var(--dc-surface);
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 160ms var(--dc-ease),
+    box-shadow 240ms var(--dc-ease),
+    transform 240ms var(--dc-ease);
+}
+.example:hover {
+  border-color: var(--sl-color-gray-5);
+  box-shadow: var(--dc-shadow);
+  transform: translateY(-2px);
+}
+.example:focus-visible {
+  outline: 2px solid var(--sl-color-accent);
+  outline-offset: 2px;
+}
+.example-shot {
+  aspect-ratio: 16 / 10;
+  border-bottom: 1px solid var(--sl-color-hairline);
+  background: var(--sl-color-black);
+  overflow: hidden;
+}
+.example-shot img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top left;
+  transition: transform 400ms var(--dc-ease);
+}
+.example:hover .example-shot img {
+  transform: scale(1.025);
+}
+.example-text {
+  padding: var(--dc-space-4) var(--dc-space-4) var(--dc-space-6);
+}
+.example-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--dc-space-3);
+  margin: 0 0 var(--dc-space-2);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--sl-color-white);
+}
+.example-stack {
+  font-family: var(--sl-font-mono);
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--sl-color-gray-3);
+}
+.example-description {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--sl-color-gray-2);
+}
+@media (prefers-reduced-motion: reduce) {
+  .example,
+  .example-shot img {
+    transition: none;
+  }
+  .example:hover,
+  .example:hover .example-shot img {
+    transform: none;
+  }
+}
 .themes {
   display: grid;
   gap: var(--dc-space-6);

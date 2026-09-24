@@ -1,0 +1,77 @@
+---
+/**
+ * The example apps as cards, each showing its app mid-tour.
+ *
+ * The images are screenshots of the built apps, taken by
+ * `pnpm capture:examples`. Re-run it when an example changes.
+ */
+import { Image } from 'astro:assets'
+import react from '../assets/examples/react.png'
+import svelte from '../assets/examples/svelte.png'
+import vanilla from '../assets/examples/vanilla.png'
+import vue from '../assets/examples/vue.png'
+
+const examples = [
+  {
+    name: 'Ledgerline',
+    stack: 'React',
+    href: '/examples/react/',
+    image: react,
+    alt: 'Ledgerline, a receivables dashboard, with a tour popover pointing at the open ledger.',
+    description:
+      'Receivables for a design studio. An auto trigger that fires once per person, steps that hand control back to the user, a step that waits for a drawer to mount, traits gating a release note, and three templates.',
+  },
+  {
+    name: 'Cinder',
+    stack: 'Vue',
+    href: '/examples/vue/',
+    image: vue,
+    alt: 'Cinder, a dark incident console, with a tour popover explaining the alert queue.',
+    description:
+      'An on-call incident console. A tour triggered by an element appearing rather than a timer, a step that waits for a checklist to be revealed, and a dark surface with brand tokens layered over it.',
+  },
+  {
+    name: 'Pressroom',
+    stack: 'Svelte',
+    href: '/examples/svelte/',
+    image: svelte,
+    alt: 'Pressroom, a newsroom run of show, with a serif tour popover and a roman numeral step counter.',
+    description:
+      'A newsroom run of show. The buttons slot replaced with the paper’s own controls, a folio counter in roman numerals, and a hand-drawn connector for the galley note.',
+  },
+  {
+    name: 'Nocturne',
+    stack: 'No framework',
+    href: '/examples/vanilla/',
+    image: vanilla,
+    alt: 'Nocturne, a radio playout desk, with a tour popover under the waveform.',
+    description:
+      'An overnight radio playout desk. Templates, slots and a headless popover built with document.createElement, plus a custom condition that keeps a tour from running when the studio is off air.',
+  },
+]
+---
+
+<div class="examples not-content">
+  {
+    examples.map((example) => (
+      <a class="example" href={example.href}>
+        <div class="example-shot">
+          <Image
+            src={example.image}
+            alt={example.alt}
+            widths={[480, 800, 1280]}
+            sizes="(min-width: 50rem) 22rem, 100vw"
+            loading="lazy"
+          />
+        </div>
+        <div class="example-text">
+          <p class="example-title">
+            <span>{example.name}</span>
+            <span class="example-stack">{example.stack}</span>
+          </p>
+          <p class="example-description">{example.description}</p>
+        </div>
+      </a>
+    ))
+  }
+</div>
