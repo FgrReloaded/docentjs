@@ -774,6 +774,16 @@ export class DomRenderer implements Renderer {
     }
 
     on('scroll', this.scheduleUpdate, { capture: true, passive: true })
+    // Scroll events stop at shadow boundaries, so a target inside a scrolling
+    // web component is followed by listening on each shadow root above it.
+    for (let root = this.target?.getRootNode(); root instanceof ShadowRoot; ) {
+      const shadow = root
+      shadow.addEventListener('scroll', this.scheduleUpdate, { capture: true, passive: true })
+      this.cleanups.push(() =>
+        shadow.removeEventListener('scroll', this.scheduleUpdate, { capture: true }),
+      )
+      root = shadow.host.getRootNode()
+    }
     on('resize', this.scheduleUpdate, { passive: true })
     const vv = win.visualViewport
     if (vv) {

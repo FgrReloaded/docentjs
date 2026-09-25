@@ -25,6 +25,7 @@ import { useState } from 'preact/hooks'
 import { toHex } from '../../contrast'
 import { suggestName, type TargetCandidate, targetCandidates } from '../../selectors'
 import { checkTarget } from '../../targets'
+import { MARK } from '../onboarding'
 import type { Store } from '../store'
 import {
   Area,
@@ -138,7 +139,11 @@ function DraftBar({ store, tour }: { store: Store; tour: Tour }) {
         ? 'Draft restored from your last visit'
         : 'Unsaved draft'
   return (
-    <div class={`notice draft ${stale ? 'warn-notice' : ''}`} role="status">
+    <div
+      class={`notice draft ${stale ? 'warn-notice' : ''}`}
+      role="status"
+      data-docent={MARK.draft}
+    >
       <div class="draft-head">
         <span class={`draft-dot ${edited ? (stale ? 'warn' : 'on') : ''}`} aria-hidden="true" />
         <strong>{status}</strong>
@@ -291,7 +296,7 @@ export function EditTab({ store }: { store: Store }) {
           </span>
         }
       >
-        <div class="step-list">
+        <div class="step-list" data-docent={MARK.steps}>
           {tour.steps.map((s, i) => (
             <button
               type="button"
@@ -369,7 +374,7 @@ function StepForm({ store, tour, step }: { store: Store; tour: Tour; step: Step 
             ]}
           />
         </Field>
-        <Field label="Placement">
+        <Field label="Placement" mark={MARK.placement}>
           <Select<Placement>
             value={step.placement ?? 'auto'}
             onChange={(v) => set('placement', v === 'auto' ? undefined : v, true)}
@@ -386,7 +391,7 @@ function StepForm({ store, tour, step }: { store: Store; tour: Tour; step: Step 
       <AdvanceField advance={step.advance} onChange={(a) => set('advance', a, true)} />
 
       <div class="grid2">
-        <Field label="Interaction with target">
+        <Field label="Interaction with target" mark={MARK.interaction}>
           <Select<'auto' | 'block' | 'allow'>
             value={step.interaction ?? 'auto'}
             onChange={(v) => set('interaction', v === 'auto' ? undefined : v, true)}
@@ -409,7 +414,11 @@ function StepForm({ store, tour, step }: { store: Store; tour: Tour; step: Step 
           />
         </Field>
       </div>
-      <Field label="Route" hint="Path pattern this step belongs to, e.g. /invoices/**">
+      <Field
+        label="Route"
+        mark={MARK.route}
+        hint="Path pattern this step belongs to, e.g. /invoices/**"
+      >
         <Text
           mono
           value={step.route ?? ''}
@@ -531,7 +540,7 @@ function TargetField({
   }
 
   return (
-    <div class="field">
+    <div class="field" data-docent={MARK.target}>
       <span class="field-label">Target</span>
       <div class="inline">
         <Select<TargetKind>
@@ -555,7 +564,7 @@ function TargetField({
             ['advanced', 'Advanced (JSON)'],
           ]}
         />
-        <Button icon="pick" onClick={() => void pick()}>
+        <Button icon="pick" data-docent={MARK.pick} onClick={() => void pick()}>
           Pick
         </Button>
       </div>
@@ -646,7 +655,7 @@ function AdvanceField({
   }
   return (
     <div class="grid2">
-      <Field label="Advance when">
+      <Field label="Advance when" mark={MARK.advance}>
         <Select<AdvanceKind>
           value={kind}
           onChange={(k) => onChange(defaults[k])}
@@ -726,7 +735,7 @@ function TourForm({ store, tour }: { store: Store; tour: Tour }) {
 
   return (
     <>
-      <Section title="Tour">
+      <Section title="Tour" mark={MARK.tourSettings}>
         <Field label="Name">
           <Text
             value={tour.name ?? ''}
@@ -858,6 +867,7 @@ function ThemeForm({ store, tour }: { store: Store; tour: Tour }) {
   return (
     <Section
       title="Theme"
+      mark={MARK.theme}
       actions={
         <Button
           variant="ghost"
@@ -967,7 +977,7 @@ function LookForm({ store, tour }: { store: Store; tour: Tour }) {
   const edit = (change: (o: NonNullable<Tour['options']>) => NonNullable<Tour['options']>) =>
     store.editTour(tour.id, (t) => ({ ...t, options: change(t.options ?? {}) }), true)
   return (
-    <Section title="Look">
+    <Section title="Look" mark={MARK.look}>
       <div class="grid2">
         <Field label="Arrow">
           <Select<ArrowStyle>

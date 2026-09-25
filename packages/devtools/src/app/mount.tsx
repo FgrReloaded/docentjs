@@ -26,6 +26,11 @@ export interface MountOptions {
    * embedded previews that should start the same way every time.
    */
   persist?: boolean
+  /**
+   * Show a short tour of the panel the first time it opens. Default true.
+   * The "?" button in the panel's header runs it again either way.
+   */
+  onboarding?: boolean
 }
 
 /**
@@ -72,6 +77,7 @@ export function mount(docent: Docent, options: MountOptions = {}): () => void {
   const store = createStore(docent, {
     ...(options.open === undefined ? {} : { open: options.open }),
     ...(options.persist === undefined ? {} : { persist: options.persist }),
+    ...(options.onboarding === undefined ? {} : { onboarding: options.onboarding }),
     ...(doc.defaultView ? { window: doc.defaultView } : {}),
     highlight,
     pick: () => pickElement({ doc, ignore: () => [host, outline], highlight }),

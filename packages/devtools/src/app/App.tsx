@@ -1,5 +1,6 @@
 /** @jsxImportSource preact */
 import { useRef } from 'preact/hooks'
+import { MARK } from './onboarding'
 import type { Dock, Store, Tab } from './store'
 import { AuditTab, auditCount } from './tabs/Audit'
 import { EditTab } from './tabs/Edit'
@@ -56,17 +57,25 @@ export function App({ store }: { store: Store }) {
         <span class="title">Docent</span>
         <span class="muted small">{store.tours.value.length} tours</span>
         <span class="grow" />
+        <IconButton
+          icon="help"
+          label="Take the devtools tour"
+          data-docent={MARK.help}
+          aria-pressed={store.onboarding.value}
+          onClick={() => (store.onboarding.value ? store.stopTour() : store.tour())}
+        />
         <LayoutPicker store={store} />
         <IconButton icon="close" label="Close" onClick={() => (store.open.value = false)} />
       </header>
       <NowBar store={store} />
-      <div class="tabs" role="tablist">
+      <div class="tabs" role="tablist" data-docent={MARK.tabs}>
         {TABS.map(([id, label]) => (
           <button
             type="button"
             role="tab"
             key={id}
             aria-selected={store.tab.value === id}
+            data-docent={MARK.tab(id)}
             onClick={() => (store.tab.value = id)}
           >
             {label}
@@ -91,7 +100,7 @@ function LayoutPicker({ store }: { store: Store }) {
   const current = store.layout.value
   const narrow = store.narrow.value
   return (
-    <fieldset class="seg" aria-label="Panel position">
+    <fieldset class="seg" aria-label="Panel position" data-docent={MARK.layout}>
       {LAYOUTS.map(([id, icon, label]) => {
         const disabled = narrow && id !== 'bottom'
         return (
@@ -126,7 +135,7 @@ function NowBar({ store }: { store: Store }) {
   const controller = store.docent.activeController
   if (!active || !controller) {
     return (
-      <div class="now">
+      <div class="now" data-docent={MARK.now}>
         <span class="label muted">No tour running</span>
       </div>
     )
@@ -135,7 +144,7 @@ function NowBar({ store }: { store: Store }) {
   const tour = controller.tour
   const step = tour.steps[state.index]
   return (
-    <div class="now">
+    <div class="now" data-docent={MARK.now}>
       <span class="live" />
       <span class="label">
         <strong>{tour.name ?? tour.id}</strong> · step {state.index + 1}/{tour.steps.length}{' '}

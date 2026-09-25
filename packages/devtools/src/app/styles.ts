@@ -6,20 +6,20 @@ export const STYLES = `
 :host { all: initial; }
 * { box-sizing: border-box; }
 .root {
-  --bg: oklch(17.5% 0.012 285);
-  --panel: oklch(21% 0.013 285);
-  --raised: oklch(24.5% 0.014 285);
-  --line: oklch(30% 0.014 285);
-  --line-soft: oklch(26% 0.013 285);
-  --fg: oklch(94% 0.006 285);
-  --muted: oklch(68% 0.012 285);
-  --faint: oklch(52% 0.012 285);
-  --accent: oklch(74% 0.13 290);
-  --accent-soft: oklch(74% 0.13 290 / 0.14);
+  --bg: oklch(13% 0.01 255);
+  --panel: oklch(16.5% 0.012 255);
+  --raised: oklch(20.5% 0.014 255);
+  --line: oklch(26.5% 0.014 255);
+  --line-soft: oklch(21.5% 0.012 255);
+  --fg: oklch(94% 0.006 255);
+  --muted: oklch(70% 0.016 255);
+  --faint: oklch(54% 0.016 255);
+  --accent: oklch(72% 0.13 240);
+  --accent-soft: oklch(72% 0.13 240 / 0.14);
   --ok: oklch(76% 0.14 160);
   --warn: oklch(82% 0.13 85);
   --bad: oklch(70% 0.17 25);
-  --info: oklch(74% 0.1 245);
+  --info: oklch(78% 0.09 195);
   font: 12px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--fg);
   -webkit-font-smoothing: antialiased;
@@ -38,7 +38,7 @@ export const STYLES = `
   display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px 0 10px;
   border: 1px solid var(--line); border-radius: 999px; background: var(--bg); color: var(--fg);
   font: inherit; font-weight: 600; cursor: pointer;
-  box-shadow: 0 8px 24px -8px oklch(10% 0.02 285 / .6);
+  box-shadow: 0 8px 24px -8px oklch(10% 0.02 255 / .6);
   transition: border-color 120ms ease-out;
 }
 .toggle:hover { border-color: var(--accent); }
@@ -49,7 +49,7 @@ export const STYLES = `
 .panel {
   position: fixed; z-index: 2147483647; display: flex; flex-direction: column;
   background: var(--bg); color: var(--fg);
-  box-shadow: 0 0 0 1px var(--line), 0 20px 60px -20px oklch(8% 0.02 285 / .7);
+  box-shadow: 0 0 0 1px var(--line), 0 20px 60px -20px oklch(8% 0.02 255 / .7);
 }
 .panel.dock-right { top: 0; right: 0; bottom: 0; max-width: 100vw; }
 .panel.dock-left { top: 0; left: 0; bottom: 0; max-width: 100vw; }
@@ -115,7 +115,7 @@ export const STYLES = `
 }
 .btn:hover { border-color: var(--faint); }
 .btn:disabled { opacity: .4; cursor: default; }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: oklch(18% 0.03 290); font-weight: 600; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: oklch(16% 0.03 245); font-weight: 600; }
 .btn.primary:hover { background: color-mix(in oklch, var(--accent) 88%, white); }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
 .btn.ghost:hover { background: var(--raised); color: var(--fg); }
@@ -162,7 +162,7 @@ select { appearance: none; padding-right: 22px; background-image: linear-gradien
 
 .badge { flex: none; font-size: 10px; font-weight: 650; letter-spacing: .03em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; }
 .badge.running { background: oklch(76% 0.14 160 / .16); color: var(--ok); }
-.badge.eligible { background: oklch(74% 0.1 245 / .16); color: var(--info); }
+.badge.eligible { background: oklch(78% 0.09 195 / .16); color: var(--info); }
 .badge.waiting { background: oklch(82% 0.13 85 / .14); color: var(--warn); }
 .badge.blocked { background: oklch(70% 0.17 25 / .16); color: var(--bad); }
 .badge.manual { background: var(--raised); color: var(--muted); }
@@ -198,7 +198,7 @@ select { appearance: none; padding-right: 22px; background-image: linear-gradien
   background: none; color: var(--fg); font: inherit; text-align: left; cursor: pointer;
 }
 .step-item:hover { background: var(--raised); }
-.step-item.on { background: var(--accent-soft); border-color: oklch(74% 0.13 290 / .35); }
+.step-item.on { background: var(--accent-soft); border-color: oklch(72% 0.13 240 / .35); }
 .candidates { display: flex; flex-direction: column; gap: 4px; padding: 8px; border: 1px dashed var(--line); border-radius: 8px; }
 .candidate { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--line-soft); border-radius: 6px; background: var(--bg); color: var(--fg); font: inherit; text-align: left; cursor: pointer; }
 .candidate:hover { border-color: var(--accent); }
@@ -252,4 +252,4 @@ table.perf { width: 100%; border-collapse: collapse; font-variant-numeric: tabul
 
 /** Outline drawn over a target on the page (outside the devtools shadow root). */
 export const OUTLINE_STYLE =
-  'position:fixed;pointer-events:none;z-index:2147483646;border:1.5px solid oklch(74% 0.13 290);border-radius:6px;background:oklch(74% 0.13 290 / .12);box-shadow:0 0 0 4px oklch(74% 0.13 290 / .12);transition:all .12s ease-out'
+  'position:fixed;pointer-events:none;z-index:2147483646;border:1.5px solid oklch(72% 0.13 240);border-radius:6px;background:oklch(72% 0.13 240 / .12);box-shadow:0 0 0 4px oklch(72% 0.13 240 / .12);transition:all .12s ease-out'

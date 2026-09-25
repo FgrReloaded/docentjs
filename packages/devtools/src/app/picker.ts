@@ -20,11 +20,11 @@ export function pickElement({ doc, ignore, highlight }: PickerOptions): Promise<
       'position:fixed;inset:0;z-index:2147483645;cursor:crosshair;background:transparent'
     const label = doc.createElement('div')
     label.style.cssText =
-      'position:fixed;z-index:2147483646;pointer-events:none;padding:4px 8px;border-radius:6px;font:11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:oklch(20% 0.02 285);color:oklch(96% 0.005 285);box-shadow:0 4px 14px oklch(20% 0.02 285 / .3);max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:none'
+      'position:fixed;z-index:2147483646;pointer-events:none;padding:4px 8px;border-radius:6px;font:11px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:oklch(20% 0.02 255);color:oklch(96% 0.005 255);box-shadow:0 4px 14px oklch(20% 0.02 255 / .3);max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:none'
     const hint = doc.createElement('div')
     hint.textContent = 'Click an element to use it as the target · Esc to cancel'
     hint.style.cssText =
-      'position:fixed;left:50%;top:12px;translate:-50% 0;z-index:2147483646;pointer-events:none;padding:6px 12px;border-radius:999px;font:12px/1.4 system-ui,sans-serif;background:oklch(20% 0.02 285);color:oklch(96% 0.005 285)'
+      'position:fixed;left:50%;top:12px;translate:-50% 0;z-index:2147483646;pointer-events:none;padding:6px 12px;border-radius:999px;font:12px/1.4 system-ui,sans-serif;background:oklch(20% 0.02 255);color:oklch(96% 0.005 255)'
 
     // Hide the running tour so its overlay does not cover what you want to pick.
     const tourHost = doc.querySelector<HTMLElement>('[data-docent-host]')

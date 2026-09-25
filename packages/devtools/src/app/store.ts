@@ -10,6 +10,7 @@ import type { Docent, DocentEvent, DocentState, Tour } from '@docentjs/core'
 import { computed, effect, signal } from '@preact/signals'
 import { loadDrafts, reconcile, type SavedDrafts, saveDrafts, stableJson } from '../drafts'
 import { type PerfSnapshot, recordPerf } from '../perf'
+import { startOnboarding } from './onboarding'
 
 export type Tab = 'tours' | 'edit' | 'simulate' | 'events' | 'audit' | 'perf'
 export type Dock = 'right' | 'left' | 'bottom'
@@ -29,6 +30,8 @@ interface Prefs {
   /** Panel height when docked at the bottom. */
   bottomSize: number
   tab: Tab
+  /** The devtools tour has been offered once. */
+  onboarded?: boolean
   /** Older single size, read once for migration. */
   size?: number
 }
@@ -65,6 +68,8 @@ export interface StoreOptions {
   persist?: boolean
   /** The window the panel lives in. Default: the global one. */
   window?: Window
+  /** Offer the devtools tour the first time the panel opens. Default true. */
+  onboarding?: boolean
 }
 
 export function createStore(docent: Docent, options: StoreOptions) {
@@ -84,6 +89,10 @@ export function createStore(docent: Docent, options: StoreOptions) {
   const layout = computed<Dock>(() => (narrow.value ? 'bottom' : dock.value))
   const size = computed(() => (layout.value === 'bottom' ? bottomSize.value : sideSize.value))
   const tab = signal<Tab>(prefs.tab ?? 'tours')
+  const onboarded = signal(prefs.onboarded ?? false)
+  /** Whether the devtools tour is on screen. */
+  const onboarding = signal(false)
+  let guide: ReturnType<typeof startOnboarding> | undefined
   const state = signal<DocentState>(docent.getState())
   const managerTours = signal<Tour[]>(docent.getTours())
   const drafts = signal<Record<string, Tour>>({})
@@ -146,6 +155,7 @@ export function createStore(docent: Docent, options: StoreOptions) {
           sideSize: sideSize.value,
           bottomSize: bottomSize.value,
           tab: tab.value,
+          onboarded: onboarded.value,
         })
       }),
     )
@@ -210,6 +220,41 @@ export function createStore(docent: Docent, options: StoreOptions) {
   cleanups.push(() => win?.removeEventListener('popstate', onRoute))
   void docent.ready.then(refreshTours)
 
+  /** Show the devtools tour, from the start. */
+  function tour(): void {
+    stopTour()
+    onboarded.value = true
+    open.value = true
+    const g = startOnboarding(store)
+    guide = g
+    onboarding.value = true
+    const off = g.subscribe((s) => {
+      if (s.status === 'running' || s.status === 'paused' || s.status === 'idle') return
+      off()
+      if (guide === g) stopTour()
+    })
+  }
+  function stopTour(): void {
+    const g = guide
+    guide = undefined
+    onboarding.value = false
+    void g?.destroy()
+  }
+  cleanups.push(stopTour)
+  cleanups.push(
+    effect(() => {
+      if (!open.value) {
+        if (guide) stopTour()
+        return
+      }
+      // Offered once, and never over a tour the app is running.
+      if (options.onboarding === false || onboarded.value || state.value.active) return
+      setTimeout(() => {
+        if (open.value && !onboarded.value) tour()
+      }, 300)
+    }),
+  )
+
   let commitTimer: ReturnType<typeof setTimeout> | undefined
   let pending: Tour | undefined
   const flush = () => {
@@ -262,7 +307,7 @@ export function createStore(docent: Docent, options: StoreOptions) {
     if (goTo) tab.value = goTo
   }
 
-  return {
+  const store = {
     docent,
     /** Whether drafts are kept in localStorage across reloads. */
     persist,
@@ -296,6 +341,9 @@ export function createStore(docent: Docent, options: StoreOptions) {
         picking.value = false
       }
     },
+    onboarding,
+    tour,
+    stopTour,
     editTour,
     resetTour,
     select,
@@ -305,6 +353,7 @@ export function createStore(docent: Docent, options: StoreOptions) {
       for (const c of cleanups) c()
     },
   }
+  return store
 }
 
 export type Store = ReturnType<typeof createStore>

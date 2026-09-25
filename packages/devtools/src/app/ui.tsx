@@ -28,6 +28,7 @@ const paths = {
   dockBottom: 'M2.5 3.5h11v9h-11zM2.5 9.5h11',
   search: 'M7 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM10 10l3 3',
   edit: 'M3 13l1-3.5L10.5 3l2.5 2.5L6.5 12zM9.5 4l2.5 2.5',
+  help: 'M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4M8 11.2v.1',
 } as const
 
 export type IconName = keyof typeof paths
@@ -85,15 +86,18 @@ export function IconButton({
 export function Field({
   label,
   hint,
+  mark,
   children,
 }: {
   label: string
   hint?: string
+  /** `data-docent` name, for the devtools tour. */
+  mark?: string
   children: ComponentChildren
 }) {
   return (
     // biome-ignore lint/a11y/noLabelWithoutControl: the control is passed in as children
-    <label class="field">
+    <label class="field" data-docent={mark}>
       <span class="field-label">{label}</span>
       {children}
       {hint && <span class="field-hint">{hint}</span>}
@@ -242,14 +246,17 @@ export function Badge({ tone, children }: { tone: string; children: ComponentChi
 export function Section({
   title,
   actions,
+  mark,
   children,
 }: {
   title: string
   actions?: ComponentChildren
+  /** `data-docent` name, for the devtools tour. */
+  mark?: string
   children: ComponentChildren
 }) {
   return (
-    <section class="section">
+    <section class="section" data-docent={mark}>
       <header class="section-head">
         <h4>{title}</h4>
         {actions}

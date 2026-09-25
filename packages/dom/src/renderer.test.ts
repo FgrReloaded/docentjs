@@ -121,6 +121,29 @@ describe('DomRenderer', () => {
     r.hide()
   })
 
+  it('follows a target that scrolls inside a shadow root', () => {
+    const outer = document.createElement('div')
+    document.body.appendChild(outer)
+    const scroller = document.createElement('div')
+    scroller.innerHTML = '<button id="target">go</button>'
+    outer.attachShadow({ mode: 'open' }).appendChild(scroller)
+    const target = scroller.querySelector('#target') as HTMLElement
+    stubLayout(target)
+    const r = new DomRenderer({ sheetBreakpoint: 0 })
+    r.show(ctx())
+    const raf = vi.spyOn(window, 'requestAnimationFrame')
+    // Element scroll events are not composed: they never reach the window.
+    scroller.dispatchEvent(new Event('scroll'))
+    expect(raf).toHaveBeenCalled()
+    raf.mockRestore()
+    r.hide()
+    // Hiding stops listening.
+    const after = vi.spyOn(window, 'requestAnimationFrame')
+    scroller.dispatchEvent(new Event('scroll'))
+    expect(after).not.toHaveBeenCalled()
+    after.mockRestore()
+  })
+
   it('draws a connector for connector styles and clears it otherwise', async () => {
     document.body.innerHTML = '<button id="target">go</button>'
     stubLayout(document.getElementById('target') as HTMLElement)

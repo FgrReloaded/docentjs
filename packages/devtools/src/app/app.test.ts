@@ -38,7 +38,7 @@ afterEach(() => {
   localStorage.clear()
 })
 
-function setup() {
+function setup(options: { onboarding?: boolean } = { onboarding: false }) {
   document.body.innerHTML = '<button data-docent="save">Save</button>'
   const docent = createDocent({
     storage: createMemoryStorage(),
@@ -57,9 +57,40 @@ function setup() {
       }),
     ],
   })
-  const unmount = mount(docent, { open: true })
+  const unmount = mount(docent, { open: true, ...options })
   return { docent, unmount }
 }
+
+const guideTitle = () =>
+  Array.from(document.querySelectorAll('[data-docent-host]'))
+    .map((h) => h.shadowRoot?.querySelector('.title')?.textContent)
+    .find((t) => t) ?? null
+
+describe('devtools onboarding', () => {
+  it('shows once on first open, outside the app manager, and replays from the header', async () => {
+    const first = setup({})
+    await vi.waitFor(() => expect(guideTitle()).toBe('Welcome to Docent devtools'), {
+      timeout: 2000,
+    })
+    // Not one of the app's tours, and not the app's running tour.
+    expect(first.docent.getTours().map((t) => t.id)).toEqual(['trial'])
+    expect(first.docent.getState().active).toBeNull()
+    button('Take the devtools tour').click()
+    await vi.waitFor(() => expect(guideTitle()).toBeNull())
+    first.unmount()
+    await first.docent.destroy()
+
+    // Next load: remembered, so it stays quiet until asked.
+    const second = setup({})
+    await new Promise((r) => setTimeout(r, 500))
+    expect(guideTitle()).toBeNull()
+    button('Take the devtools tour').click()
+    await vi.waitFor(() => expect(guideTitle()).toBe('Welcome to Docent devtools'))
+    second.unmount()
+    await vi.waitFor(() => expect(guideTitle()).toBeNull())
+    await second.docent.destroy()
+  })
+})
 
 describe('devtools panel', () => {
   it('leaves localStorage alone when persist is off', async () => {
@@ -69,7 +100,7 @@ describe('devtools panel', () => {
       tours: [defineTour({ id: 'demo', steps: [{ id: 'a', title: 'A' }] })],
     })
     localStorage.setItem('docent-devtools', JSON.stringify({ tab: 'perf' }))
-    const unmount = mount(docent, { open: true, persist: false })
+    const unmount = mount(docent, { open: true, persist: false, onboarding: false })
     await vi.waitFor(() => expect(panelText()).toContain('demo'))
     // Saved preferences are not restored...
     expect(shadow().querySelector('[role="tab"][aria-selected="true"]')?.textContent).toContain(
