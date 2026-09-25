@@ -1,5 +1,9 @@
 # @docentjs/core
 
+## 0.10.2
+
+No changes in this release.
+
 ## 0.10.1
 
 No changes in this release.
