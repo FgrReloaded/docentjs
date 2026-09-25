@@ -122,26 +122,65 @@ function inherit<T extends string>(
 }
 
 /**
- * Edits are kept in this browser until they reach the code. Say so, and warn
- * when the code has changed underneath restored edits.
+ * Where edits live and how to keep them. Edits are a draft: they preview on
+ * this page and sit in this browser's localStorage until copied into the code.
  */
-function DraftNotice({ store, tourId }: { store: Store; tourId: string }) {
-  if (store.stale.value.has(tourId)) {
-    return (
-      <p class="notice warn-notice" role="status">
-        <strong>The code for this tour changed after these edits.</strong> Review them, or discard
-        to use the version in your code.
-      </p>
-    )
-  }
-  const restored = store.restored.value.has(tourId)
+function DraftBar({ store, tour }: { store: Store; tour: Tour }) {
+  const edited = store.edited.value.has(tour.id)
+  const stale = store.stale.value.has(tour.id)
+  const restored = store.restored.value.has(tour.id)
+  const json = () => JSON.stringify(tour, null, 2)
+  const status = !edited
+    ? 'Matches your code'
+    : stale
+      ? 'Your code changed after these edits'
+      : restored
+        ? 'Draft restored from your last visit'
+        : 'Unsaved draft'
   return (
-    <p class="notice" role="status">
-      {restored
-        ? 'Restored unsaved edits from your last session. '
-        : 'Edits are kept in this browser. '}
-      Copy or download the JSON into your code to keep them for good.
-    </p>
+    <div class={`notice draft ${stale ? 'warn-notice' : ''}`} role="status">
+      <div class="draft-head">
+        <span class={`draft-dot ${edited ? (stale ? 'warn' : 'on') : ''}`} aria-hidden="true" />
+        <strong>{status}</strong>
+      </div>
+      <p>
+        {stale
+          ? 'Review the edits below, or discard them to go back to the version in your code. '
+          : 'Changes preview live on this page. '}
+        {store.persist
+          ? "They are saved as a draft in this browser's localStorage, so a reload keeps them, but they are not in your code and nobody else sees them."
+          : 'Saving drafts is turned off, so a reload loses them.'}
+      </p>
+      <p>
+        To keep them, copy or download the tour JSON and paste it over this tour in your code.
+        {store.persist && ' Once your code matches, the draft clears itself.'}
+      </p>
+      <div class="inline wrap">
+        <Button
+          icon="copy"
+          title="Copy this tour as JSON, ready to paste into your code"
+          onClick={() => copyText(json())}
+        >
+          Copy JSON
+        </Button>
+        <Button
+          icon="download"
+          title={`Save this tour as ${tour.id}.tour.json`}
+          onClick={() => download(`${tour.id}.tour.json`, json())}
+        >
+          Download
+        </Button>
+        <Button
+          variant="danger"
+          icon="reset"
+          disabled={!edited}
+          title="Throw away the draft and go back to the tour in your code"
+          onClick={() => store.resetTour(tour.id)}
+        >
+          Discard draft
+        </Button>
+      </div>
+    </div>
   )
 }
 
@@ -165,7 +204,11 @@ export function EditTab({ store }: { store: Store }) {
   const tour = tours.find((t) => t.id === sel.tourId) ?? first
   const step = tour.steps.find((s) => s.id === sel.stepId) ?? tour.steps[0]
   const edited = store.edited.value.has(tour.id)
-  const json = () => JSON.stringify(tour, null, 2)
+  const controller = store.docent.activeController
+  const liveStep =
+    store.state.value.active === tour.id
+      ? controller?.tour.steps[controller.getState().index]?.id
+      : undefined
 
   const editSteps = (change: (steps: Step[]) => Step[], immediate = true) =>
     store.editTour(tour.id, (t) => ({ ...t, steps: change(t.steps) }), immediate)
@@ -197,26 +240,16 @@ export function EditTab({ store }: { store: Store }) {
         />
         {edited && <Badge tone="eligible">edited</Badge>}
         <span class="grow" />
-        <IconButton
+        <Button
           icon="play"
-          label="Preview from this step"
+          title="Start this tour on the page, at the selected step"
           onClick={() => void store.docent.start(tour.id, step ? { at: step.id } : {})}
-        />
-        <IconButton icon="copy" label="Copy tour JSON" onClick={() => copyText(json())} />
-        <IconButton
-          icon="download"
-          label="Download tour JSON"
-          onClick={() => download(`${tour.id}.tour.json`, json())}
-        />
-        <IconButton
-          icon="reset"
-          label="Discard edits"
-          disabled={!edited}
-          onClick={() => store.resetTour(tour.id)}
-        />
+        >
+          Preview step
+        </Button>
       </div>
 
-      {edited && <DraftNotice store={store} tourId={tour.id} />}
+      <DraftBar store={store} tour={tour} />
 
       <Section
         title={`Steps (${tour.steps.length})`}
@@ -270,6 +303,11 @@ export function EditTab({ store }: { store: Store }) {
             >
               <span class="index mono">{String(i + 1).padStart(2, '0')}</span>
               <span class="grow">{s.title || <span class="muted">{s.id}</span>}</span>
+              {s.id === liveStep && (
+                <span class="live-tag" title="This step is showing on the page now">
+                  showing
+                </span>
+              )}
               {s.target === undefined && <span class="muted small">modal</span>}
             </button>
           ))}

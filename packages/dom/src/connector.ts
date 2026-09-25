@@ -244,23 +244,27 @@ export function connectorShape(
       }
     }
     case 'loop': {
-      // A prolate cycloid: one small loop, then on to the target.
-      const R = Math.min(22, Math.max(9, L / 5.5))
-      const steps = 48
-      const points: Point[] = []
-      for (let i = 0; i <= steps; i++) {
-        const t = i / steps
-        points.push(
-          f.at(
-            L * t - R * Math.sin(2 * Math.PI * t),
-            bend * 0.75 * R * (1 - Math.cos(2 * Math.PI * t)),
-          ),
+      // A gentle curve with one round loop that crosses back over itself, then
+      // runs on to the target so the head points at it.
+      const R = Math.min(14, Math.max(8, L / 9))
+      const half = Math.min(0.2, (2.4 * R) / L)
+      const a = 0.48 - half
+      const b = 0.48 + half
+      const at = (t: number) => {
+        const w = clamp((t - a) / (b - a), 0, 1)
+        // Smootherstep, so the loop leaves and rejoins the curve without a kink.
+        const turn = 2 * Math.PI * w * w * w * (w * (w * 6 - 15) + 10)
+        return f.at(
+          L * t + 1.3 * R * Math.sin(turn),
+          bend * (0.4 * L * t * (1 - t) + R * (1 - Math.cos(turn))),
         )
       }
-      return {
-        paths: [{ d: polyline(points) }],
-        head: head(unit(points[points.length - 3] as Point, to)),
-      }
+      // Sample the loop densely and the plain runs either side lightly.
+      const ts: number[] = []
+      for (let i = 0; i < 16; i++) ts.push((a * i) / 16)
+      for (let i = 0; i < 48; i++) ts.push(a + ((b - a) * i) / 48)
+      for (let i = 0; i <= 16; i++) ts.push(b + ((1 - b) * i) / 16)
+      return { paths: [{ d: polyline(ts.map(at)) }], head: head(unit(at(0.97), to)) }
     }
     case 'elbow': {
       const dx = to.x - from.x

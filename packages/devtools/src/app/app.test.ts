@@ -123,8 +123,7 @@ describe('devtools panel', () => {
     await docent.start('trial', { at: 'save' })
     await vi.waitFor(() => expect(popoverTitle()).toBe('Save'))
     tab('Edit')
-    await vi.waitFor(() => expect(panelText()).toContain('Step · hello'))
-    stepItem('Save').click()
+    // The editor opens on the step that is showing.
     await vi.waitFor(() => expect(panelText()).toContain('Step · save'))
     const title = Array.from(shadow().querySelectorAll('.field')).find((f) =>
       f.textContent?.startsWith('Title'),
@@ -134,8 +133,28 @@ describe('devtools panel', () => {
     expect(docent.getTours()[0]?.steps[1]?.title).toBe('Save your work')
     expect(shadow().querySelector('.badge.eligible')?.textContent).toBe('edited')
 
-    button('Discard edits').click()
+    button('Discard draft').click()
     await vi.waitFor(() => expect(popoverTitle()).toBe('Save'))
+    unmount()
+    await docent.destroy()
+  })
+
+  it('follows the running tour to each new step, leaving picks alone until it moves', async () => {
+    const { docent, unmount } = setup()
+    tab('Edit')
+    await docent.start('trial')
+    await vi.waitFor(() => expect(panelText()).toContain('Step · hello'))
+    await docent.activeController?.next()
+    await vi.waitFor(() => expect(panelText()).toContain('Step · save'))
+    // A hand-picked step stays selected while editing re-shows the running one.
+    stepItem('Hello').click()
+    await vi.waitFor(() => expect(panelText()).toContain('Step · hello'))
+    const title = Array.from(shadow().querySelectorAll('.field')).find((f) =>
+      f.textContent?.startsWith('Title'),
+    )
+    await type(title?.querySelector('input') as HTMLInputElement, 'Hi')
+    await vi.waitFor(() => expect(docent.getTours()[0]?.steps[0]?.title).toBe('Hi'))
+    expect(panelText()).toContain('Step · hello')
     unmount()
     await docent.destroy()
   })
@@ -146,8 +165,7 @@ describe('devtools panel', () => {
     await docent.start('trial', { at: 'save' })
     await vi.waitFor(() => expect(popoverTitle()).toBe('Save'))
     tab('Edit')
-    await vi.waitFor(() => expect(panelText()).toContain('Step · hello'))
-    stepItem('Save').click()
+    // The editor opens on the step that is showing.
     await vi.waitFor(() => expect(panelText()).toContain('Step · save'))
     const target = Array.from(shadow().querySelectorAll('.field'))
       .find((f) => f.querySelector('.field-label')?.textContent === 'Target')
@@ -171,7 +189,7 @@ describe('devtools panel', () => {
       f.textContent?.startsWith('Title'),
     )
     await type(title?.querySelector('input') as HTMLInputElement, 'Hello again')
-    await vi.waitFor(() => expect(panelText()).toContain('Edits are kept in this browser'))
+    await vi.waitFor(() => expect(panelText()).toContain('Unsaved draft'))
     expect(localStorage.getItem('docent-devtools-drafts')).toContain('Hello again')
     first.unmount()
     await first.docent.destroy()
@@ -179,8 +197,8 @@ describe('devtools panel', () => {
     // A fresh page: same code, new manager, new panel.
     const second = setup()
     await vi.waitFor(() => expect(second.docent.getTours()[0]?.steps[0]?.title).toBe('Hello again'))
-    await vi.waitFor(() => expect(panelText()).toContain('Restored unsaved edits'))
-    button('Discard edits').click()
+    await vi.waitFor(() => expect(panelText()).toContain('Draft restored from your last visit'))
+    button('Discard draft').click()
     await vi.waitFor(() => expect(second.docent.getTours()[0]?.steps[0]?.title).toBe('Hello'))
     expect(localStorage.getItem('docent-devtools-drafts')).toBeNull()
     second.unmount()

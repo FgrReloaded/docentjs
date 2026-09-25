@@ -119,6 +119,7 @@ export const STYLES = `
 .btn.primary:hover { background: color-mix(in oklch, var(--accent) 88%, white); }
 .btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
 .btn.ghost:hover { background: var(--raised); color: var(--fg); }
+.btn.danger:not(:disabled):hover { border-color: var(--bad); color: var(--bad); }
 .btn.icon-only { width: 28px; padding: 0; }
 .btn.chip { height: 24px; padding: 0 10px; border-radius: 999px; font-size: 11px; }
 .btn .icon { flex: none; }
@@ -208,6 +209,14 @@ select { appearance: none; padding-right: 22px; background-image: linear-gradien
 .notice strong { color: var(--fg); font-weight: 600; }
 .notice.warn-notice { border-color: oklch(82% 0.13 85 / 0.45); background: oklch(82% 0.13 85 / 0.08); }
 .notice.warn-notice strong { color: var(--warn); }
+.notice.draft { display: flex; flex-direction: column; gap: 6px; }
+.notice.draft p { margin: 0; }
+.draft-head { display: flex; align-items: center; gap: 7px; }
+.draft-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: var(--faint); }
+.draft-dot.on { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.draft-dot.warn { background: var(--warn); }
+.live-tag { display: inline-flex; align-items: center; gap: 5px; color: var(--ok); font-size: 11px; }
+.live-tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
 .hint-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; color: var(--muted); }
 code { padding: 1px 5px; border-radius: 4px; background: var(--raised); color: var(--fg); }
 

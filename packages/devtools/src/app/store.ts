@@ -173,8 +173,19 @@ export function createStore(docent: Docent, options: StoreOptions) {
       refreshTours()
     }),
   )
+  let shown = ''
+  const follow = (tourId: string, stepId: string | undefined) => {
+    const key = `${tourId}\u0000${stepId ?? ''}`
+    if (key === shown) return
+    shown = key
+    selection.value = stepId === undefined ? { tourId } : { tourId, stepId }
+  }
+  const running = docent.activeController
+  if (running) follow(running.tour.id, running.tour.steps[running.getState().index]?.id)
   cleanups.push(
     docent.onEvent((event) => {
+      if (event.type === 'step:shown') follow(event.tourId, event.stepId)
+      else if (event.type.startsWith('tour:')) shown = ''
       const next = [...events.value, { id: ++eventSeq, at: Date.now(), event }]
       events.value = next.length > MAX_EVENTS ? next.slice(-MAX_EVENTS) : next
       tick.value++
@@ -253,6 +264,8 @@ export function createStore(docent: Docent, options: StoreOptions) {
 
   return {
     docent,
+    /** Whether drafts are kept in localStorage across reloads. */
+    persist,
     open,
     dock,
     layout,

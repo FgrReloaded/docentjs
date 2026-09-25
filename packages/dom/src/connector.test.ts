@@ -57,6 +57,24 @@ describe('connectors', () => {
     expect(connectorShape('elbow', from, to).paths[0]?.d).toBe('M100 200L100 140')
   })
 
+  it.each([60, 90, 200, 400])(
+    'a %ipx loop crosses itself and arrives heading at the target',
+    (length) => {
+      const shape = connectorShape('loop', { x: 0, y: 0 }, { x: length, y: 0 })
+      const xs = [...(shape.paths[0]?.d ?? '').matchAll(/[ML](-?[\d.]+) (-?[\d.]+)/g)].map((m) =>
+        Number(m[1]),
+      )
+      // A real loop runs backwards for a while.
+      expect(xs.some((x, i) => i > 0 && x < (xs[i - 1] as number) - 0.5)).toBe(true)
+      // Both chevron arms sit behind the tip, so the head points forward, not down or back.
+      const head = [...(shape.head ?? '').matchAll(/[ML](-?[\d.]+) (-?[\d.]+)/g)].map((m) =>
+        Number(m[1]),
+      )
+      expect(head[0]).toBeLessThan(length)
+      expect(head[2]).toBeLessThan(length)
+    },
+  )
+
   it('points the arrowhead along the direction of travel', () => {
     // Travelling up: both chevron arms sit below the tip.
     const d = arrowHead({ x: 0, y: 0 }, { x: 0, y: -1 })
