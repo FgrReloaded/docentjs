@@ -250,7 +250,7 @@ export function createStore(docent: Docent, options: StoreOptions) {
       // Offered once, and never over a tour the app is running.
       if (options.onboarding === false || onboarded.value || state.value.active) return
       setTimeout(() => {
-        if (open.value && !onboarded.value) tour()
+        if (open.value && !onboarded.value && !state.value.active) tour()
       }, 300)
     }),
   )

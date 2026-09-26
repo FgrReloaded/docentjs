@@ -223,7 +223,7 @@
       ]
       const docent = createDocent({ tours: managed, sink })
       window.docent = docent
-      if (params.has('devtools')) import('@docentjs/devtools').then((d) => d.mount(docent, { open: true }))
+      if (params.has('devtools')) import('@docentjs/devtools').then((d) => d.mount(docent, { open: true, onboarding: false }))
       docent.identify(params.get('user') ?? 'u1', { plan: params.get('plan') ?? 'trial' })
     } else {
       const tour = tours[params.get('tour') ?? 'basic']

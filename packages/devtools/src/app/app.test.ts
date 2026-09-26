@@ -90,6 +90,20 @@ describe('devtools onboarding', () => {
     await vi.waitFor(() => expect(guideTitle()).toBeNull())
     await second.docent.destroy()
   })
+
+  it('waits when the app starts a tour while the panel is opening', async () => {
+    const { docent, unmount } = setup({})
+    // The user now qualifies, so the app's tour starts inside the onboarding delay.
+    await docent.identify('u', { plan: 'trial' })
+    await vi.waitFor(() => expect(docent.getState().active).toBe('trial'))
+    await new Promise((r) => setTimeout(r, 500))
+    const titles = Array.from(document.querySelectorAll('[data-docent-host]')).map(
+      (h) => h.shadowRoot?.querySelector('.title')?.textContent,
+    )
+    expect(titles).toEqual(['Hello'])
+    unmount()
+    await docent.destroy()
+  })
 })
 
 describe('devtools panel', () => {
