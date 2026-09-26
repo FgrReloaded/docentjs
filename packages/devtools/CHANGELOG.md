@@ -1,5 +1,13 @@
 # @docentjs/devtools
 
+## 0.10.3
+
+### Patch Changes
+
+- 8eba522: Devtools: the panel's first-run tour no longer opens on top of a tour your app starts while the panel is opening. It waits until that tour ends.
+- @docentjs/core@0.10.3
+  - @docentjs/dom@0.10.3
+
 ## 0.10.2
 
 ### Patch Changes

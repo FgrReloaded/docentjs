@@ -1,6 +1,6 @@
 {
   "name": "@docentjs/core",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "description": "Platform-agnostic tour engine: schema, state machine, triggers, persistence, events. No DOM access.",
   "license": "MIT",
   "repository": {
