@@ -1,5 +1,13 @@
 # @docentjs/svelte
 
+## 0.11.0
+
+### Patch Changes
+
+- Updated dependencies [54dd1d7]
+  - @docentjs/core@0.11.0
+  - @docentjs/dom@0.11.0
+
 ## 0.10.3
 
 ### Patch Changes
