@@ -5,7 +5,13 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import type { Event, IncidentState } from '../data'
 import { incidents, timelines } from '../data'
 import TourCard from '../TourCard.vue'
-import { escalationTour, postmortemTour, triageTour } from '../tours'
+import {
+  escalationTour,
+  postmortemTour,
+  runbookTooltip,
+  signalsBeacon,
+  triageTour,
+} from '../tours'
 import IncidentDetail from './IncidentDetail.vue'
 import IncidentQueue from './IncidentQueue.vue'
 import SignalPanel from './SignalPanel.vue'
@@ -37,7 +43,8 @@ const sev1Open = computed(() =>
 
 // Watches triggers, checks conditions, runs one tour at a time. Defaults come from App.vue.
 const docent = useDocent({
-  tours: [triageTour, escalationTour],
+  // The beacons show their marks and wait to be opened.
+  tours: [triageTour, escalationTour, signalsBeacon, runbookTooltip],
   hooks: {
     [triageTour.id]: {
       onComplete: () => say('Triage guide finished — replay it from the top bar'),

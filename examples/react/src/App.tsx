@@ -10,7 +10,16 @@ import { type Period, Topbar } from './components/Topbar'
 import { type Invoice, invoices } from './data'
 import { TourCard } from './TourCard'
 import { rendererDefaults } from './tour-theme'
-import { onboardingTour, reconcileTour, releaseTour, remindersTour } from './tours'
+import {
+  agingBeacon,
+  onboardingTour,
+  overdueBeacon,
+  periodBeacon,
+  planTooltip,
+  reconcileTour,
+  releaseTour,
+  remindersTour,
+} from './tours'
 
 /** Every tour event arrives here; product analytics would go in its place. */
 const analytics: EventSink = {
@@ -42,7 +51,16 @@ function Console() {
   app.current = { openDraft, closeDraft, say }
 
   const docent = useDocent({
-    tours: [onboardingTour, remindersTour, releaseTour],
+    tours: [
+      onboardingTour,
+      remindersTour,
+      releaseTour,
+      // Beacons: each shows its mark and waits for the reader.
+      periodBeacon,
+      overdueBeacon,
+      planTooltip,
+      agingBeacon,
+    ],
     hooks: {
       [onboardingTour.id]: {
         steps: {

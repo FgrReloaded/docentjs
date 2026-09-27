@@ -145,3 +145,45 @@ export const publishTour = defineTour({
     },
   ],
 })
+
+/** A "Beta" badge on the edition switch, in the galley look. Read once, then gone. */
+export const editionBeacon = defineTour({
+  id: 'pressroom-morning-beta',
+  version: 1,
+  name: 'Morning edition',
+  trigger: { type: 'beacon', label: 'Morning edition is in beta' },
+  options: {
+    template: 'galley',
+    beacon: { style: 'badge', text: 'Beta', position: 'top-right', offset: 2 },
+  },
+  steps: [
+    {
+      id: 'tip',
+      target: { name: 'edition' },
+      title: 'The morning edition, in beta',
+      body: 'Stories scheduled after midnight land here. Switch back to Evening any time; nothing moves.',
+      placement: 'bottom-start',
+    },
+  ],
+})
+
+/** A standing help dot beside the checks. Hover to read; it stays put. */
+export const checksBeacon = defineTour({
+  id: 'pressroom-checks-help',
+  version: 1,
+  name: 'Checks',
+  trigger: { type: 'beacon', open: 'hover', label: 'About the checks' },
+  options: {
+    frequency: 'always',
+    beacon: { style: 'dot', position: 'left', offset: 10, size: 8 },
+  },
+  steps: [
+    {
+      id: 'tip',
+      target: { name: 'checks' },
+      title: 'Every check has an owner',
+      body: 'A story cannot go to press until each of these is ticked by the person named beside it.',
+      placement: 'left',
+    },
+  ],
+})

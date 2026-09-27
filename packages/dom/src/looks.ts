@@ -6,6 +6,7 @@
  * name replaces the built-in one.
  */
 
+import type { Tour } from '@docentjs/core'
 import type { PopoverTemplate } from './theme'
 
 export type LookName = 'spotlight' | 'hint' | 'announcement'
@@ -33,4 +34,18 @@ export const BUILT_IN_LOOKS: Record<LookName, PopoverTemplate> = {
     arrow: 'none',
     theme: { width: 420 },
   },
+}
+
+/** Where templates come from: the renderer's options. */
+export interface TemplateSources {
+  template?: string | PopoverTemplate | undefined
+  templates?: Record<string, PopoverTemplate> | undefined
+}
+
+/** The tour's template: one the app registered, a built-in look, or a theme handed over whole. */
+export function templateFor(tour: Tour, sources: TemplateSources): PopoverTemplate | undefined {
+  const chosen = tour.options?.template ?? sources.template
+  if (chosen === undefined) return undefined
+  if (typeof chosen !== 'string') return chosen
+  return sources.templates?.[chosen] ?? BUILT_IN_LOOKS[chosen as LookName]
 }

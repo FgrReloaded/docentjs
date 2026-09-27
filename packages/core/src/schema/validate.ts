@@ -47,6 +47,16 @@ export function validateTour(tour: unknown, options: ValidateOptions = {}): Tour
       }
       seen.add(id)
     })
+    const trigger = isObject(tour.trigger) ? tour.trigger : undefined
+    const first = isObject(tour.steps[0]) ? tour.steps[0] : undefined
+    if (trigger?.type === 'beacon' && trigger.target === undefined && first?.target === undefined) {
+      issues.push({
+        level: 'error',
+        path: 'trigger',
+        message:
+          'A beacon needs an element to sit on. Give the first step a target, or set trigger.target.',
+      })
+    }
   }
   return issues
 }

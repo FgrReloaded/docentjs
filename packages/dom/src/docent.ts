@@ -30,9 +30,13 @@ export function createDocent(options: CreateDocentOptions = {}): Docent {
   const docent = new Docent({
     ...rest,
     storage: rest.storage ?? createLocalStorage(),
-    environment: createDomEnvironment(doc),
-    createController: (tour, shared) =>
-      new DomTourController(tour, { ...shared, renderer: rendererOptions }),
+    environment: createDomEnvironment(doc, rendererOptions),
+    createController: (tour, shared, launch) =>
+      new DomTourController(tour, {
+        ...shared,
+        // A hover preview must not pull focus away from where the reader is.
+        renderer: launch.via === 'hover' ? { ...rendererOptions, focus: false } : rendererOptions,
+      }),
   })
   warnAboutTours(docent)
   return docent

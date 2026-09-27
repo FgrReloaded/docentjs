@@ -1,0 +1,194 @@
+---
+title: Beacons
+description: A small mark on an element that opens a tip, or a whole tour, when the reader clicks or hovers it.
+---
+
+import { Aside } from '@astrojs/starlight/components'
+import Demo from '../../../components/Demo.astro'
+
+A tour interrupts. A beacon waits. It puts a small mark on an element, such as a new button, and opens a tip only when the reader asks for it by clicking or hovering the mark.
+
+A beacon is a tour with a `beacon` trigger. Everything else about it is an ordinary tour, so conditions, frequency, versions, events, validation and the devtools all work the same way.
+
+```ts
+import { createDocent, defineTour } from '@docentjs/dom'
+
+const exportTip = defineTour({
+  id: 'export-tip',
+  trigger: { type: 'beacon' },
+  steps: [
+    { id: 'tip', target: { name: 'export' }, title: 'Export to CSV', body: 'Download any table as a spreadsheet.' },
+  ],
+})
+
+createDocent({ tours: [exportTip] })
+```
+
+That is all the setup there is. The mark sits on the first step's target, takes the theme's accent colour, and goes away once it has been read.
+
+<Demo
+  label="Show again"
+  caption="Click the badge"
+  tour={{
+    schemaVersion: 1,
+    id: 'beacon-click',
+    name: 'New: export',
+    trigger: { type: 'beacon' },
+    options: { beacon: { style: 'badge', text: 'New' } },
+    steps: [
+      { id: 'tip', target: { name: 'beacon-export' }, title: 'Export to CSV', body: 'Download any table as a spreadsheet. Click anywhere else to close this.' },
+    ],
+  }}
+>
+  <div class="row">
+    <button type="button">Filter</button>
+    <button type="button" data-docent="beacon-export">Export</button>
+  </div>
+</Demo>
+
+<Aside>
+Beacons are drawn by the [tour manager](/guides/manager/): `createDocent`, or `useDocent` in React, Vue and Svelte. A tour started on its own with `createTour` has no trigger, so it has no beacon either.
+</Aside>
+
+## What a beacon's tip does by default
+
+A tip opened from a beacon should feel light, so a beacon tour starts from these defaults. Anything the tour sets itself still wins.
+
+| Default | Change it with |
+| --- | --- |
+| No scrim; the page stays usable | `options.overlay: { style: 'dim' }` |
+| A click outside the popover closes it | `options.closeOnOutsideClick: false` |
+| With one step, no step counter | `options.progress` |
+| With one step, the button says **Got it** | `options.labels: { done: '…' }` |
+
+A beacon can also open a tour of several steps. It behaves like any other tour, with a counter, and the beacon stays on the page until the tour ends.
+
+## Click or hover
+
+```ts
+trigger: { type: 'beacon' }                  // opens on click (the default)
+trigger: { type: 'beacon', open: 'hover' }   // opens on hover, or on keyboard focus
+```
+
+A hover beacon shows its tip as a preview:
+
+- The tip opens after the pointer rests on the mark for 200 ms, so passing over it does nothing.
+- It closes 250 ms after the pointer leaves both the mark and the tip, so the reader can move into the tip to use a link or a button.
+- Clicking inside the tip, or clicking the mark, keeps it open until it is closed.
+- A tour of more than one step always stays open until it is closed.
+- Tabbing to the mark shows the preview. **Enter** moves focus into it, and **Escape** closes it and returns focus to the mark.
+- A preview never takes focus, so it cannot interrupt someone who is typing.
+- On a touch screen, which cannot hover, a tap opens it.
+
+Closing a preview counts as reading it. With the default `frequency: 'once'`, the mark goes away afterwards.
+
+<Demo
+  label="Show again"
+  caption="Hover the dot"
+  tour={{
+    schemaVersion: 1,
+    id: 'beacon-hover',
+    name: 'Overdue',
+    trigger: { type: 'beacon', open: 'hover' },
+    options: { frequency: 'always', beacon: { style: 'pulse' }, theme: { beacon: '#d9442b' } },
+    steps: [
+      { id: 'tip', target: { name: 'beacon-overdue' }, title: 'What counts as overdue', body: 'Anything past its due date. Move the pointer away and this closes.' },
+    ],
+  }}
+>
+  <div class="row">
+    <span data-docent="beacon-overdue" style="padding: 10px 14px; border: 1px solid var(--sl-color-hairline); border-radius: 8px;">Overdue: £21,480</span>
+  </div>
+</Demo>
+
+## Tooltips
+
+With `style: 'none'` there is no mark. The element itself opens the tip when it is hovered or focused, which makes a plain tooltip:
+
+```ts
+trigger: { type: 'beacon', open: 'hover' },
+options: { frequency: 'always', beacon: { style: 'none' } },
+```
+
+Set `frequency: 'always'` so the tooltip keeps working after the first time. A tooltip has nothing to tap, so it does not open on touch screens. Keep what it says available some other way on phones.
+
+<Demo
+  label="Show again"
+  caption="Hover the plan"
+  tour={{
+    schemaVersion: 1,
+    id: 'beacon-tooltip',
+    trigger: { type: 'beacon', open: 'hover' },
+    options: { frequency: 'always', beacon: { style: 'none' } },
+    steps: [
+      { id: 'tip', target: { name: 'beacon-plan' }, title: 'Studio plan', body: '100 invoices a month. Unused ones do not roll over.', placement: 'right' },
+    ],
+  }}
+>
+  <div class="row">
+    <button type="button" data-docent="beacon-plan">Studio plan</button>
+  </div>
+</Demo>
+
+## Looks
+
+`options.beacon` sets how the mark looks. Every field is optional.
+
+| Field | Values | Default |
+| --- | --- | --- |
+| `style` | `pulse`, `dot`, `ring`, `badge`, `none` | `pulse` |
+| `text` | the text of a `badge` | `New` |
+| `position` | `top-left`, `top`, `top-right`, `right`, `bottom-right`, `bottom`, `bottom-left`, `left`, `center` | `top-right` |
+| `offset` | px away from the target's centre, or an exact shift `{ x, y }` | `0` |
+| `size` | the dot's diameter, in px | `10` |
+
+The mark is centred on its position, so at `top-right` it sits half over the element's corner. A negative `offset` moves it inward.
+
+Its colour is the `beacon` theme token, which falls back to `accent`:
+
+```ts
+options: { theme: { beacon: '#d9442b' } }
+```
+
+As with the other [looks](/customize/arrows-and-spotlight/), the renderer's `beacon` option sets a default for every tour, a [theme](/customize/themes/) or template can carry a `beacon` block, and a tour's own `options.beacon` wins over both. Beacons also follow `appearance` and the tour's theme, so a dark tour gets a mark that suits it.
+
+## Where the mark goes
+
+The mark sits on the first step's target. To put it somewhere else, give the trigger its own target:
+
+```ts
+trigger: { type: 'beacon', target: { name: 'help-menu' } }
+```
+
+It follows the element through scrolling, resizing and layout changes. It is hidden while the element is missing, has no size, or is scrolled off screen, and it appears again when the element comes back.
+
+While a tour is running, every other beacon is hidden, so nothing competes with the tour. The beacon that opened a tour stays until that tour ends.
+
+## Who sees it, and how often
+
+Beacons follow the usual [triggers and conditions](/guides/triggers-and-conditions/) rules. The mark shows only while the tour's conditions hold and its frequency allows it:
+
+| `frequency` | The mark goes away |
+| --- | --- |
+| `once` (default) | once the tip has been opened and closed, however it closed |
+| `until-completed` | once the reader finishes the tour; closing it early brings the mark back |
+| `always` | never; use this for standing help and tooltips |
+
+Bump the tour's `version` to show a beacon again to people who have already read it.
+
+## Accessibility
+
+- The mark is a real button. Screen readers announce `trigger.label`, or the tour's `name` when there is no label, and whether the tip is open.
+- The button takes taps and clicks across 44 × 44 px, whatever size the mark is drawn.
+- With reduced motion, the pulse is replaced by a still ring.
+
+## Events
+
+The manager reports two more events to your `sink`:
+
+| Event | When |
+| --- | --- |
+| `beacon:shown` | the mark appears for the first time on this page |
+| `beacon:opened` | the reader opens it; `via` is `click` or `hover` |
+
+With `tour:completed` and `tour:skipped`, that makes a funnel for each beacon: seen, opened, read.

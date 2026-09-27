@@ -47,6 +47,24 @@ describe('explainTour', () => {
     await d.destroy()
   })
 
+  it('describes a beacon and says when it is waiting for its element', async () => {
+    const d = manager(
+      defineTour({
+        id: 'tip',
+        trigger: { type: 'beacon', open: 'hover' },
+        steps: [{ id: 's', target: { name: 'export' } }],
+      }),
+    )
+    await d.ready
+    expect(find(d, 'tip')).toMatchObject({
+      verdict: 'waiting',
+      trigger: { text: 'beacon on [data-docent="export"], opens on hover' },
+    })
+    document.body.innerHTML = '<button data-docent="export">Export</button>'
+    expect(find(d, 'tip').summary).toBe('Beacon showing; opens when the reader hovers it')
+    await d.destroy()
+  })
+
   it('blames the viewport when the window is narrower than minViewportWidth', async () => {
     // jsdom's window is 1024px wide.
     const d = manager(

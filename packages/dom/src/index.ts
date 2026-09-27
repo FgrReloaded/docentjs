@@ -22,6 +22,7 @@ export {
   resolveSlots,
 } from './popover'
 export {
+  anchorPoint,
   availableSpace,
   centerPosition,
   computePosition,

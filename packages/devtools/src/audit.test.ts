@@ -71,6 +71,30 @@ describe('auditTours', () => {
   })
 })
 
+describe('auditTours with beacons', () => {
+  it('flags beacons on top of each other and settings that do not apply', async () => {
+    document.body.innerHTML = '<button data-docent="export">x</button>'
+    const tip = (id: string, extra: Parameters<typeof defineTour>[0]['options'] = {}) =>
+      defineTour({
+        id,
+        trigger: { type: 'beacon' },
+        options: extra,
+        steps: [{ id: 's', title: id, target: { name: 'export' } }],
+      })
+    const tours = [tip('a'), tip('b'), tip('c', { beacon: { style: 'none' } })]
+    const docent = createDocent({ tours, storage: createMemoryStorage(), connect: false })
+    await docent.ready
+    const issues = auditTours(docent, tours).map((i) => `${i.severity}|${i.tourId}|${i.message}`)
+    expect(issues).toEqual(
+      expect.arrayContaining([
+        'warning|b|Beacon sits on top of the beacon of "a".',
+        'info|c|A beacon with style "none" opens on hover, whatever `open` says.',
+      ]),
+    )
+    expect(issues.some((i) => i.startsWith('warning|c|Beacon sits'))).toBe(false)
+  })
+})
+
 describe('contrastRatio', () => {
   it('computes WCAG ratios for hex colors', () => {
     expect(contrastRatio('#000000', '#ffffff')?.toFixed(1)).toBe('21.0')

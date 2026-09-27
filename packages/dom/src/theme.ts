@@ -5,7 +5,9 @@
  */
 
 import type {
+  Appearance,
   ArrowStyle,
+  BeaconOptions,
   OverlayOptions,
   ProgressStyle,
   RenderContext,
@@ -14,6 +16,7 @@ import type {
   ThemeName,
   ThemeSpec,
   ThemeValue,
+  Tour,
 } from '@docentjs/core'
 
 /** Token → CSS custom property (without the `--docent-` prefix). */
@@ -34,6 +37,7 @@ export const THEME_VARS: Record<keyof Theme, string> = {
   zIndex: 'z',
   connector: 'connector',
   ring: 'ring',
+  beacon: 'beacon',
 }
 
 /** Tokens that take a unit when given as a number. */
@@ -70,7 +74,7 @@ export function applyTheme(el: HTMLElement, theme: Theme | undefined): void {
  * Is this colour light enough to need dark text on it? Resolves the colour
  * through the browser, so any CSS colour works. Undefined when it cannot tell.
  */
-function isLightColor(el: HTMLElement, color: string): boolean | undefined {
+export function isLightColor(el: HTMLElement, color: string): boolean | undefined {
   const view = el.ownerDocument.defaultView
   if (!view) return undefined
   const previous = el.style.color
@@ -124,6 +128,70 @@ export type ThemePresets = Record<ThemeName, Theme>
 /** True when this theme cannot be resolved without the built-in presets. */
 export function needsPresets(spec: ThemeSpec | undefined): boolean {
   return typeof spec === 'string' || (!!spec && typeof spec === 'object' && 'preset' in spec)
+}
+
+let presetLoad: Promise<ThemePresets> | undefined
+
+/** Fetch the preset chunk once. */
+export function loadPresets(): Promise<ThemePresets> {
+  presetLoad ??= import('./themes').then(({ light, dark, minimal, contrast }) => ({
+    light,
+    dark,
+    minimal,
+    contrast,
+  }))
+  return presetLoad
+}
+
+/** Where a tour's theme comes from: the renderer's options and its template. */
+export interface ThemeSources {
+  theme?: ThemeSpec | undefined
+  appearance?: Appearance | undefined
+}
+
+export function appearanceOf(tour: Tour, sources: ThemeSources): Appearance {
+  return tour.options?.appearance ?? sources.appearance ?? 'light'
+}
+
+/** Does this tour need the built-in presets to work out its tokens? */
+export function usesPresets(
+  tour: Tour,
+  sources: ThemeSources,
+  template: PopoverTemplate | undefined,
+): boolean {
+  return (
+    appearanceOf(tour, sources) !== 'light' ||
+    needsPresets(sources.theme) ||
+    needsPresets(tour.options?.theme) ||
+    needsPresets(template?.theme)
+  )
+}
+
+/**
+ * A tour's tokens: renderer, then the appearance surface, then template, then
+ * tour. The surface is the dark preset for `dark`, and for `auto` the one
+ * matching the reader's system setting.
+ */
+export function tourTheme(
+  tour: Tour,
+  sources: ThemeSources,
+  template: PopoverTemplate | undefined,
+  presets: ThemePresets | undefined,
+  prefersDark: boolean,
+): Theme {
+  const appearance = appearanceOf(tour, sources)
+  const surface =
+    appearance === 'dark' || (appearance === 'auto' && prefersDark)
+      ? presets?.dark
+      : appearance === 'auto'
+        ? presets?.light
+        : undefined
+  return mergeThemes(
+    resolveTheme(sources.theme, presets),
+    surface,
+    resolveTheme(template?.theme, presets),
+    resolveTheme(tour.options?.theme, presets),
+  )
 }
 
 /** A preset name, tokens, or a preset with tokens on top, flattened to tokens. */
@@ -192,6 +260,8 @@ export interface PopoverTemplate {
   count?: string
   spotlight?: SpotlightOptions
   overlay?: OverlayOptions
+  /** How beacons look for tours using this template. */
+  beacon?: BeaconOptions
   /** Extra CSS injected into the shadow root while this template is active. */
   css?: string
 }

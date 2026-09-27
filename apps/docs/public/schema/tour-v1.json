@@ -84,6 +84,10 @@
         "closeOnOverlayClick": {
           "type": "boolean"
         },
+        "closeOnOutsideClick": {
+          "type": "boolean",
+          "description": "Close when the reader clicks outside the popover. On by default for beacon tours."
+        },
         "keyboard": {
           "type": "boolean",
           "description": "Arrow-key navigation."
@@ -164,6 +168,68 @@
               "description": "Blur radius for the `blur` style, in px."
             }
           }
+        },
+        "beacon": {
+          "type": "object",
+          "properties": {
+            "style": {
+              "enum": [
+                "pulse",
+                "dot",
+                "ring",
+                "badge",
+                "none"
+              ],
+              "description": "`none` draws nothing: the target itself opens the tour on hover or focus."
+            },
+            "text": {
+              "type": "string",
+              "description": "Text of the `badge` style. Default `New`."
+            },
+            "position": {
+              "enum": [
+                "top-left",
+                "top",
+                "top-right",
+                "right",
+                "bottom-right",
+                "bottom",
+                "bottom-left",
+                "left",
+                "center"
+              ],
+              "description": "Where on the target it sits."
+            },
+            "offset": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "object",
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y"
+                  ]
+                }
+              ],
+              "description": "Px away from the target's centre, or an exact shift: `{ x, y }`."
+            },
+            "size": {
+              "type": "number",
+              "minimum": 4,
+              "description": "Diameter of the dot, in px."
+            }
+          },
+          "description": "How the beacon looks, for tours with a `beacon` trigger."
         },
         "scroll": {
           "type": "object",
@@ -258,6 +324,10 @@
                 "ring": {
                   "type": "string",
                   "description": "Colour of the spotlight ring."
+                },
+                "beacon": {
+                  "type": "string",
+                  "description": "Colour of beacons. Defaults to the accent."
                 },
                 "radius": {
                   "anyOf": [
@@ -929,6 +999,35 @@
             "name"
           ],
           "description": "When your code reports an event."
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "enum": [
+                "beacon"
+              ]
+            },
+            "target": {
+              "$ref": "#/$defs/target",
+              "description": "Where the beacon sits. Defaults to the first step's target."
+            },
+            "open": {
+              "enum": [
+                "click",
+                "hover"
+              ],
+              "description": "Open on click (the default), or on hover and focus."
+            },
+            "label": {
+              "type": "string",
+              "description": "What screen readers announce. Defaults to the tour's name."
+            }
+          },
+          "required": [
+            "type"
+          ],
+          "description": "When the reader opens a beacon: a small dot pinned to an element."
         }
       ]
     },
@@ -1192,6 +1291,10 @@
         "ring": {
           "type": "string",
           "description": "Colour of the spotlight ring."
+        },
+        "beacon": {
+          "type": "string",
+          "description": "Colour of beacons. Defaults to the accent."
         },
         "radius": {
           "anyOf": [

@@ -152,3 +152,43 @@ export const postmortemTour = defineTour({
     },
   ],
 })
+
+/** A ring on the signals pane, drawn in the `signal` look. Offered until someone reads it through. */
+export const signalsBeacon = defineTour({
+  id: 'cinder-signals-note',
+  version: 1,
+  name: 'Reading the signals',
+  trigger: { type: 'beacon', label: 'How to read the signals' },
+  options: {
+    frequency: 'until-completed',
+    template: 'signal',
+    beacon: { style: 'ring', position: 'top-left', offset: -14, size: 12 },
+  },
+  steps: [
+    {
+      id: 'tip',
+      target: { name: 'signals' },
+      title: 'Above the dashed line is over budget',
+      body: 'p99 latency against the 1.2 s budget, and the dependencies that feed it. Red means it is paging someone.',
+      placement: 'left',
+    },
+  ],
+})
+
+/** No mark: hovering or focusing the runbook button explains it, like a tooltip. */
+export const runbookTooltip = defineTour({
+  id: 'cinder-runbook-tooltip',
+  version: 1,
+  name: 'Runbook',
+  trigger: { type: 'beacon', open: 'hover' },
+  options: { frequency: 'always', beacon: { style: 'none' } },
+  steps: [
+    {
+      id: 'tip',
+      target: { name: 'runbook-toggle' },
+      title: 'Shared checklist',
+      body: 'Ticks are shared with everyone on the incident, so two people never run the same step.',
+      placement: 'bottom-end',
+    },
+  ],
+})

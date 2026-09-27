@@ -20,12 +20,15 @@ trigger: { type: 'auto', delay: 1000 }               // when the page loads
 trigger: { type: 'route', pattern: '/invoices/**' }  // on a matching path
 trigger: { type: 'element', target: '#new-menu' }    // when an element appears
 trigger: { type: 'event', name: 'invoice-saved' }    // when you call docent.track('invoice-saved')
+trigger: { type: 'beacon' }                          // when the reader opens a beacon
 trigger: { type: 'manual' }                          // only docent.start(id)
 ```
 
 `delay` waits before starting, so the page can settle. When the delay ends, the trigger is checked again: a route tour does not start if the user has already moved to another page.
 
 Route patterns are explained in [Routes and persistence](/guides/routes-and-persistence/#multi-page-tours).
+
+A `beacon` trigger is different from the rest: instead of starting the tour, it puts a small mark on the page and waits for the reader to open it. [Beacons](/guides/beacons/) has the details.
 
 ## Conditions
 

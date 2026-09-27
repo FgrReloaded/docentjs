@@ -35,7 +35,7 @@ const id = `demo-${tour.id}`
 </figure>
 
 <script>
-  import { createTour } from '@docentjs/dom'
+  import { createDocent, createTour } from '@docentjs/dom'
   import * as themes from '@docentjs/dom/themes'
 
   for (const box of document.querySelectorAll<HTMLElement>('.demo[data-tour]')) {
@@ -43,11 +43,15 @@ const id = `demo-${tour.id}`
     const options = JSON.parse(box.dataset.renderer ?? '{}')
     // Allow `theme: "dark"` style references to the built-in presets.
     if (typeof options.theme === 'string') options.theme = (themes as Record<string, unknown>)[options.theme]
-    const controller = createTour(tour, {
-      renderer: options,
-      storage: { get: () => null, set: () => {}, remove: () => {} },
-      sink: { emit: (e) => console.debug('[docent]', e.type, e.stepId ?? '') },
-    })
+    const storage = { get: () => null, set: () => {}, remove: () => {} }
+    const sink = { emit: (e: { type: string; stepId?: string }) => console.debug('[docent]', e.type, e.stepId ?? '') }
+    // A beacon shows itself and waits for the reader, so the button brings a used one back.
+    if (tour.trigger?.type === 'beacon') {
+      const docent = createDocent({ tours: [tour], renderer: options, storage, sink })
+      box.querySelector('[data-start]')?.addEventListener('click', () => void docent.reset(tour.id))
+      continue
+    }
+    const controller = createTour(tour, { renderer: options, storage, sink })
     box.querySelector('[data-start]')?.addEventListener('click', () => {
       window.posthog?.capture('documentation_demo_started', { tour_id: tour.id })
       controller.start()

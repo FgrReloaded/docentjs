@@ -74,6 +74,18 @@ export const SPOTLIGHT_RINGS = ['hairline', 'none', 'glow', 'pulse', 'dashed', '
 export const OVERLAY_STYLES = ['dim', 'blur', 'vignette', 'none'] as const
 export const PROGRESS_STYLES = ['meter', 'count', 'ticks', 'dots', 'none'] as const
 export const THEME_NAMES = ['light', 'dark', 'minimal', 'contrast'] as const
+export const BEACON_STYLES = ['pulse', 'dot', 'ring', 'badge', 'none'] as const
+export const BEACON_POSITIONS = [
+  'top-left',
+  'top',
+  'top-right',
+  'right',
+  'bottom-right',
+  'bottom',
+  'bottom-left',
+  'left',
+  'center',
+] as const
 export const PLACEMENTS = [
   'auto',
   'top',
@@ -191,6 +203,16 @@ const trigger: Spec = {
       doc: 'When your code reports an event.',
       fields: { type: required(enums('event')), name: required(str) },
     },
+    {
+      kind: 'object',
+      doc: 'When the reader opens a beacon: a small dot pinned to an element.',
+      fields: {
+        type: required(enums('beacon')),
+        target: field(ref('target'), "Where the beacon sits. Defaults to the first step's target."),
+        open: field(enums('click', 'hover'), 'Open on click (the default), or on hover and focus.'),
+        label: field(str, "What screen readers announce. Defaults to the tour's name."),
+      },
+    },
   ],
 }
 
@@ -284,6 +306,7 @@ const theme: Spec = {
     accentForeground: field(str),
     connector: field(str, 'Colour of drawn arrows.'),
     ring: field(str, 'Colour of the spotlight ring.'),
+    beacon: field(str, 'Colour of beacons. Defaults to the accent.'),
     radius: field(themeValue, 'Popover corners. A number means px.'),
     shadow: field(str),
     font: field(str, "Defaults to the page's own font."),
@@ -326,6 +349,26 @@ const overlay: Spec = {
   },
 }
 
+const beacon: Spec = {
+  kind: 'object',
+  fields: {
+    style: field(
+      { kind: 'enum', values: BEACON_STYLES },
+      '`none` draws nothing: the target itself opens the tour on hover or focus.',
+    ),
+    text: field(str, 'Text of the `badge` style. Default `New`.'),
+    position: field({ kind: 'enum', values: BEACON_POSITIONS }, 'Where on the target it sits.'),
+    offset: field(
+      {
+        kind: 'union',
+        of: [num, { kind: 'object', fields: { x: required(num), y: required(num) } }],
+      },
+      "Px away from the target's centre, or an exact shift: `{ x, y }`.",
+    ),
+    size: field({ kind: 'number', min: 4 }, 'Diameter of the dot, in px.'),
+  },
+}
+
 const scroll: Spec = {
   kind: 'object',
   fields: {
@@ -360,10 +403,15 @@ const options: Spec = {
     eyebrow: field(str, "A small line above every title. `{tour}` becomes the tour's name."),
     allowClose: field(bool, 'Allow Escape and the close button.'),
     closeOnOverlayClick: field(bool),
+    closeOnOutsideClick: field(
+      bool,
+      'Close when the reader clicks outside the popover. On by default for beacon tours.',
+    ),
     keyboard: field(bool, 'Arrow-key navigation.'),
     arrow: field({ kind: 'enum', values: ARROW_STYLES }),
     spotlight: field(spotlight),
     overlay: field(overlay),
+    beacon: field(beacon, 'How the beacon looks, for tours with a `beacon` trigger.'),
     scroll: field(scroll),
     labels: field(labels),
     theme: field(themeSpec),
@@ -459,6 +507,7 @@ const themeFile: Spec = {
     arrow: field({ kind: 'enum', values: ARROW_STYLES }),
     spotlight: field(spotlight),
     overlay: field(overlay),
+    beacon: field(beacon),
     css: field(str, 'Extra CSS, scoped to the popover.'),
   },
 }

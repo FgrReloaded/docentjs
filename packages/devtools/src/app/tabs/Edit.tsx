@@ -7,6 +7,9 @@
 import type {
   Advance,
   ArrowStyle,
+  BeaconOptions,
+  BeaconPosition,
+  BeaconStyle,
   OverlayStyle,
   Placement,
   SpotlightRing,
@@ -105,6 +108,24 @@ const RINGS: ReadonlyArray<readonly [SpotlightRing, string]> = [
   ['pulse', 'Pulse'],
   ['dashed', 'Dashed'],
   ['solid', 'Solid'],
+]
+const BEACON_STYLES: ReadonlyArray<readonly [BeaconStyle, string]> = [
+  ['pulse', 'Pulse (default)'],
+  ['dot', 'Dot'],
+  ['ring', 'Ring'],
+  ['badge', 'Badge'],
+  ['none', 'None (hover the element)'],
+]
+const BEACON_POSITIONS: ReadonlyArray<readonly [BeaconPosition, string]> = [
+  ['top-right', 'Top right (default)'],
+  ['top', 'Top'],
+  ['top-left', 'Top left'],
+  ['right', 'Right'],
+  ['left', 'Left'],
+  ['bottom-right', 'Bottom right'],
+  ['bottom', 'Bottom'],
+  ['bottom-left', 'Bottom left'],
+  ['center', 'Centre'],
 ]
 const OVERLAYS: ReadonlyArray<readonly [OverlayStyle, string]> = [
   ['dim', 'Dim (default)'],
@@ -731,6 +752,7 @@ function TourForm({ store, tour }: { store: Store; tour: Tour }) {
     route: { type: 'route', pattern: '/' },
     element: { type: 'element', target: '' },
     event: { type: 'event', name: 'my-event' },
+    beacon: { type: 'beacon' },
   }
 
   return (
@@ -755,6 +777,7 @@ function TourForm({ store, tour }: { store: Store; tour: Tour }) {
                 ['route', 'On a route'],
                 ['element', 'When an element appears'],
                 ['event', 'On an event'],
+                ['beacon', 'From a beacon'],
               ]}
             />
           </Field>
@@ -797,6 +820,7 @@ function TourForm({ store, tour }: { store: Store; tour: Tour }) {
             />
           </Field>
         )}
+        {trigger?.type === 'beacon' && <BeaconForm store={store} tour={tour} />}
         <span class="checks">
           <Check
             label="Show progress"
@@ -860,7 +884,15 @@ function ThemeForm({ store, tour }: { store: Store; tour: Tour }) {
     )
   }
   const color = (key: keyof Theme) =>
-    toHex(String(theme[key] ?? base[key] ?? '#000000')) ?? '#000000'
+    toHex(
+      String(
+        theme[key] ??
+          (key === 'beacon' ? theme.accent : undefined) ??
+          base[key] ??
+          base.accent ??
+          '#000000',
+      ),
+    ) ?? '#000000'
   const px = (v: string | number | undefined, fallback: number) =>
     v === undefined ? fallback : typeof v === 'number' ? v : Number.parseFloat(v)
 
@@ -912,6 +944,7 @@ function ThemeForm({ store, tour }: { store: Store; tour: Tour }) {
             ['accent', 'Accent'],
             ['accentForeground', 'Accent text'],
             ['overlay', 'Overlay'],
+            ...(tour.trigger?.type === 'beacon' ? ([['beacon', 'Beacon']] as const) : []),
           ] as const
         ).map(([key, label]) => (
           <Field key={key} label={label}>
@@ -965,6 +998,93 @@ function ThemeForm({ store, tour }: { store: Store; tour: Tour }) {
         />
       </Field>
     </Section>
+  )
+}
+
+// ------------------------------------------------------------- beacon form
+
+function BeaconForm({ store, tour }: { store: Store; tour: Tour }) {
+  const trigger = tour.trigger
+  if (trigger?.type !== 'beacon') return null
+  const beacon = tour.options?.beacon ?? {}
+  const setTrigger = <K extends 'open' | 'label'>(
+    key: K,
+    value: (typeof trigger)[K] | undefined,
+    immediate = true,
+  ) => store.editTour(tour.id, (t) => ({ ...t, trigger: with_(trigger, key, value) }), immediate)
+  const setBeacon = <K extends keyof BeaconOptions>(
+    key: K,
+    value: BeaconOptions[K] | undefined,
+    immediate = true,
+  ) =>
+    store.editTour(
+      tour.id,
+      (t) => with_(t, 'options', with_(t.options ?? {}, 'beacon', with_(beacon, key, value))),
+      immediate,
+    )
+  return (
+    <>
+      <div class="grid2">
+        <Field label="Opens on">
+          <Select<'click' | 'hover'>
+            value={trigger.open ?? 'click'}
+            onChange={(v) => setTrigger('open', v === 'click' ? undefined : v)}
+            options={[
+              ['click', 'Click (default)'],
+              ['hover', 'Hover or focus'],
+            ]}
+          />
+        </Field>
+        <Field label="Beacon style">
+          <Select<BeaconStyle>
+            value={beacon.style ?? 'pulse'}
+            onChange={(v) => setBeacon('style', v === 'pulse' ? undefined : v)}
+            options={BEACON_STYLES}
+          />
+        </Field>
+        <Field label="Position">
+          <Select<BeaconPosition>
+            value={beacon.position ?? 'top-right'}
+            onChange={(v) => setBeacon('position', v === 'top-right' ? undefined : v)}
+            options={BEACON_POSITIONS}
+          />
+        </Field>
+        <Field label="Size">
+          <Slider
+            value={beacon.size ?? 10}
+            min={6}
+            max={24}
+            unit="px"
+            onInput={(v) => setBeacon('size', v === 10 ? undefined : v, false)}
+          />
+        </Field>
+        <Field label="Offset">
+          <Slider
+            value={typeof beacon.offset === 'number' ? beacon.offset : 0}
+            min={-12}
+            max={24}
+            unit="px"
+            onInput={(v) => setBeacon('offset', v === 0 ? undefined : v, false)}
+          />
+        </Field>
+        {beacon.style === 'badge' && (
+          <Field label="Badge text">
+            <Text
+              value={beacon.text ?? ''}
+              placeholder="New"
+              onInput={(v) => setBeacon('text', v || undefined, false)}
+            />
+          </Field>
+        )}
+      </div>
+      <Field label="Label" hint="What screen readers announce. Empty uses the tour's name.">
+        <Text
+          value={trigger.label ?? ''}
+          placeholder={tour.name ?? tour.id}
+          onInput={(v) => setTrigger('label', v || undefined, false)}
+        />
+      </Field>
+    </>
   )
 }
 

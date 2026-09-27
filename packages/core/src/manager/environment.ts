@@ -4,7 +4,28 @@
  * MutationObserver; a native package would use its router and view tree.
  */
 
-import type { Target } from '../schema/tour'
+import type { BeaconOpen, Target, Tour } from '../schema/tour'
+
+/** A beacon the manager wants on screen, with the callbacks that drive its tour. */
+export interface BeaconRequest {
+  tour: Tour
+  target: Target
+  open: BeaconOpen
+  /** Accessible name of the beacon. */
+  label: string
+  /** The beacon became visible. Called once. */
+  onShown(): void
+  /** Start the tour. False when it cannot start now (another tour is running). */
+  onOpen(via: BeaconOpen): boolean
+  /** Close the tour the beacon opened: a second click, or a hover preview left behind. */
+  onClose(): void
+}
+
+export interface BeaconHandle {
+  /** The beacon's tour ended and the beacon stays: go back to waiting. */
+  reset(): void
+  remove(): void
+}
 
 export interface DocentEnvironment {
   /** Current path, e.g. `/invoices/new`. Omit on platforms without routes. */
@@ -22,4 +43,6 @@ export interface DocentEnvironment {
   viewportWidth?(): number | undefined
   /** Call `listener` when the viewport is resized. Returns an unsubscribe function. */
   onViewportChange?(listener: () => void): () => void
+  /** Draw a beacon until it is removed. Without this, beacon tours never show. */
+  showBeacon?(request: BeaconRequest): BeaconHandle
 }

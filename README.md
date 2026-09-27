@@ -60,8 +60,11 @@ docent.identify(user.id, { plan: user.plan })
   counter, theme tokens — is a field in the JSON, not CSS in your app. A whole look is one file: a
   [theme](https://docentjs.dev/customize/themes/), installable with
   `npx @docentjs/cli theme add ledger`.
-- **Small.** About 15 kB compressed for engine and renderer. Drawn arrows and theme presets load
-  only when a tour uses one.
+- **Tours, tips and tooltips.** A tour can also wait behind a
+  [beacon](https://docentjs.dev/guides/beacons/): a small mark on an element that opens a tip on
+  click or hover. One trigger line, the same JSON.
+- **Small.** About 15 kB compressed for engine and renderer. Drawn arrows, beacons and theme
+  presets load only when a tour uses one.
 - **Accessible.** Dialog semantics, focus kept in the popover and returned afterwards, full
   keyboard control, reduced motion, 44 px touch targets.
 - **Isolated.** The popover renders in a shadow root, so your CSS cannot break it and its CSS

@@ -6,6 +6,8 @@
 export { SCHEMA_ID, tourJsonSchema } from './schema/json-schema'
 export {
   ARROW_STYLES,
+  BEACON_POSITIONS,
+  BEACON_STYLES,
   OVERLAY_STYLES,
   PLACEMENTS,
   SPOTLIGHT_RINGS,

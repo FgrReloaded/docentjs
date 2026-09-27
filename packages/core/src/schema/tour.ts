@@ -134,6 +134,38 @@ export interface ScrollOptions {
   block?: 'start' | 'center' | 'end' | 'nearest'
 }
 
+/** How a beacon opens its tour: a click (or tap), or hovering or focusing it. */
+export type BeaconOpen = 'click' | 'hover'
+
+/**
+ * How a beacon is drawn. `none` draws nothing: the target itself opens the
+ * tour on hover or focus, which makes a plain tooltip.
+ */
+export type BeaconStyle = 'pulse' | 'dot' | 'ring' | 'badge' | 'none'
+
+/** Where on the target the beacon sits. */
+export type BeaconPosition =
+  | 'top-left'
+  | 'top'
+  | 'top-right'
+  | 'right'
+  | 'bottom-right'
+  | 'bottom'
+  | 'bottom-left'
+  | 'left'
+  | 'center'
+
+export interface BeaconOptions {
+  style?: BeaconStyle
+  /** Text of the `badge` style. Default `New`. */
+  text?: string
+  position?: BeaconPosition
+  /** Px away from the target's centre, or an exact shift (`x` right, `y` down). */
+  offset?: number | { x: number; y: number }
+  /** Diameter of the dot, in px. */
+  size?: number
+}
+
 export interface Media {
   type: 'image' | 'video'
   src: string
@@ -216,6 +248,14 @@ export type Trigger =
   | { type: 'route'; pattern: string; delay?: number }
   | { type: 'element'; target: Target; delay?: number }
   | { type: 'event'; name: string }
+  | {
+      type: 'beacon'
+      /** Where the beacon sits. Defaults to the first step's target. */
+      target?: Target
+      open?: BeaconOpen
+      /** What screen readers announce for the beacon. Defaults to the tour's name. */
+      label?: string
+    }
 
 /**
  * How often an eligible user sees the tour.
@@ -261,6 +301,8 @@ export interface Theme {
   connector?: string
   /** Color of the spotlight ring. */
   ring?: string
+  /** Color of beacons. Defaults to `accent`. */
+  beacon?: string
   background?: string
   foreground?: string
   muted?: string
@@ -360,10 +402,14 @@ export interface TourOptions {
   /** Allow closing with Escape or the close button. */
   allowClose?: boolean
   closeOnOverlayClick?: boolean
+  /** Close when the reader clicks anywhere outside the popover. Default: on for beacon tours. */
+  closeOnOutsideClick?: boolean
   keyboard?: boolean
   arrow?: ArrowStyle
   spotlight?: SpotlightOptions
   overlay?: OverlayOptions
+  /** How the beacon looks, for tours with a `beacon` trigger. */
+  beacon?: BeaconOptions
   scroll?: ScrollOptions
   labels?: Labels
   /** A preset name, tokens, or both, applied on top of the renderer's theme. */

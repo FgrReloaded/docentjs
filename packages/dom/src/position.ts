@@ -3,7 +3,7 @@
  * the arrow. No DOM access, so it is unit-tested without a browser.
  */
 
-import type { Alignment, Placement, Side } from '@docentjs/core'
+import type { Alignment, BeaconOptions, BeaconPosition, Placement, Side } from '@docentjs/core'
 
 export interface Rect {
   x: number
@@ -169,4 +169,24 @@ export function clipToViewport(rect: Rect, viewport: Viewport): Rect {
   const y2 = Math.min(vy + viewport.height, rect.y + rect.height)
   if (x2 <= x1 || y2 <= y1) return rect
   return { x: x1, y: y1, width: x2 - x1, height: y2 - y1 }
+}
+
+/**
+ * The point on the target a beacon is centred on. A number offset moves it
+ * away from the target's centre; `{ x, y }` shifts it exactly.
+ */
+export function anchorPoint(
+  rect: Rect,
+  position: BeaconPosition = 'top-right',
+  offset: BeaconOptions['offset'] = 0,
+): { x: number; y: number } {
+  const fx = position.includes('left') ? 0 : position.includes('right') ? 1 : 0.5
+  const fy = position.startsWith('top') ? 0 : position.startsWith('bottom') ? 1 : 0.5
+  const x = rect.x + rect.width * fx
+  const y = rect.y + rect.height * fy
+  if (typeof offset === 'object') return { x: x + offset.x, y: y + offset.y }
+  const dx = fx - 0.5
+  const dy = fy - 0.5
+  const length = Math.hypot(dx, dy)
+  return length === 0 ? { x, y } : { x: x + (dx / length) * offset, y: y + (dy / length) * offset }
 }

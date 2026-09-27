@@ -26,23 +26,31 @@ survives a reload; steps that hand control back to the user (`advance` on
 'wait'`); step hooks that open and close that drawer; `identify()` traits
 gating a release note; `track()` raising an event tour; three templates
 (a house style, a `hint`-style margin note, an announcement with a drawn
-figure in the `media` slot); a custom React popover in headless mode.
+figure in the `media` slot); a custom React popover in headless mode; and four
+beacons: a "New" badge on the period switch (click, read once), a red help dot
+on Overdue (hover, always there), a tooltip on the plan box (`style: 'none'`),
+and a ring on Aging that opens a two-step tour until someone finishes it.
 
 **Cinder (Vue)** — a tour triggered by an *element appearing* rather than a
 timer; `advance: { on: 'element' }` waiting for a checklist the user has to
 reveal; `appearance: 'dark'` as the base surface with brand tokens layered on
 top by the template; slots for the title and a segmented progress bar; a
 `signal` template with no scrim, a pulsing ring and a `pin` connector; a
-custom Vue popover teleported through `<TourPopover>`.
+custom Vue popover teleported through `<TourPopover>`; a ring beacon on the
+signals pane drawn in the `signal` look, and a tooltip on the runbook button
+(`style: 'none'`), both following the dark surface.
 
 **Pressroom (Svelte)** — the `buttons` slot fully replaced with the paper's
 own controls, a folio counter in roman numerals, a `sketch` connector and a
 dashed ring for the galley note, and a custom Svelte popover component passed
-straight to `useTour({ popover })`.
+straight to `useTour({ popover })`; a "Beta" badge on the edition switch in the
+galley look, and a small help dot beside the checks that opens on hover.
 
 **Nocturne (vanilla)** — no framework at all: templates, slots and a headless
 popover built with `document.createElement`, plus a `custom` condition
-predicate (`onAir`) that keeps a tour from running when the studio is not live.
+predicate (`onAir`) that keeps a tour from running when the studio is not live;
+a red hover beacon on the waveform, coloured with the `beacon` theme token, and
+a "New" badge on the cart wall.
 Open it with `?start=<tour-id>` to jump straight into one.
 
 ## Deploying

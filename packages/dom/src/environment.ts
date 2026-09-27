@@ -3,10 +3,15 @@
  * and navigation events, element presence from the DOM.
  */
 
-import type { DocentEnvironment, Target } from '@docentjs/core'
+import type { BeaconHandle, DocentEnvironment, Target } from '@docentjs/core'
+import type { DomRendererOptions } from './renderer'
 import { resolveTarget } from './target'
 
-export function createDomEnvironment(doc: Document = document): DocentEnvironment {
+/** `renderer` supplies the theme and templates beacons are drawn with. */
+export function createDomEnvironment(
+  doc: Document = document,
+  renderer: DomRendererOptions = {},
+): DocentEnvironment {
   const win = doc.defaultView
   return {
     currentRoute() {
@@ -58,6 +63,21 @@ export function createDomEnvironment(doc: Document = document): DocentEnvironmen
       })
       observer.observe(doc.documentElement, { childList: true, subtree: true, attributes: true })
       return () => observer.disconnect()
+    },
+
+    showBeacon(request) {
+      let handle: BeaconHandle | undefined
+      let removed = false
+      void import('./beacon').then((mod) => {
+        if (!removed) handle = mod.showBeacon(doc, request, renderer)
+      })
+      return {
+        reset: () => handle?.reset(),
+        remove: () => {
+          removed = true
+          handle?.remove()
+        },
+      }
     },
   }
 }

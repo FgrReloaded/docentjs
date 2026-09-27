@@ -2,12 +2,12 @@
  * Bundle budgets.
  *
  * Code the library loads on demand is treated as external for the
- * initial-load entries and measured on its own: connector arrows and theme
- * presets, which load only for tours that use one, and the schema checker,
+ * initial-load entries and measured on its own: connector arrows, beacons and
+ * theme presets, which load only for tours that use one, and the schema checker,
  * which production builds drop along with the call that imports it.
  * (size-limit inlines dynamic imports, so they have to be listed here.)
  */
-const LAZY = /connector-[\w-]+\.js$|themes(-[\w-]+)?\.js$|@docentjs\/core\/validate$/
+const LAZY = /(connector|beacon)-[\w-]+\.js$|themes(-[\w-]+)?\.js$|@docentjs\/core\/validate$/
 const initialLoad = (config) => {
   const previous = config.external
   config.external = (id, ...rest) =>
@@ -26,19 +26,19 @@ module.exports = [
     path: 'packages/dom/dist/index.js',
     import: '{ createTour }',
     modifyRolldownConfig: initialLoad,
-    limit: '15 kB',
+    limit: '15.25 kB',
   },
   {
     name: 'createDocent (core + dom + manager)',
     path: 'packages/dom/dist/index.js',
     import: '{ createDocent }',
     modifyRolldownConfig: initialLoad,
-    limit: '17 kB',
+    limit: '17.75 kB',
   },
   {
     name: 'schema checker (development only)',
     path: 'packages/core/dist/validate.js',
-    limit: '4.75 kB',
+    limit: '5.25 kB',
   },
   {
     name: 'theme presets (loaded when a tour names one)',
@@ -51,8 +51,15 @@ module.exports = [
     limit: '2.5 kB',
   },
   {
+    name: 'beacons (loaded when a tour has a beacon trigger)',
+    path: 'packages/dom/dist/beacon-*.js',
+    // Only the chunk itself: what it imports is already loaded with the renderer.
+    modifyRolldownConfig: (config) => ({ ...config, external: (id) => id.startsWith('./') }),
+    limit: '2.75 kB',
+  },
+  {
     name: '@docentjs/core (everything)',
     path: 'packages/core/dist/index.js',
-    limit: '5.75 kB',
+    limit: '6 kB',
   },
 ]

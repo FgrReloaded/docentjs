@@ -225,6 +225,34 @@
       window.docent = docent
       if (params.has('devtools')) import('@docentjs/devtools').then((d) => d.mount(docent, { open: true, onboarding: false }))
       docent.identify(params.get('user') ?? 'u1', { plan: params.get('plan') ?? 'trial' })
+    } else if (params.has('beacons')) {
+      const beacons = [
+        defineTour({
+          id: 'b-save',
+          trigger: { type: 'beacon', label: 'About saving' },
+          steps: [{ id: 'tip', target: '#save', title: 'Saving', body: 'Drafts save as you type.' }],
+        }),
+        defineTour({
+          id: 'b-sidebar',
+          trigger: { type: 'beacon', open: 'hover' },
+          options: { frequency: 'always', beacon: { style: 'dot', position: 'top-left' } },
+          steps: [{ id: 'tip', target: { name: 'sidebar' }, title: 'Sidebar tip' }],
+        }),
+        defineTour({
+          id: 'b-blur',
+          trigger: { type: 'beacon', open: 'hover', label: 'Blurred tip' },
+          options: {
+            frequency: 'always',
+            overlay: { style: 'blur' },
+            spotlight: { padding: 0 },
+            beacon: { style: 'badge', text: 'New' },
+          },
+          steps: [{ id: 'tip', target: '#blocked', title: 'Behind a blur', placement: 'bottom' }],
+        }),
+      ]
+      const docent = createDocent({ tours: beacons, sink })
+      window.docent = docent
+      docent.identify(params.get('user') ?? 'u1')
     } else {
       const tour = tours[params.get('tour') ?? 'basic']
       const controller = createTour(tour, { sink })

@@ -6,7 +6,7 @@ import type { Renderer } from '../engine/renderer'
 import type { Target, Tour } from '../schema/tour'
 import type { TourSource } from '../seams'
 import { Docent, type DocentOptions } from './docent'
-import type { DocentEnvironment } from './environment'
+import type { BeaconRequest, DocentEnvironment } from './environment'
 
 const tick = (ms = 0) => new Promise((r) => setTimeout(r, ms))
 const settle = async () => {
@@ -19,6 +19,7 @@ function fakeEnv(route = '/') {
   const routeListeners = new Set<() => void>()
   const watchers = new Map<string, Set<() => void>>()
   const viewportListeners = new Set<() => void>()
+  const beacons = new Map<string, BeaconRequest>()
   let current = route
   let width = 1280
   const env: DocentEnvironment = {
@@ -41,9 +42,19 @@ function fakeEnv(route = '/') {
       watchers.set(k, set)
       return () => set.delete(l)
     },
+    showBeacon: (request) => {
+      beacons.set(request.tour.id, request)
+      return {
+        reset: () => {},
+        remove: () => {
+          if (beacons.get(request.tour.id) === request) beacons.delete(request.tour.id)
+        },
+      }
+    },
   }
   return {
     env,
+    beacons,
     navigate(to: string) {
       current = to
       for (const l of routeListeners) l()
@@ -546,5 +557,111 @@ describe('Docent sources and state', () => {
     f.navigate('/x')
     await settle()
     expect(shown).toEqual([])
+  })
+})
+
+describe('Docent beacons', () => {
+  const tip = (id: string, extra: Partial<Tour> = {}) =>
+    defineTour({
+      id,
+      name: `${id} tip`,
+      trigger: { type: 'beacon' },
+      steps: [{ id: 'only', target: { name: id }, title: id }],
+      ...extra,
+    })
+  // Beacon targets are on the page, so the tours' steps can show.
+  const withTargets = (tours: Tour[], extra: Partial<DocentOptions> = {}) => {
+    const result = setup(tours, extra)
+    for (const tour of tours) result.f.appear(tour.id)
+    return result
+  }
+
+  it('shows a beacon on the first step target without starting the tour', async () => {
+    const { docent, shown, f } = withTargets([tip('export'), oneStep('plain')])
+    await docent.ready
+    await settle()
+    expect([...f.beacons.keys()]).toEqual(['export'])
+    const beacon = f.beacons.get('export')
+    expect(beacon?.target).toEqual({ name: 'export' })
+    expect(beacon?.open).toBe('click')
+    expect(beacon?.label).toBe('export tip')
+    expect(shown).toEqual([])
+  })
+
+  it('opens the tour from the beacon and hides every other beacon while it runs', async () => {
+    const events: string[] = []
+    const { docent, shown, f, finish } = withTargets([tip('a'), tip('b')], {
+      sink: { emit: (e) => events.push(`${e.type}${e.via ? `:${e.via}` : ''}`) },
+    })
+    await docent.ready
+    await settle()
+    f.beacons.get('a')?.onShown()
+    f.beacons.get('a')?.onOpen('hover')
+    await settle()
+    expect(shown).toEqual(['a:only'])
+    expect([...f.beacons.keys()]).toEqual(['a'])
+    expect(events.slice(0, 3)).toEqual(['beacon:shown', 'beacon:opened:hover', 'tour:started'])
+    await finish()
+    // Seen once, so only the other beacon comes back.
+    expect([...f.beacons.keys()]).toEqual(['b'])
+  })
+
+  it('keeps an `always` beacon after its tour ends, and refuses to open over another tour', async () => {
+    const { docent, f, finish } = withTargets([
+      tip('help', { options: { frequency: 'always' } }),
+      oneStep('tour'),
+    ])
+    await docent.ready
+    await settle()
+    const first = f.beacons.get('help')
+    expect(first?.onOpen('click')).toBe(true)
+    await settle()
+    await finish()
+    expect(f.beacons.get('help')).toBe(first)
+    await docent.start('tour')
+    expect(first?.onOpen('click')).toBe(false)
+  })
+
+  it('closing a hover tip counts as seen', async () => {
+    const { docent, f } = withTargets([
+      tip('once'),
+      tip('until', { options: { frequency: 'until-completed' } }),
+    ])
+    await docent.ready
+    await settle()
+    for (const id of ['once', 'until']) {
+      f.beacons.get(id)?.onOpen('hover')
+      await settle()
+      f.beacons.get(id)?.onClose()
+      await settle()
+      expect(docent.tourState(id)).toBe('skipped')
+    }
+    expect([...f.beacons.keys()]).toEqual(['until'])
+  })
+
+  it('follows conditions and returns after another tour ends', async () => {
+    const { docent, f, finish } = withTargets([
+      tip('pro', { conditions: [{ type: 'trait', key: 'plan', op: 'eq', value: 'pro' }] }),
+      oneStep('tour'),
+    ])
+    await docent.ready
+    await settle()
+    expect(f.beacons.size).toBe(0)
+    await docent.identify('u1', { plan: 'pro' })
+    expect([...f.beacons.keys()]).toEqual(['pro'])
+    await docent.start('tour')
+    expect(f.beacons.size).toBe(0)
+    await finish()
+    expect([...f.beacons.keys()]).toEqual(['pro'])
+  })
+
+  it('redraws a beacon when its tour is edited', async () => {
+    const { docent, f } = withTargets([tip('a')])
+    await docent.ready
+    await settle()
+    const before = f.beacons.get('a')
+    await docent.updateTour(tip('a', { options: { beacon: { style: 'badge' } } }))
+    expect(f.beacons.get('a')).not.toBe(before)
+    expect(f.beacons.get('a')?.tour.options?.beacon?.style).toBe('badge')
   })
 })

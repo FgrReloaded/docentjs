@@ -4,6 +4,7 @@
  */
 
 import {
+  beaconTarget,
   type Condition,
   type Docent,
   matchRoute,
@@ -13,7 +14,7 @@ import {
   type Tour,
 } from '@docentjs/core'
 import { validateTour } from '@docentjs/core/validate'
-import { resolveTarget, toSpec } from '@docentjs/dom'
+import { anchorPoint, resolveTarget, toSpec } from '@docentjs/dom'
 import { contrast, dark, light, minimal } from '@docentjs/dom/themes'
 import { contrastRatio } from './contrast'
 
@@ -233,6 +234,58 @@ function themeIssues(tour: Tour, out: Issue[]): void {
   }
 }
 
+/** Beacon mistakes: nowhere to sit, and settings that do not do what they suggest. */
+function beaconIssues(tour: Tour, out: Issue[]): void {
+  const trigger = tour.trigger
+  if (trigger?.type !== 'beacon') return
+  const style = tour.options?.beacon?.style
+  if (trigger.target !== undefined && !resolveTarget(trigger.target)) {
+    out.push({
+      tourId: tour.id,
+      severity: 'warning',
+      message: 'Beacon target is not on this page.',
+      hint: 'The beacon appears once the element does.',
+    })
+  }
+  if (style === 'none' && trigger.open !== 'hover') {
+    out.push({
+      tourId: tour.id,
+      severity: 'info',
+      message: 'A beacon with style "none" opens on hover, whatever `open` says.',
+      hint: 'There is no mark to click. Set open: "hover" to say so.',
+    })
+  }
+  if (trigger.open === 'hover' && tour.steps.length > 1) {
+    out.push({
+      tourId: tour.id,
+      severity: 'info',
+      message: `Opens on hover but has ${tour.steps.length} steps, so it stays open until closed.`,
+    })
+  }
+}
+
+/** Beacons drawn so close together that one covers the other. */
+function overlappingBeacons(tours: Tour[], out: Issue[]): void {
+  const placed: Array<{ tour: Tour; x: number; y: number }> = []
+  for (const tour of tours) {
+    const target = beaconTarget(tour)
+    const element = target && resolveTarget(target)
+    if (!element || tour.options?.beacon?.style === 'none') continue
+    const beacon = tour.options?.beacon
+    const point = anchorPoint(element.getBoundingClientRect(), beacon?.position, beacon?.offset)
+    const near = placed.find((p) => Math.hypot(p.x - point.x, p.y - point.y) < 24)
+    if (near) {
+      out.push({
+        tourId: tour.id,
+        severity: 'warning',
+        message: `Beacon sits on top of the beacon of "${near.tour.id}".`,
+        hint: 'Move one with options.beacon.position or offset.',
+      })
+    }
+    placed.push({ tour, ...point })
+  }
+}
+
 /** Schema problems: unknown values, missing fields, typos. */
 function schemaIssues(tour: Tour, out: Issue[]): void {
   for (const issue of validateTour(tour)) {
@@ -288,7 +341,9 @@ export function auditTours(docent: Docent, tours: Tour[]): Issue[] {
       })
     }
     themeIssues(tour, out)
+    beaconIssues(tour, out)
   }
+  overlappingBeacons(tours, out)
   const rank: Record<Severity, number> = { error: 0, warning: 1, info: 2 }
   return out.sort((a, b) => rank[a.severity] - rank[b.severity])
 }

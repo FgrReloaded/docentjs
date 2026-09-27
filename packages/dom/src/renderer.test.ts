@@ -121,6 +121,40 @@ describe('DomRenderer', () => {
     r.hide()
   })
 
+  it('shows a beacon tip without a scrim or a counter, and closes it on an outside click', () => {
+    document.body.innerHTML = '<button id="target">go</button><p id="elsewhere">text</p>'
+    const r = new DomRenderer({ overlay: { style: 'blur' } })
+    const base = ctx()
+    const tour = { ...base.tour, trigger: { type: 'beacon' as const } }
+    r.show({ ...base, tour })
+    const h = host() as HTMLElement
+    expect(h.getAttribute('data-overlay')).toBe('none')
+    expect(shadow().querySelector('.progress')?.hasAttribute('data-progress')).toBe(false)
+    expect(shadow().querySelector('[part~="button-next"]')?.textContent).toBe('Got it')
+    expect(shadow().querySelector<HTMLElement>('.blocker')?.hidden).toBe(true)
+
+    shadow()
+      .querySelector('.popover')
+      ?.dispatchEvent(new Event('pointerdown', { bubbles: true, composed: true }))
+    expect(base.actions.skip).not.toHaveBeenCalled()
+    document
+      .getElementById('elsewhere')
+      ?.dispatchEvent(new Event('pointerdown', { bubbles: true, composed: true }))
+    expect(base.actions.skip).toHaveBeenCalled()
+    r.hide()
+  })
+
+  it('leaves focus alone with focus: false', async () => {
+    document.body.innerHTML = '<button id="target">go</button><input id="field" />'
+    const field = document.getElementById('field') as HTMLInputElement
+    field.focus()
+    const r = new DomRenderer({ focus: false })
+    r.show(ctx())
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    expect(document.activeElement).toBe(field)
+    r.hide()
+  })
+
   it('follows a target that scrolls inside a shadow root', () => {
     const outer = document.createElement('div')
     document.body.appendChild(outer)

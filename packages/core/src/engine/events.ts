@@ -1,4 +1,4 @@
-import type { Tour } from '../schema/tour'
+import type { BeaconOpen, Tour } from '../schema/tour'
 import type { DocentEvent, DocentEventType, EventSink, Identity } from '../seams'
 import { tourVersion } from './progress'
 
@@ -6,6 +6,7 @@ export interface EventInput {
   tour: Tour
   identity: Identity
   stepIndex?: number
+  via?: BeaconOpen
   now?: () => number
 }
 
@@ -17,6 +18,7 @@ export function createEvent(type: DocentEventType, input: EventInput): DocentEve
     timestamp: (input.now ?? Date.now)(),
     identity: input.identity,
   }
+  if (input.via) event.via = input.via
   if (input.stepIndex !== undefined && input.stepIndex >= 0) {
     const step = input.tour.steps[input.stepIndex]
     event.stepIndex = input.stepIndex

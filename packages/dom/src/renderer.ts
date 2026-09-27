@@ -11,6 +11,7 @@
 import type {
   Appearance,
   ArrowStyle,
+  BeaconOptions,
   Labels,
   OverlayOptions,
   ProgressStyle,
@@ -19,12 +20,11 @@ import type {
   SpotlightOptions,
   Step,
   Target,
-  Theme,
   ThemeSpec,
 } from '@docentjs/core'
 import { arrowGap, isConnector } from './arrows'
 import type { Connector } from './connector'
-import { BUILT_IN_LOOKS, type LookName } from './looks'
+import { templateFor } from './looks'
 import { uncover } from './occlusion'
 import { Overlay } from './overlay'
 import { buildHeadlessShell, buildPopover, type PopoverLook } from './popover'
@@ -40,14 +40,15 @@ import {
 import { STYLES } from './styles'
 import { resolveTarget, waitForTarget } from './target'
 import {
+  appearanceOf,
   applyTheme,
   type HeadlessPopover,
-  mergeThemes,
-  needsPresets,
+  loadPresets,
   type PopoverSlots,
   type PopoverTemplate,
-  resolveTheme,
   type ThemePresets,
+  tourTheme,
+  usesPresets,
 } from './theme'
 
 export interface DomRendererOptions {
@@ -67,6 +68,8 @@ export interface DomRendererOptions {
   eyebrow?: string
   /** Overlay defaults when a tour sets none: style, color, opacity, blur. */
   overlay?: OverlayOptions
+  /** Beacon defaults when a tour sets none: style, position, size. */
+  beacon?: BeaconOptions
   /** Base theme: a preset name, tokens, or both. Tours and templates layer on top. */
   theme?: ThemeSpec
   /** Light (default), dark, or follow the reader's system setting. */
@@ -88,6 +91,11 @@ export interface DomRendererOptions {
   sheetBreakpoint?: number
   /** Scroll past sticky/fixed headers and footers that cover the target. Default true. */
   avoidOcclusion?: boolean
+  /**
+   * Move focus into the popover when a tour opens, and back when it ends.
+   * Default true. Tours opened by hovering a beacon never take focus.
+   */
+  focus?: boolean
 }
 
 type Cleanup = () => void
@@ -134,7 +142,6 @@ export class DomRenderer implements Renderer {
   private look: Look = DEFAULT_LOOK
   /** Preset tokens, once loaded. */
   private presets: ThemePresets | undefined
-  private presetLoad: Promise<void> | undefined
   /** Set while `appearance: 'auto'` is following the system setting. */
   private schemeQuery: MediaQueryList | undefined
   /** The body element currently watched for scrolling. */
@@ -170,8 +177,9 @@ export class DomRenderer implements Renderer {
   show(ctx: RenderContext): void | Promise<void> {
     // Preset tokens live in a separate chunk, so tours that name one (or ask
     // for dark) wait for it rather than flashing the default look first.
-    if (this.presets === undefined && this.usesPresets(ctx)) {
-      return this.loadPresets().then(() => {
+    if (this.presets === undefined && usesPresets(ctx.tour, this.options, this.template(ctx))) {
+      return loadPresets().then((presets) => {
+        this.presets = presets
         this.showNow(ctx)
       })
     }
@@ -219,14 +227,16 @@ export class DomRenderer implements Renderer {
     this.listen()
     this.wireAdvance(ctx.step)
 
-    if (firstStep) this.previousFocus = this.doc.activeElement
+    const focus = this.options.focus !== false
+    if (firstStep && focus) this.previousFocus = deepActiveElement(this.doc)
     requestAnimationFrame(() => {
       this.popover?.removeAttribute('data-entering')
-      initialFocus.focus({ preventScroll: true })
+      if (focus) initialFocus.focus({ preventScroll: true })
     })
   }
 
   hide(): void {
+    const lastTarget = this.target
     this.teardownStep()
     this.scrollingBody?.removeEventListener('scroll', this.onBodyScroll)
     this.scrollingBody = undefined
@@ -242,7 +252,15 @@ export class DomRenderer implements Renderer {
     }
     const prev = this.previousFocus
     this.previousFocus = null
-    if (prev instanceof HTMLElement && prev.isConnected) prev.focus({ preventScroll: true })
+    if (!(prev instanceof HTMLElement)) return
+    // What opened the tour may be gone (a beacon that has been seen): fall back to the target.
+    const back = prev.isConnected ? prev : lastTarget
+    if (
+      back instanceof HTMLElement &&
+      back.isConnected &&
+      (back === prev || back.matches(FOCUSABLE))
+    )
+      back.focus({ preventScroll: true })
   }
 
   // -------------------------------------------------------------------------
@@ -285,7 +303,7 @@ export class DomRenderer implements Renderer {
       overlay.update(
         overlaySize,
         { target: rect, padding, radius, shape },
-        this.blocksInteraction(ctx.step),
+        this.blocksInteraction(ctx),
       )
       this.connector?.clear()
       const vx = viewport.x ?? 0
@@ -315,7 +333,7 @@ export class DomRenderer implements Renderer {
     overlay.update(
       overlaySize,
       { target: rect, padding, radius, shape },
-      this.blocksInteraction(ctx.step),
+      this.blocksInteraction(ctx),
     )
     const hole = overlay.hole ?? rect
     const pos = computePosition({
@@ -400,58 +418,14 @@ export class DomRenderer implements Renderer {
     shadow.insertBefore(this.connector.el, before)
   }
 
-  /** Does anything here need the built-in presets? */
-  private usesPresets(ctx: RenderContext): boolean {
-    return (
-      this.appearance(ctx) !== 'light' ||
-      needsPresets(this.options.theme) ||
-      needsPresets(ctx.tour.options?.theme) ||
-      needsPresets(this.template(ctx)?.theme)
-    )
-  }
-
-  private loadPresets(): Promise<void> {
-    this.presetLoad ??= import('./themes').then((mod) => {
-      this.presets = {
-        light: mod.light,
-        dark: mod.dark,
-        minimal: mod.minimal,
-        contrast: mod.contrast,
-      }
-    })
-    return this.presetLoad
-  }
-
-  private appearance(ctx: RenderContext): Appearance {
-    return ctx.tour.options?.appearance ?? this.options.appearance ?? 'light'
-  }
-
-  /** The surface tokens for the current appearance: dark, or nothing for light. */
-  private appearanceTheme(ctx: RenderContext): Theme | undefined {
-    const appearance = this.appearance(ctx)
-    if (appearance === 'dark') return this.presets?.dark
-    if (appearance !== 'auto') return undefined
-    return this.prefersDark() ? this.presets?.dark : this.presets?.light
-  }
-
-  private prefersDark(): boolean {
-    return this.doc.defaultView?.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false
-  }
-
-  /** Renderer, then the appearance surface, then template, then tour. */
-  private themeFor(ctx: RenderContext, template: PopoverTemplate | undefined): Theme {
-    const presets = this.presets
-    return mergeThemes(
-      resolveTheme(this.options.theme, presets),
-      this.appearanceTheme(ctx),
-      resolveTheme(template?.theme, presets),
-      resolveTheme(ctx.tour.options?.theme, presets),
-    )
+  private themeFor(ctx: RenderContext, template: PopoverTemplate | undefined) {
+    const dark = this.doc.defaultView?.matchMedia?.('(prefers-color-scheme: dark)').matches
+    return tourTheme(ctx.tour, this.options, template, this.presets, dark ?? false)
   }
 
   /** With `appearance: 'auto'`, follow the system setting while the tour runs. */
   private watchAppearance(ctx: RenderContext): void {
-    const wanted = this.appearance(ctx) === 'auto'
+    const wanted = appearanceOf(ctx.tour, this.options) === 'auto'
     if (wanted === (this.schemeQuery !== undefined)) return
     if (!wanted) {
       this.schemeQuery?.removeEventListener('change', this.onSchemeChange)
@@ -467,21 +441,36 @@ export class DomRenderer implements Renderer {
     if (ctx && this.host) applyTheme(this.host, this.themeFor(ctx, this.template(ctx)))
   }
 
+  /**
+   * A beacon's tip keeps the page usable and, with one step, reads as a tip:
+   * no counter and "Got it". The tour's own settings still win.
+   */
   private resolveLook(ctx: RenderContext, template: PopoverTemplate | undefined): Look {
     const tour = ctx.tour.options ?? {}
     const step = ctx.step
+    const tip = isBeaconTour(ctx)
+    const single = tip && ctx.tour.steps.length === 1
     return {
       arrow: step.arrow ?? tour.arrow ?? template?.arrow ?? this.options.arrow ?? 'caret',
       eyebrow: tour.eyebrow ?? template?.eyebrow ?? this.options.eyebrow,
-      progress: tour.progress ?? template?.progress ?? this.options.progress ?? 'meter',
+      progress:
+        tour.progress ??
+        (single ? 'none' : (template?.progress ?? this.options.progress ?? 'meter')),
       count: template?.count,
+      labels: single ? { done: 'Got it' } : undefined,
       spotlight: {
         ...this.options.spotlight,
         ...template?.spotlight,
         ...tour.spotlight,
         ...step.spotlight,
       },
-      overlay: { ...this.options.overlay, ...template?.overlay, ...tour.overlay, ...step.overlay },
+      overlay: {
+        ...this.options.overlay,
+        ...template?.overlay,
+        ...(tip ? { style: 'none' as const } : {}),
+        ...tour.overlay,
+        ...step.overlay,
+      },
     }
   }
 
@@ -613,14 +602,8 @@ export class DomRenderer implements Renderer {
   // Popover construction
   // -------------------------------------------------------------------------
 
-  /** The tour's template: one the app registered, or a built-in look. */
   private template(ctx: RenderContext): PopoverTemplate | undefined {
-    // A tour names a template; the renderer may instead be handed one outright,
-    // which is how an installed theme arrives.
-    const chosen = ctx.tour.options?.template ?? this.options.template
-    if (chosen === undefined) return undefined
-    if (typeof chosen !== 'string') return chosen
-    return this.options.templates?.[chosen] ?? BUILT_IN_LOOKS[chosen as LookName]
+    return templateFor(ctx.tour, this.options)
   }
 
   private buildDefault(
@@ -724,8 +707,10 @@ export class DomRenderer implements Renderer {
     this.sheetAdjusted = false
   }
 
-  private blocksInteraction(step: Step): boolean {
+  private blocksInteraction(ctx: RenderContext): boolean {
+    const step = ctx.step
     if (step.interaction) return step.interaction === 'block'
+    if (isBeaconTour(ctx)) return false
     const advance = step.advance
     return !(typeof advance === 'object' && (advance.on === 'click' || advance.on === 'input'))
   }
@@ -812,6 +797,23 @@ export class DomRenderer implements Renderer {
       overlayEl.addEventListener('click', handler)
       this.cleanups.push(() => overlayEl.removeEventListener('click', handler))
     }
+
+    if (options.closeOnOutsideClick ?? isBeaconTour(ctx)) {
+      on(
+        'pointerdown',
+        (e) => {
+          const inside = e.composedPath().some(
+            (n) =>
+              n === this.popover ||
+              n === this.headlessContainer ||
+              // Beacons handle their own clicks, including closing their tip.
+              (n instanceof Element && n.hasAttribute('data-docent-beacons')),
+          )
+          if (!inside) ctx.actions.skip()
+        },
+        { capture: true },
+      )
+    }
   }
 
   private onKeydown(e: KeyboardEvent, ctx: RenderContext): void {
@@ -895,4 +897,13 @@ export class DomRenderer implements Renderer {
 
 function toRect(r: DOMRect): Rect {
   return { x: r.left, y: r.top, width: r.width, height: r.height }
+}
+
+const isBeaconTour = (ctx: RenderContext) => ctx.tour.trigger?.type === 'beacon'
+
+/** The focused element, looking inside open shadow roots (a beacon is a button in one). */
+function deepActiveElement(doc: Document): Element | null {
+  let active = doc.activeElement
+  while (active?.shadowRoot?.activeElement) active = active.shadowRoot.activeElement
+  return active
 }

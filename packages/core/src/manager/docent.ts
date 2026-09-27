@@ -7,6 +7,7 @@
 import { devWarn } from '../dev'
 import { type ConditionEnv, type CustomPredicate, evaluateAll } from '../engine/conditions'
 import type { ControllerOptions, TourController } from '../engine/controller'
+import { createEvent, type EventInput } from '../engine/events'
 import {
   createMemoryStorage,
   ProgressStore,
@@ -16,7 +17,14 @@ import {
 } from '../engine/progress'
 import { matchRoute } from '../engine/route'
 import type { TourHooks } from '../hooks'
-import type { Tour, TourProgressState, TraitValue, Trigger } from '../schema/tour'
+import type {
+  BeaconOpen,
+  Target,
+  Tour,
+  TourProgressState,
+  TraitValue,
+  Trigger,
+} from '../schema/tour'
 import {
   ANONYMOUS_IDENTITY,
   type DocentEvent,
@@ -25,11 +33,22 @@ import {
   type StorageAdapter,
   type TourSource,
 } from '../seams'
-import type { DocentEnvironment } from './environment'
+import type { BeaconHandle, DocentEnvironment } from './environment'
 import { scopeStorage } from './scoped-storage'
 
 /** Options every controller the manager creates receives. */
 export type SharedControllerOptions = Omit<ControllerOptions, 'tour' | 'renderer'>
+
+/** How a tour was started. `via` is set when a beacon opened it. */
+export interface TourLaunch {
+  via?: BeaconOpen
+}
+
+/** Where a beacon tour's beacon sits: its own target, or the first step's. */
+export function beaconTarget(tour: Tour): Target | undefined {
+  const trigger = tour.trigger
+  return trigger?.type === 'beacon' ? (trigger.target ?? tour.steps[0]?.target) : undefined
+}
 
 export interface DocentOptions {
   /** Tours to manage: an array, or a source that loads (and may live-update) them. */
@@ -43,7 +62,11 @@ export interface DocentOptions {
   custom?: Record<string, CustomPredicate>
   environment: DocentEnvironment
   /** Builds a platform controller for a tour. The DOM package supplies this. */
-  createController: (tour: Tour, options: SharedControllerOptions) => TourController
+  createController: (
+    tour: Tour,
+    options: SharedControllerOptions,
+    launch: TourLaunch,
+  ) => TourController
   now?: () => number
   /**
    * Show no tours while the viewport is narrower than this, in px: triggers do
@@ -106,6 +129,10 @@ export class Docent {
   private attached = false
   /** Last seen viewport width, to notice a tour becoming wide enough. */
   private viewportWidth: number | undefined
+  /** Beacons on screen, by tour id, with the definition each was drawn from. */
+  private readonly beacons = new Map<string, { tour: Tour; handle: BeaconHandle }>()
+  /** The beacon that opened the running tour. It stays on screen until the tour ends. */
+  private openBeacon: string | null = null
 
   constructor(options: DocentOptions) {
     this.options = options
@@ -144,6 +171,7 @@ export class Docent {
       this.cleanups.length = 0
     }
     this.queue = []
+    for (const id of [...this.beacons.keys()]) this.removeBeacon(id)
     await this.stopActive()
     this.emitState()
   }
@@ -261,6 +289,7 @@ export class Docent {
     await this.ready
     this.tours.set(tour.id, tour)
     if (this.activeId === tour.id) await this.controller?.updateTour(tour)
+    this.syncBeacons()
     this.emitState()
   }
 
@@ -367,6 +396,7 @@ export class Docent {
     const before = this.viewportWidth
     const now = this.env.viewportWidth?.()
     this.viewportWidth = now
+    this.syncBeacons()
     if (before === undefined || now === undefined || now <= before) return
     for (const tour of this.tours.values()) {
       const min = this.minViewportWidth(tour)
@@ -401,12 +431,14 @@ export class Docent {
       if (!trigger || tour.id === except) continue
       this.arm(tour, trigger)
     }
+    this.syncBeacons()
   }
 
   private arm(tour: Tour, trigger: Trigger): void {
     switch (trigger.type) {
       case 'manual':
       case 'event':
+      case 'beacon':
         return
       case 'auto':
         // Marked as used in fire() only once it actually starts or queues, so a tour
@@ -466,6 +498,65 @@ export class Docent {
   }
 
   // -------------------------------------------------------------------------
+  // Beacons
+  // -------------------------------------------------------------------------
+
+  /**
+   * Show the beacons of eligible tours and remove the rest. While a tour runs
+   * only the beacon that opened it stays, so nothing competes with the tour.
+   */
+  private syncBeacons(): void {
+    const show = this.env.showBeacon
+    if (!show) return
+    for (const [id, beacon] of this.beacons) {
+      if (this.tours.get(id) !== beacon.tour || !this.wantsBeacon(beacon.tour)) {
+        this.removeBeacon(id)
+      }
+    }
+    if (this.activeId) return
+    for (const tour of this.tours.values()) {
+      if (!this.beacons.has(tour.id) && this.wantsBeacon(tour)) this.addBeacon(tour, show)
+    }
+  }
+
+  private wantsBeacon(tour: Tour): boolean {
+    if (this.destroyed || !this.attached || tour.trigger?.type !== 'beacon') return false
+    if (this.activeId) return this.activeId === tour.id && this.openBeacon === tour.id
+    return beaconTarget(tour) !== undefined && this.isEligible(tour.id)
+  }
+
+  private addBeacon(tour: Tour, show: NonNullable<DocentEnvironment['showBeacon']>): void {
+    const trigger = tour.trigger
+    const target = beaconTarget(tour)
+    if (trigger?.type !== 'beacon' || target === undefined) return
+    const handle = show({
+      tour,
+      target,
+      open: trigger.open ?? 'click',
+      label: trigger.label ?? tour.name ?? tour.steps[0]?.title ?? 'Show tip',
+      onShown: () => this.emit(createEvent('beacon:shown', this.eventInput(tour))),
+      onOpen: (via) => this.openFromBeacon(tour.id, via),
+      onClose: () => {
+        if (this.activeId === tour.id) void this.controller?.skip()
+      },
+    })
+    this.beacons.set(tour.id, { tour, handle })
+  }
+
+  private removeBeacon(tourId: string): void {
+    this.beacons.get(tourId)?.handle.remove()
+    this.beacons.delete(tourId)
+  }
+
+  private openFromBeacon(tourId: string, via: BeaconOpen): boolean {
+    const tour = this.tours.get(tourId)
+    if (!tour || this.activeId || !this.isEligible(tourId)) return false
+    this.emit(createEvent('beacon:opened', { ...this.eventInput(tour), via }))
+    void this.run(tour, undefined, true, via)
+    return true
+  }
+
+  // -------------------------------------------------------------------------
   // Running
   // -------------------------------------------------------------------------
 
@@ -488,12 +579,7 @@ export class Docent {
       storage: scopeStorage(this.baseStorage, this.identity.id),
       tourState: (id) => this.tourState(id),
     }
-    shared.sink = {
-      emit: (event) => {
-        this.options.sink?.emit(event)
-        for (const l of this.eventListeners) l(event)
-      },
-    }
+    shared.sink = { emit: (event) => this.emit(event) }
     const hooks = this.options.hooks?.[tour.id]
     if (hooks) shared.hooks = hooks
     if (this.options.custom) shared.custom = this.options.custom
@@ -501,11 +587,19 @@ export class Docent {
     return shared
   }
 
-  private async run(tour: Tour, at: number | string | undefined, manual: boolean): Promise<void> {
+  private async run(
+    tour: Tour,
+    at: number | string | undefined,
+    manual: boolean,
+    via?: BeaconOpen,
+  ): Promise<void> {
     this.queue = this.queue.filter((id) => id !== tour.id)
-    const controller = this.options.createController(tour, this.sharedOptions(tour))
+    const launch: TourLaunch = via ? { via } : {}
+    const controller = this.options.createController(tour, this.sharedOptions(tour), launch)
     this.controller = controller
     this.activeId = tour.id
+    this.openBeacon = via ? tour.id : null
+    this.syncBeacons()
     // Mirror what the controller persists, so tourState() is right while it runs.
     this.records.set(tour.id, {
       tourId: tour.id,
@@ -555,6 +649,11 @@ export class Docent {
   private release(controller: TourController, finishedId?: string): void {
     this.controller = undefined
     this.activeId = null
+    // Kept, so focus can return to it, while the tour's frequency still allows it.
+    const beacon = this.openBeacon ? this.beacons.get(this.openBeacon) : undefined
+    if (beacon && this.wantsBeacon(beacon.tour)) beacon.handle.reset()
+    else if (this.openBeacon) this.removeBeacon(this.openBeacon)
+    this.openBeacon = null
     this.emitState()
     // Let the finished controller complete its own cleanup (hide, persist, events) first.
     setTimeout(() => {
@@ -571,6 +670,7 @@ export class Docent {
     if (!controller) return
     this.controller = undefined
     this.activeId = null
+    this.openBeacon = null
     await controller.destroy()
   }
 
@@ -579,6 +679,17 @@ export class Docent {
       const next = this.queue.shift()
       if (next) this.fire(next)
     }
+  }
+
+  private eventInput(tour: Tour): EventInput {
+    const input: EventInput = { tour, identity: this.identity }
+    if (this.options.now) input.now = this.options.now
+    return input
+  }
+
+  private emit(event: DocentEvent): void {
+    this.options.sink?.emit(event)
+    for (const l of this.eventListeners) l(event)
   }
 
   private emitState(): void {

@@ -4,6 +4,7 @@
  */
 
 import {
+  beaconTarget,
   type Condition,
   type ConditionEnv,
   type Docent,
@@ -89,6 +90,15 @@ function describeTrigger(tour: Tour, env: ConditionEnv): TourExplanation['trigge
       }
     case 'event':
       return { text: `on track('${t.name}')`, awaiting: `track('${t.name}')`, holds: null }
+    case 'beacon': {
+      const target = beaconTarget(tour)
+      const where = target ? describeTarget(target) : 'no element'
+      return {
+        text: `beacon on ${where}, opens on ${t.open ?? 'click'}`,
+        awaiting: `${where} to appear`,
+        holds: target ? (env.elementExists?.(target) ?? false) : false,
+      }
+    }
   }
 }
 
@@ -140,10 +150,20 @@ export function explainTour(docent: Docent, tour: Tour): TourExplanation {
   }
   if (!trigger.holds)
     return { ...base, verdict: 'waiting', summary: `Eligible; waiting for ${trigger.awaiting}` }
+  const busy = docent.getState().active
+  if (tour.trigger?.type === 'beacon') {
+    return {
+      ...base,
+      verdict: 'eligible',
+      summary: busy
+        ? 'Beacon hidden while another tour runs'
+        : `Beacon showing; opens when the reader ${tour.trigger.open === 'hover' ? 'hovers' : 'clicks'} it`,
+    }
+  }
   return {
     ...base,
     verdict: 'eligible',
-    summary: docent.getState().active
+    summary: busy
       ? 'Eligible; queued behind the running tour'
       : 'Eligible and triggered; it should be showing',
   }

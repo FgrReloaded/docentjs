@@ -15,7 +15,7 @@ The schema is published at [docentjs.dev/schema/tour-v1.json](https://docentjs.d
 }
 ```
 
-The guides explain each area with examples: [steps](/guides/steps/), [targets](/guides/targets/), [triggers and conditions](/guides/triggers-and-conditions/), [theming](/customize/theming/), and [arrows, spotlight and overlay](/customize/arrows-and-spotlight/).
+The guides explain each area with examples: [steps](/guides/steps/), [targets](/guides/targets/), [triggers and conditions](/guides/triggers-and-conditions/), [beacons](/guides/beacons/), [theming](/customize/theming/), and [arrows, spotlight and overlay](/customize/arrows-and-spotlight/).
 
 ## Tour
 
@@ -42,10 +42,12 @@ The guides explain each area with examples: [steps](/guides/steps/), [targets](/
 | `eyebrow` | `string` | – ; a small line above every title. `{tour}` becomes the tour's name |
 | `allowClose` | `boolean` | `true` (Escape and the close button) |
 | `closeOnOverlayClick` | `boolean` | `false` |
+| `closeOnOutsideClick` | `boolean` | `true` for beacon tours, else `false`; a click anywhere outside the popover closes it |
 | `keyboard` | `boolean` | `true` (arrow keys) |
 | `arrow` | `ArrowStyle` | `'caret'`; see [Arrows, spotlight and overlay](/customize/arrows-and-spotlight/) |
 | `spotlight` | `{ padding?, radius?, shape?, ring?, animate? }` | `8`, `10`, `'rounded'`, `'hairline'`, `true` |
 | `overlay` | `{ style?, color?, opacity?, blur? }` | `'dim'`, tinted ink, `0.52`, `4` |
+| `beacon` | `{ style?, text?, position?, offset?, size? }` | `'pulse'`, `'New'`, `'top-right'`, `0`, `10`; see [Beacons](/guides/beacons/) |
 | `scroll` | `{ enabled?, behavior?, block? }` | `true`, `'auto'`, `'center'` |
 | `labels` | `Labels` | English defaults; `progress` supports `{current}`, `{total}`, `{current2}`, `{total2}` |
 | `theme` | `ThemeSpec` | a preset name, tokens, or `{ preset, ...tokens }` |
@@ -108,6 +110,7 @@ A string is a CSS selector. An object is the portable form:
 { type: 'route', pattern, delay? }
 { type: 'element', target, delay? }
 { type: 'event', name }
+{ type: 'beacon', target?, open?, label? }  // target defaults to the first step's; open: 'click' | 'hover'
 ```
 
 ## Condition
@@ -124,7 +127,7 @@ A string is a CSS selector. An object is the portable form:
 
 ## Theme
 
-Sizes and times accept a CSS string or a number (`radius: 12` is `12px`, `duration: 180` is `180ms`). Tokens map to `--docent-*` custom properties: `background`, `foreground`, `muted`, `accent`, `accentForeground`, `radius`, `shadow`, `font`, `width`, `padding`, `overlay`, `overlayOpacity`, `duration`, `zIndex`, `connector`, `ring`. All are CSS strings.
+Sizes and times accept a CSS string or a number (`radius: 12` is `12px`, `duration: 180` is `180ms`). Tokens map to `--docent-*` custom properties: `background`, `foreground`, `muted`, `accent`, `accentForeground`, `radius`, `shadow`, `font`, `width`, `padding`, `overlay`, `overlayOpacity`, `duration`, `zIndex`, `connector`, `ring`, `beacon` (defaults to `accent`). All are CSS strings.
 
 ## Looks
 
@@ -135,6 +138,9 @@ type ProgressStyle = 'meter' | 'count' | 'ticks' | 'dots' | 'none'
 type SpotlightShape = 'rounded' | 'rect' | 'pill' | 'circle'
 type SpotlightRing = 'hairline' | 'none' | 'glow' | 'pulse' | 'dashed' | 'solid'
 type OverlayStyle = 'dim' | 'blur' | 'vignette' | 'none'
+type BeaconStyle = 'pulse' | 'dot' | 'ring' | 'badge' | 'none'
+type BeaconPosition = 'top-left' | 'top' | 'top-right' | 'right' | 'bottom-right'
+  | 'bottom' | 'bottom-left' | 'left' | 'center'
 ```
 
 ## Checking a tour

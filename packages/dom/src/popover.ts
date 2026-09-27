@@ -99,6 +99,8 @@ export interface PopoverLook {
   progress?: ProgressStyle | undefined
   /** Text of the step counter, when the look wants one of its own. */
   count?: string | undefined
+  /** Default button labels for this look. The tour's and renderer's labels win. */
+  labels?: Labels | undefined
 }
 
 /** The eyebrow's text for this step, or empty when there is none. */
@@ -145,6 +147,7 @@ export function buildPopover(
   // A theme may set the counter's format; a tour's own label still wins.
   const text: Required<Labels> = {
     ...DEFAULT_LABELS,
+    ...look.labels,
     ...(look.count === undefined ? {} : { progress: look.count }),
     ...options.labels,
     ...labels,

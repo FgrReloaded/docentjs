@@ -4,7 +4,7 @@
  * a local file, the user's own backend, or a hosted service.
  */
 
-import type { Tour, TraitValue } from './schema/tour'
+import type { BeaconOpen, Tour, TraitValue } from './schema/tour'
 
 export type MaybePromise<T> = T | Promise<T>
 
@@ -62,6 +62,8 @@ export type DocentEventType =
   | 'step:completed'
   | 'step:skipped'
   | 'step:missing'
+  | 'beacon:shown'
+  | 'beacon:opened'
 
 export interface DocentEvent {
   type: DocentEventType
@@ -72,6 +74,8 @@ export interface DocentEvent {
   /** Unix epoch milliseconds. */
   timestamp: number
   identity: Identity
+  /** For `beacon:opened`: whether a click or a hover opened it. */
+  via?: BeaconOpen
 }
 
 /** Receives every lifecycle event. Wire it to console, your analytics, or a hosted endpoint. */

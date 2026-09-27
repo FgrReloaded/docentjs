@@ -854,8 +854,48 @@
     }
 
     // Watches triggers, checks conditions, runs one tour at a time.
+    // A standing help dot on the waveform, in the on-air red. Hover to read.
+    const waveBeacon = defineTour({
+      id: 'nocturne-wave-help',
+      version: 1,
+      name: 'The waveform',
+      trigger: { type: 'beacon', open: 'hover', label: 'About the waveform' },
+      options: {
+        frequency: 'always',
+        beacon: { style: 'pulse', position: 'top-left', offset: -6 },
+        theme: { beacon: 'oklch(62% 0.21 25)' },
+      },
+      steps: [
+        {
+          id: 'tip',
+          target: { name: 'wave' },
+          title: 'Where the fade starts',
+          body: 'The bright part has played. The fade begins where the bars start to shrink, so talk up to there.',
+          placement: 'bottom',
+        },
+      ],
+    })
+
+    // A "New" badge on the cart wall: click to read, then it is gone.
+    const cartsBeacon = defineTour({
+      id: 'nocturne-carts-new',
+      version: 1,
+      name: 'Cart wall',
+      trigger: { type: 'beacon', label: 'New: cart wall colours' },
+      options: { template: 'cue', beacon: { style: 'badge', text: 'New' } },
+      steps: [
+        {
+          id: 'tip',
+          target: { name: 'carts' },
+          title: 'Carts are coloured by length',
+          body: 'Short idents are pale, beds are dark. Press one to fire it; it lands in the compliance log.',
+          placement: 'left',
+        },
+      ],
+    })
+
     const docent = createDocent({
-      tours: [studioTour, cartTour],
+      tours: [studioTour, cartTour, waveBeacon, cartsBeacon],
       renderer,
       sink,
       custom: { onAir: () => state.onAir },

@@ -113,6 +113,27 @@ describe('validateTour', () => {
     expect(bad[0]?.suggestion).toBe('dark')
   })
 
+  it('accepts a beacon tour and asks where a beacon without a target sits', () => {
+    const beacon = defineTour({
+      id: 'tip',
+      trigger: { type: 'beacon', open: 'hover', label: 'Export' },
+      options: {
+        beacon: { style: 'badge', text: 'New', position: 'top-left', offset: { x: 2, y: -2 } },
+        theme: { beacon: '#e5484d' },
+        closeOnOutsideClick: false,
+      },
+      steps: [{ id: 'only', target: { name: 'export' }, title: 'Export' }],
+    })
+    expect(validateTour(beacon)).toEqual([])
+    const nowhere = validateTour({ ...beacon, steps: [{ id: 'only', title: 'Export' }] })
+    expect(nowhere).toEqual([expect.objectContaining({ level: 'error', path: 'trigger' })])
+    const own = { ...beacon, trigger: { type: 'beacon', target: '#export' }, steps: [{ id: 'a' }] }
+    expect(validateTour(own)).toEqual([])
+    expect(validateTour({ ...beacon, options: { beacon: { style: 'puls' } } })).toEqual([
+      expect.objectContaining({ path: 'options.beacon.style', suggestion: 'pulse' }),
+    ])
+  })
+
   it('formats issues for a console warning', () => {
     const issues = validateTour({ id: 'x', steps: [{ id: 'a', arrow: 'curvy' }] })
     expect(formatIssues(issues)).toBe(

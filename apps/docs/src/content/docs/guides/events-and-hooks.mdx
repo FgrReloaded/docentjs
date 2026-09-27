@@ -29,8 +29,10 @@ createTour(tour, {
 | `step:completed` | a step is finished and the tour moves on |
 | `step:skipped` | a step is passed over, for example by a condition |
 | `step:missing` | a step's target could not be found |
+| `beacon:shown` | a [beacon](/guides/beacons/) appears on the page for the first time |
+| `beacon:opened` | the reader opens a beacon; `via` is `click` or `hover` |
 
-Each event carries the tour id and version, the step id and index where it applies, a timestamp, and the user's identity.
+Each event carries the tour id and version, the step id and index where it applies, a timestamp, and the user's identity. Beacon events come from the manager, so they reach the `sink` given to `createDocent`.
 
 To send events to several places, combine sinks. `@docentjs/core` comes with every Docent package; add it to your own dependencies to import from it directly.
 

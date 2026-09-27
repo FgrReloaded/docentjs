@@ -10,7 +10,7 @@
   import { checks as initialChecks, stories, type StoryState } from './data'
   import TourCard from './TourCard.svelte'
   import { rendererDefaults } from './tour-theme'
-  import { deskTour, publishTour, reviewTour } from './tours'
+  import { checksBeacon, deskTour, editionBeacon, publishTour, reviewTour } from './tours'
 
   /** Every tour event arrives here; product analytics would go in its place. */
   const analytics: EventSink = {
@@ -58,7 +58,8 @@
   // Watches triggers, checks conditions, runs one tour at a time. Hooks are keyed by tour id.
   const docent = useDocent({
     ...shared,
-    tours: [deskTour, reviewTour],
+    // The beacons show their marks and wait to be opened.
+    tours: [deskTour, reviewTour, editionBeacon, checksBeacon],
     hooks: {
       [deskTour.id]: {
         steps: {

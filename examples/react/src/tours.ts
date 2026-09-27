@@ -189,3 +189,91 @@ export const reconcileTour = defineTour({
     },
   ],
 })
+
+/** A badge on a new control. Opens on click and goes away once read. */
+export const periodBeacon = defineTour({
+  id: 'ledgerline-year-to-date',
+  version: 1,
+  name: 'Year to date',
+  trigger: { type: 'beacon', label: 'New: year to date' },
+  options: { beacon: { style: 'badge', text: 'New', position: 'top-right', offset: 4 } },
+  steps: [
+    {
+      id: 'tip',
+      target: { name: 'period' },
+      title: 'Year to date is here',
+      body: 'Switch to **Year** to see every figure from 1 January. The ledger follows along.',
+      format: 'markdown',
+      placement: 'bottom',
+    },
+  ],
+})
+
+/** A standing help dot. Hover it for a preview; it stays on the page. */
+export const overdueBeacon = defineTour({
+  id: 'ledgerline-overdue-help',
+  version: 1,
+  name: 'What counts as overdue',
+  trigger: { type: 'beacon', open: 'hover' },
+  options: {
+    frequency: 'always',
+    beacon: { style: 'pulse', position: 'top-right', offset: -10 },
+    theme: { beacon: 'oklch(58% 0.19 28)' },
+  },
+  steps: [
+    {
+      id: 'tip',
+      target: { name: 'figure-overdue' },
+      title: 'What counts as overdue',
+      body: 'Anything past its due date, counted from the day it was sent. Part payments stay here until they are settled.',
+      placement: 'bottom',
+    },
+  ],
+})
+
+/** No mark at all: hovering or focusing the plan box explains it, like a tooltip. */
+export const planTooltip = defineTour({
+  id: 'ledgerline-plan-tooltip',
+  version: 1,
+  name: 'Your plan',
+  trigger: { type: 'beacon', open: 'hover' },
+  options: { frequency: 'always', beacon: { style: 'none' } },
+  steps: [
+    {
+      id: 'tip',
+      target: { name: 'plan' },
+      title: 'Studio plan',
+      body: '100 invoices a month. Unused ones do not roll over; upgrade from Settings when you need more.',
+      placement: 'right',
+    },
+  ],
+})
+
+/** A ring that opens a short two-step tour, offered until someone finishes it. */
+export const agingBeacon = defineTour({
+  id: 'ledgerline-aging-walkthrough',
+  version: 1,
+  name: 'Reading the aging bands',
+  trigger: { type: 'beacon', label: 'How aging works' },
+  options: {
+    frequency: 'until-completed',
+    showProgress: true,
+    beacon: { style: 'ring', position: 'top-left', size: 12 },
+  },
+  steps: [
+    {
+      id: 'bands',
+      target: { name: 'aging' },
+      title: 'Four bands, oldest last',
+      body: 'Each bar is money waiting, grouped by how long it has been out.',
+      placement: 'left',
+    },
+    {
+      id: 'activity',
+      target: { name: 'activity' },
+      title: 'Then act on it',
+      body: 'Reminders you send from the ledger are logged here, so the band shrinks as clients pay.',
+      placement: 'left',
+    },
+  ],
+})
