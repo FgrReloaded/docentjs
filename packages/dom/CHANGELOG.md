@@ -1,5 +1,18 @@
 # @docentjs/dom
 
+## 0.12.0
+
+### Minor Changes
+
+- 2275cdd: On small screens the card now sits beside its target when it fits: as wide as the screen, directly above or below the element, pointing at it with the caret or the tour's connector arrow. It docks near the bottom only when it fits on neither side, and a docked card now points at its target too (caret lined up with it, or the connector drawn to it). A target pinned to the bottom of the screen, such as a tab bar, or at the very end of the page gets the card docked at the top instead. The choice is made once per step, so the card does not jump while the page scrolls. New tour option `options.mobile.layout` (`'auto'`, `'float'` or `'dock'`) and renderer option `mobile` choose the behaviour. A target shown after its step starts is now scrolled into view.
+
+### Patch Changes
+
+- 2275cdd: The step counter no longer runs under the buttons when the footer is short of room (phones, long button labels, Skip + Back + Next). It moves to a row of its own above the buttons instead, and the buttons stay aligned to the end.
+- 2275cdd: Small-screen fixes. A step whose target is hidden (`display: none`, e.g. a desktop sidebar on a phone) shows a centred card instead of a stray spotlight in the corner, and spotlights the target once it is shown. When several elements match a target, the one on screen wins, so one `data-docent` name can mark a desktop and a mobile variant. The popover keeps clear of the notch and home indicator on pages with `viewport-fit=cover`. On touch screens the dialog takes focus instead of Next, so no keyboard focus ring appears unasked. A target taller than the screen has its spotlight framed to the visible part, and the docked card no longer scrolls its top out of view.
+- Updated dependencies [2275cdd]
+  - @docentjs/core@0.12.0
+
 ## 0.11.0
 
 ### Minor Changes

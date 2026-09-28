@@ -1,5 +1,15 @@
 # @docentjs/react
 
+## 0.12.0
+
+### Patch Changes
+
+- Updated dependencies [2275cdd]
+- Updated dependencies [2275cdd]
+- Updated dependencies [2275cdd]
+  - @docentjs/dom@0.12.0
+  - @docentjs/core@0.12.0
+
 ## 0.11.0
 
 ### Patch Changes
