@@ -43,6 +43,22 @@ export default defineConfig({
       title: 'Docent',
       description: 'Guided product tours for the web. Spotlight an element, explain it, move on.',
       logo: { light: './src/assets/logo-light.svg', dark: './src/assets/logo-dark.svg' },
+      routeMiddleware: './src/routeData.ts',
+      head: [
+        { tag: 'link', attrs: { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' } },
+        {
+          tag: 'meta',
+          attrs: {
+            name: 'theme-color',
+            content: '#fcfdfe',
+            media: '(prefers-color-scheme: light)',
+          },
+        },
+        {
+          tag: 'meta',
+          attrs: { name: 'theme-color', content: '#0e0e13', media: '(prefers-color-scheme: dark)' },
+        },
+      ],
       social: [
         { icon: 'github', label: 'GitHub', href: 'https://github.com/FgrReloaded/docentjs' },
       ],
