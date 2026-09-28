@@ -14,6 +14,7 @@ const valid = defineTour({
     arrow: 'curve',
     spotlight: { shape: 'pill', ring: 'pulse', padding: 8 },
     overlay: { style: 'blur', opacity: 0.5 },
+    mobile: { layout: 'dock' },
   },
   steps: [
     { id: 'intro', title: 'Welcome' },
@@ -42,6 +43,13 @@ describe('validateTour', () => {
         message: expect.stringContaining('"curvy" is not one of: caret, none'),
         suggestion: 'curve',
       },
+    ])
+  })
+
+  it('checks the small-screen layout', () => {
+    const issues = validateTour({ ...valid, options: { mobile: { layout: 'docked' } } })
+    expect(issues).toEqual([
+      expect.objectContaining({ path: 'options.mobile.layout', suggestion: 'dock' }),
     ])
   })
 

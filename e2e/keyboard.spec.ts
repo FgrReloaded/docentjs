@@ -13,12 +13,18 @@ test.describe('keyboard and focus', () => {
     expect(await state(page)).toMatchObject({ status: 'skipped' })
   })
 
-  test('Tab cycles inside the popover', async ({ page }) => {
+  test('Tab cycles inside the popover', async ({ page, isMobile }) => {
     await open(page, 'basic')
     await button(page, 'Next').click()
-    await expect(button(page, 'Next')).toBeFocused()
+    if (isMobile) {
+      // Touch screens focus the dialog itself (no unasked focus ring on Next);
+      // the first Tab moves into it.
+      await expect(popover(page)).toBeFocused()
+    } else {
+      await expect(button(page, 'Next')).toBeFocused()
+    }
     await page.keyboard.press('Tab')
-    // Wrapped to the first focusable: the close button.
+    // The first focusable (wrapped to, from Next): the close button.
     await expect(popover(page).locator('.close')).toBeFocused()
     await page.keyboard.press('Shift+Tab')
     await expect(button(page, 'Next')).toBeFocused()

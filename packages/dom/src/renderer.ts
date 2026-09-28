@@ -13,10 +13,12 @@ import type {
   ArrowStyle,
   BeaconOptions,
   Labels,
+  MobileOptions,
   OverlayOptions,
   ProgressStyle,
   RenderContext,
   Renderer,
+  Side,
   SpotlightOptions,
   Step,
   Target,
@@ -25,20 +27,24 @@ import type {
 import { arrowGap, isConnector } from './arrows'
 import type { Connector } from './connector'
 import { templateFor } from './looks'
-import { uncover } from './occlusion'
+import { pinnedAncestor, uncover } from './occlusion'
 import { Overlay } from './overlay'
 import { buildHeadlessShell, buildPopover, type PopoverLook } from './popover'
 import {
   centerPosition,
   clipToViewport,
   computePosition,
+  dockedArrow,
+  floatSide,
+  inflate,
+  oversizedClip,
   type PositionResult,
   type Rect,
   type Size,
   type Viewport,
 } from './position'
 import { STYLES } from './styles'
-import { resolveTarget, waitForTarget } from './target'
+import { isVisible, resolveTarget, waitForTarget } from './target'
 import {
   appearanceOf,
   applyTheme,
@@ -85,10 +91,14 @@ export interface DomRendererOptions {
   /** Extra CSS injected into the shadow root. */
   css?: string
   /**
-   * Below this viewport width the popover docks to the bottom edge as a sheet
-   * instead of floating beside the target. Default 480; 0 disables.
+   * Below this viewport width the screen counts as small: the card is as wide
+   * as the screen allows, and sits above or below the target when it fits
+   * there, docked near the bottom edge when it does not (see `mobile.layout`).
+   * Default 480; 0 disables.
    */
   sheetBreakpoint?: number
+  /** Small-screen settings when a tour sets none, e.g. `{ layout: 'dock' }`. */
+  mobile?: MobileOptions
   /** Scroll past sticky/fixed headers and footers that cover the target. Default true. */
   avoidOcclusion?: boolean
   /**
@@ -107,6 +117,16 @@ interface Look extends PopoverLook {
   overlay: OverlayOptions
 }
 
+/** How the card sits on a small screen this step. */
+interface SmallLayout {
+  /** Screen width it was decided at. */
+  width?: number
+  /** The side of the target the card floats on; undefined when docked. */
+  side: 'top' | 'bottom' | undefined
+  /** Docked at the top edge rather than the bottom. */
+  dockTop: boolean
+}
+
 const DEFAULT_LOOK: Look = { arrow: 'caret', progress: 'meter', spotlight: {}, overlay: {} }
 
 /** Breathing room kept between the popover and the edges of the screen. */
@@ -123,6 +143,8 @@ export class DomRenderer implements Renderer {
   private host: HTMLDivElement | undefined
   private shadow: ShadowRoot | undefined
   private overlay: Overlay | undefined
+  /** Reads the safe-area insets, which only CSS can see. */
+  private safeProbe: HTMLDivElement | undefined
   private templateStyle: HTMLStyleElement | undefined
   private popover: HTMLDivElement | undefined
   private arrow: HTMLDivElement | undefined
@@ -134,6 +156,14 @@ export class DomRenderer implements Renderer {
   private previousFocus: Element | null = null
   /** Set once per step after the sheet has scrolled the target clear. */
   private sheetAdjusted = false
+  /**
+   * The small-screen layout for this step. Decided once, so the card does not
+   * jump between floating and docked while the page scrolls; decided again
+   * after a smooth scroll settles or when the screen width changes.
+   */
+  private layout: SmallLayout | undefined
+  /** Whether the target has been on screen this step (it may be shown late). */
+  private shown = false
   private connector: Connector | undefined
   /** Loaded on first use: connector styles cost nothing for tours that never use them. */
   private connectorModule: typeof import('./connector') | undefined
@@ -214,14 +244,19 @@ export class DomRenderer implements Renderer {
       this.popover?.setAttribute('data-entering', '')
     }
 
-    if (this.target) {
-      const smooth = this.scrollIntoView(this.target, ctx.step)
-      if (this.options.avoidOcclusion !== false) {
-        const target = this.target
-        this.afterScroll(smooth, target, () => {
-          if (this.target === target && uncover(target, host, this.viewport())) this.update()
-        })
-      }
+    // A hidden target has nowhere to scroll to yet; `update` scrolls once it is shown.
+    this.shown = !!this.target && isVisible(this.target)
+    if (this.target && this.shown) {
+      const target = this.target
+      const smooth = this.scrollIntoView(target, ctx.step)
+      this.afterScroll(smooth, target, () => {
+        if (this.target !== target) return
+        // Where a smooth scroll ends is where the small-screen layout should be decided.
+        if (smooth) this.layout = undefined
+        const uncovered =
+          this.options.avoidOcclusion !== false && uncover(target, host, this.viewport())
+        if (uncovered || smooth) this.update()
+      })
     }
     this.update()
     this.listen()
@@ -229,9 +264,13 @@ export class DomRenderer implements Renderer {
 
     const focus = this.options.focus !== false
     if (firstStep && focus) this.previousFocus = deepActiveElement(this.doc)
+    // On touch screens the dialog itself takes focus: a focus ring on Next
+    // appearing unasked reads as a glitch there. Keyboards still start on Next.
+    const into =
+      this.popover && !this.headlessContainer && touchOnly(this.doc) ? this.popover : initialFocus
     requestAnimationFrame(() => {
       this.popover?.removeAttribute('data-entering')
-      if (focus) initialFocus.focus({ preventScroll: true })
+      if (focus) into.focus({ preventScroll: true })
     })
   }
 
@@ -247,6 +286,7 @@ export class DomRenderer implements Renderer {
       this.host = undefined
       this.shadow = undefined
       this.overlay = undefined
+      this.safeProbe = undefined
       this.connector = undefined
       this.templateStyle = undefined
     }
@@ -281,80 +321,118 @@ export class DomRenderer implements Renderer {
     if (tracking && performance.now() > this.settleUntil) this.markTracking()
 
     const viewport = this.viewport()
+    // Where the popover may sit: the visible area minus notches and the home indicator.
+    const room = this.room(viewport)
     const overlaySize = { width: overlay.el.offsetWidth, height: overlay.el.offsetHeight }
     const spotlight = this.look.spotlight
     const padding = spotlight.padding ?? 8
     const radius = spotlight.radius ?? 10
     const shape = spotlight.shape ?? 'rounded'
     const external = this.headlessContainer
-    const sheet = this.isSheet(viewport)
-    popover.classList.toggle('sheet', sheet)
+    // A hidden target (a desktop-only sidebar, a tab not shown yet) has no box to
+    // point at: centre the card until it is shown, which the ResizeObserver sees.
+    const target = this.target?.isConnected && isVisible(this.target) ? this.target : null
+    if (target && !this.shown) {
+      this.shown = true
+      this.layout = undefined
+      this.scrollIntoView(target, ctx.step)
+    }
+    const small = this.isSmall(viewport)
     // Never taller than the screen: the body scrolls instead of being cut off.
-    // Docked, it also leaves the page visible above it.
-    const limit = sheet ? viewport.height * 0.72 : viewport.height - EDGE * 2
+    // On a small screen it also leaves some of the page visible.
+    const limit = small ? room.height * 0.72 : room.height - EDGE * 2
     this.host?.style.setProperty('--docent-max-h', `${Math.max(160, Math.round(limit))}px`)
-    // Docked: a card with air around it, as wide as the screen allows.
-    popover.style.width = sheet ? `${Math.min(viewport.width - EDGE * 2, DOCKED_MAX_WIDTH)}px` : ''
+    // On a small screen the card is as wide as the screen allows, with air around it.
+    popover.style.width = small ? `${Math.min(room.width - EDGE * 2, DOCKED_MAX_WIDTH)}px` : ''
+    popover.style.maxWidth = small ? 'none' : ''
     const floating = { width: popover.offsetWidth, height: popover.offsetHeight }
     this.markScrollable(popover)
 
-    if (sheet) {
-      const rect = this.target?.isConnected ? toRect(this.target.getBoundingClientRect()) : null
+    const rect = target ? toRect(target.getBoundingClientRect()) : null
+    const layout = small ? this.smallLayout(ctx, target, rect, floating, room, padding) : undefined
+    popover.classList.toggle('sheet', !!layout && !layout.side)
+    popover.toggleAttribute('data-dock', false)
+    external?.toggleAttribute('data-dock', false)
+
+    if (layout && !layout.side) {
+      const left = room.x + Math.max(EDGE, (room.width - floating.width) / 2)
+      const top = layout.dockTop
+        ? room.y + EDGE
+        : Math.max(room.y + EDGE, room.y + room.height - floating.height - EDGE)
+      // The cutout stays in the strip of page left beside the card.
+      const free = layout.dockTop
+        ? {
+            ...room,
+            y: top + floating.height,
+            height: room.y + room.height - top - floating.height,
+          }
+        : { ...room, height: top - room.y }
       overlay.update(
         overlaySize,
-        { target: rect, padding, radius, shape },
+        {
+          target: rect,
+          padding,
+          radius,
+          shape,
+          clip: rect ? oversizedClip(rect, free) : undefined,
+        },
         this.blocksInteraction(ctx),
-      )
-      this.connector?.clear()
-      const vx = viewport.x ?? 0
-      const left = vx + Math.max(EDGE, (viewport.width - floating.width) / 2)
-      const top = Math.max(
-        (viewport.y ?? 0) + EDGE,
-        (viewport.y ?? 0) + viewport.height - floating.height - EDGE,
       )
       popover.style.transform = `translate(${Math.round(left)}px, ${Math.round(top)}px)`
       popover.setAttribute('data-side', 'sheet')
       external?.setAttribute('data-side', 'sheet')
-      this.keepClearOfSheet(rect, top)
+      if (!rect) {
+        this.connector?.clear()
+        return
+      }
+      // Docked, the card still points at its target: the caret on the edge
+      // facing it, or the tour's connector.
+      const side = layout.dockTop ? 'top' : 'bottom'
+      const hole = clipToViewport(overlay.hole ?? rect, room)
+      const arrow = dockedArrow(hole, left, floating.width)
+      popover.setAttribute('data-dock', side)
+      external?.setAttribute('data-dock', side)
+      this.placeArrow(side, arrow)
+      this.renderConnector({ x: left, y: top, side, align: 'center', arrow }, floating, hole)
+      if (!layout.dockTop && target && !this.keepClearOfSheet(target, rect, top, room)) {
+        // The page cannot scroll the target clear of the card: move the card to the top.
+        layout.dockTop = true
+        this.update()
+      }
       return
     }
 
-    if (!this.target?.isConnected) {
+    if (!rect) {
       overlay.update(overlaySize, { target: null, padding, radius }, false)
       this.connector?.clear()
-      const { x, y } = centerPosition(floating, viewport)
+      const { x, y } = centerPosition(floating, room)
       popover.style.transform = `translate(${x}px, ${y}px)`
       popover.setAttribute('data-side', 'center')
       external?.setAttribute('data-side', 'center')
       return
     }
 
-    const rect = toRect(this.target.getBoundingClientRect())
     overlay.update(
       overlaySize,
-      { target: rect, padding, radius, shape },
+      { target: rect, padding, radius, shape, clip: oversizedClip(rect, room) },
       this.blocksInteraction(ctx),
     )
     const hole = overlay.hole ?? rect
     const pos = computePosition({
-      anchor: clipToViewport(hole, viewport),
+      anchor: clipToViewport(hole, room),
       floating,
-      viewport,
-      placement: ctx.step.placement ?? 'auto',
+      viewport: room,
+      // On a small screen, the side the card was found to fit on.
+      placement: layout?.side ?? ctx.step.placement ?? 'auto',
       gap: this.gap(),
+      // A full-width card is centred, with the same margin as a docked one.
+      ...(small ? { edgePadding: EDGE } : {}),
     })
     popover.style.transform = `translate(${pos.x}px, ${pos.y}px)`
     popover.setAttribute('data-side', pos.side)
-    if (this.arrow) {
-      const vertical = pos.side === 'top' || pos.side === 'bottom'
-      this.arrow.style.left = vertical ? `${pos.arrow - 6}px` : ''
-      this.arrow.style.top = vertical ? '' : `${pos.arrow - 6}px`
-    }
-    if (external) {
-      external.setAttribute('data-side', pos.side)
-      external.style.setProperty('--docent-arrow', `${pos.arrow}px`)
-    }
-    this.renderConnector(pos, floating, clipToViewport(hole, viewport))
+    external?.setAttribute('data-side', pos.side)
+    this.placeArrow(pos.side, pos.arrow)
+    this.renderConnector(pos, floating, clipToViewport(hole, room))
   }
 
   /**
@@ -524,6 +602,25 @@ export class DomRenderer implements Renderer {
   }
 
   /**
+   * The visible area minus the safe-area insets (notch, home indicator,
+   * rounded corners), which are non-zero on pages with `viewport-fit=cover`.
+   */
+  private room(viewport: Viewport): Rect {
+    const probe = this.safeProbe
+    const style = probe && this.doc.defaultView?.getComputedStyle(probe)
+    const inset = (side: 'Top' | 'Right' | 'Bottom' | 'Left') =>
+      Number.parseFloat(style?.[`padding${side}`] ?? '') || 0
+    const top = inset('Top')
+    const left = inset('Left')
+    return {
+      x: (viewport.x ?? 0) + left,
+      y: (viewport.y ?? 0) + top,
+      width: Math.max(0, viewport.width - left - inset('Right')),
+      height: Math.max(0, viewport.height - top - inset('Bottom')),
+    }
+  }
+
+  /**
    * Fade the bottom of the text while there is more to read, so a scrollable
    * body never looks like a sentence that was cut off.
    */
@@ -546,19 +643,65 @@ export class DomRenderer implements Renderer {
     if (this.popover) this.markScrollable(this.popover)
   }
 
-  private isSheet(viewport: Viewport): boolean {
+  private isSmall(viewport: Viewport): boolean {
     const breakpoint = this.options.sheetBreakpoint ?? 480
     return breakpoint > 0 && viewport.width < breakpoint
   }
 
-  /** In sheet mode, scroll once so the target is not hidden behind the sheet. */
-  private keepClearOfSheet(target: Rect | null, sheetTop: number): void {
+  /**
+   * Float above or below the target when the card fits there, dock otherwise.
+   * Docked cards sit at the bottom, unless the target is pinned to the lower
+   * half of the screen (a tab bar), which no scrolling can move clear.
+   */
+  private smallLayout(
+    ctx: RenderContext,
+    target: Element | null,
+    rect: Rect | null,
+    floating: Size,
+    room: Rect,
+    padding: number,
+  ): SmallLayout {
+    if (!target || !rect) return { side: undefined, dockTop: false }
+    if (this.layout?.width === room.width) return this.layout
+    const mode = ctx.tour.options?.mobile?.layout ?? this.options.mobile?.layout ?? 'auto'
+    const anchor = clipToViewport(inflate(rect, padding), room)
+    const placement = ctx.step.placement ?? 'auto'
+    const side =
+      mode === 'dock'
+        ? undefined
+        : floatSide(anchor, floating, room, placement, this.gap(), EDGE, mode === 'float')
+    const low = rect.y + rect.height / 2 > room.y + room.height / 2
+    const dockTop = !side && low && pinnedAncestor(target) !== null
+    this.layout = { width: room.width, side, dockTop }
+    return this.layout
+  }
+
+  /** Point the caret (and a headless popover's `--docent-arrow`) at the target. */
+  private placeArrow(side: Side, offset: number): void {
+    if (this.arrow) {
+      const vertical = side === 'top' || side === 'bottom'
+      this.arrow.style.left = vertical ? `${offset - 6}px` : ''
+      this.arrow.style.top = vertical ? '' : `${offset - 6}px`
+    }
+    this.headlessContainer?.style.setProperty('--docent-arrow', `${offset}px`)
+  }
+
+  /**
+   * With the card docked at the bottom, scroll once so the target is not hidden
+   * behind it. A target taller than the room above the card only has its top
+   * brought in: scrolling it fully clear would push its heading off screen.
+   * Returns false when the target stays covered (the page ends too soon).
+   */
+  private keepClearOfSheet(target: Element, rect: Rect, sheetTop: number, room: Rect): boolean {
     const win = this.doc.defaultView
-    if (!target || !win || this.sheetAdjusted) return
-    const overlap = target.y + target.height - sheetTop
-    if (overlap <= 0) return
+    const overlap = rect.y + rect.height - sheetTop
+    if (!win || overlap <= 0 || this.sheetAdjusted) return true
     this.sheetAdjusted = true
-    win.scrollBy({ top: overlap + 16, behavior: 'auto' })
+    const headroom = rect.y - (room.y + EDGE)
+    const by = Math.min(overlap + 16, headroom)
+    // Instant, even under `scroll-behavior: smooth`, so the result can be read back now.
+    if (by > 0) win.scrollBy({ top: by, behavior: 'instant' })
+    return rect.height > sheetTop - room.y || target.getBoundingClientRect().bottom <= sheetTop
   }
 
   /**
@@ -681,6 +824,9 @@ export class DomRenderer implements Renderer {
     const style = this.doc.createElement('style')
     style.textContent = this.options.css ? `${STYLES}\n${this.options.css}` : STYLES
     shadow.appendChild(style)
+    const probe = this.doc.createElement('div')
+    probe.className = 'safe-area'
+    shadow.appendChild(probe)
     const overlay = new Overlay(this.doc)
     shadow.appendChild(overlay.el)
     shadow.appendChild(overlay.ring)
@@ -690,6 +836,7 @@ export class DomRenderer implements Renderer {
     this.host = host
     this.shadow = shadow
     this.overlay = overlay
+    this.safeProbe = probe
     return host
   }
 
@@ -705,6 +852,8 @@ export class DomRenderer implements Renderer {
     this.ctx = undefined
     this.target = null
     this.sheetAdjusted = false
+    this.layout = undefined
+    this.shown = false
   }
 
   private blocksInteraction(ctx: RenderContext): boolean {
@@ -898,6 +1047,10 @@ export class DomRenderer implements Renderer {
 function toRect(r: DOMRect): Rect {
   return { x: r.left, y: r.top, width: r.width, height: r.height }
 }
+
+/** A device whose only pointer is a finger: no hover, coarse pointer. */
+const touchOnly = (doc: Document) =>
+  doc.defaultView?.matchMedia?.('(hover: none) and (pointer: coarse)').matches ?? false
 
 const isBeaconTour = (ctx: RenderContext) => ctx.tour.trigger?.type === 'beacon'
 

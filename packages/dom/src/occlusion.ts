@@ -21,7 +21,7 @@ function isPinned(el: Element): boolean {
 }
 
 /** Nearest pinned ancestor (inclusive), or null. */
-function pinnedAncestor(el: Element | null): Element | null {
+export function pinnedAncestor(el: Element | null): Element | null {
   let cur: Element | null = el
   while (cur && cur !== cur.ownerDocument.documentElement) {
     if (isPinned(cur)) return cur

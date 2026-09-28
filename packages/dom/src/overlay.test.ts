@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
-import { holeFor, holePath, Overlay } from './overlay'
+import { clipHole, holeFor, holePath, Overlay } from './overlay'
 
 const viewport = { width: 100, height: 50 }
 
@@ -67,5 +67,20 @@ describe('holeFor', () => {
     expect(c.hole.width).toBe(c.hole.height)
     expect(c.radius).toBeCloseTo(Math.hypot(40, 20) / 2)
     expect(c.hole.x + c.hole.width / 2).toBe(30)
+  })
+})
+
+describe('clipHole', () => {
+  it('cuts the hole to the band and keeps the radius within it', () => {
+    const hole = { x: 10, y: -50, width: 300, height: 1000 }
+    const out = clipHole({ hole, radius: 12 }, { top: 8, bottom: 508 })
+    expect(out.hole).toEqual({ x: 10, y: 8, width: 300, height: 500 })
+    expect(out.radius).toBe(12)
+  })
+
+  it('keeps the hole when there is no band or no overlap', () => {
+    const hole = { x: 0, y: 0, width: 10, height: 10 }
+    expect(clipHole({ hole, radius: 4 }, undefined).hole).toBe(hole)
+    expect(clipHole({ hole, radius: 4 }, { top: 50, bottom: 60 }).hole).toBe(hole)
   })
 })

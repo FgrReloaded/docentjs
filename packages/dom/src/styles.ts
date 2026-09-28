@@ -49,6 +49,17 @@ export const STYLES = `
   -moz-osx-font-smoothing: grayscale;
 }
 * { box-sizing: border-box; }
+/* Measures env(safe-area-inset-*) for the renderer; never seen. */
+.safe-area {
+  position: absolute;
+  width: 0;
+  height: 0;
+  visibility: hidden;
+  pointer-events: none;
+  padding:
+    env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
 
 /* ------------------------------------------------------------------ overlay */
 
@@ -181,13 +192,16 @@ export const STYLES = `
   background: var(--docent-bg);
   transform: rotate(45deg);
 }
-.popover[data-side="bottom"] .arrow {
+/* A docked card points the same way: [data-dock] names the target side it is on. */
+.popover[data-side="bottom"] .arrow,
+.popover[data-dock="bottom"] .arrow {
   top: -6px;
   border-top: 1px solid var(--_line);
   border-left: 1px solid var(--_line);
   border-top-left-radius: 2px;
 }
-.popover[data-side="top"] .arrow {
+.popover[data-side="top"] .arrow,
+.popover[data-dock="top"] .arrow {
   bottom: -6px;
   border-bottom: 1px solid var(--_line);
   border-right: 1px solid var(--_line);
@@ -206,7 +220,7 @@ export const STYLES = `
   border-top-right-radius: 2px;
 }
 .popover[data-side="center"] .arrow,
-.popover[data-side="sheet"] .arrow { display: none; }
+.popover[data-side="sheet"]:not([data-dock]) .arrow { display: none; }
 
 /* ------------------------------------------------------------------ content */
 
@@ -305,12 +319,18 @@ export const STYLES = `
 .footer {
   flex: none;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 12px;
+  gap: 10px 12px;
   margin-top: 20px;
 }
+/*
+ * Sized by its content, so when the buttons leave too little room the counter
+ * takes a row of its own instead of being squeezed under them (phones, long
+ * labels, three buttons).
+ */
 .progress {
-  flex: 1;
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -337,7 +357,14 @@ export const STYLES = `
 .marks i[data-done] { background: var(--docent-fg); }
 .progress[data-progress="dots"] .marks { gap: 5px; }
 .progress[data-progress="dots"] .marks i { width: 5px; height: 5px; border-radius: 50%; }
-.buttons { display: flex; align-items: center; gap: 6px; }
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  margin-inline-start: auto;
+}
 .button {
   appearance: none;
   display: inline-flex;

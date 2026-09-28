@@ -127,6 +127,21 @@ export interface OverlayOptions {
   blur?: number
 }
 
+/**
+ * How the popover is laid out on a small screen (below the renderer's
+ * `sheetBreakpoint`, 480px by default).
+ * - `auto` (default): beside the target when the card fits above or below it,
+ *   docked near the bottom edge when it does not.
+ * - `float`: always beside the target, overlapping it when there is no room.
+ * - `dock`: always docked.
+ */
+export type SmallScreenLayout = 'auto' | 'float' | 'dock'
+
+/** Settings for small screens (phones). */
+export interface MobileOptions {
+  layout?: SmallScreenLayout
+}
+
 export interface ScrollOptions {
   /** Scroll the target into view before showing the step. */
   enabled?: boolean
@@ -410,6 +425,8 @@ export interface TourOptions {
   overlay?: OverlayOptions
   /** How the beacon looks, for tours with a `beacon` trigger. */
   beacon?: BeaconOptions
+  /** Settings for small screens (phones). */
+  mobile?: MobileOptions
   scroll?: ScrollOptions
   labels?: Labels
   /** A preset name, tokens, or both, applied on top of the renderer's theme. */

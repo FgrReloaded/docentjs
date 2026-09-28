@@ -369,6 +369,16 @@ const beacon: Spec = {
   },
 }
 
+const mobile: Spec = {
+  kind: 'object',
+  fields: {
+    layout: field(
+      enums('auto', 'float', 'dock'),
+      '`auto` puts the card beside the target when it fits and docks it near the bottom when it does not; `float` never docks; `dock` always does.',
+    ),
+  },
+}
+
 const scroll: Spec = {
   kind: 'object',
   fields: {
@@ -412,6 +422,7 @@ const options: Spec = {
     spotlight: field(spotlight),
     overlay: field(overlay),
     beacon: field(beacon, 'How the beacon looks, for tours with a `beacon` trigger.'),
+    mobile: field(mobile, 'Settings for small screens (phones).'),
     scroll: field(scroll),
     labels: field(labels),
     theme: field(themeSpec),

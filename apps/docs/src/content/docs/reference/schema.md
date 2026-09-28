@@ -48,6 +48,7 @@ The guides explain each area with examples: [steps](/guides/steps/), [targets](/
 | `spotlight` | `{ padding?, radius?, shape?, ring?, animate? }` | `8`, `10`, `'rounded'`, `'hairline'`, `true` |
 | `overlay` | `{ style?, color?, opacity?, blur? }` | `'dim'`, tinted ink, `0.52`, `4` |
 | `beacon` | `{ style?, text?, position?, offset?, size? }` | `'pulse'`, `'New'`, `'top-right'`, `0`, `10`; see [Beacons](/guides/beacons/) |
+| `mobile` | `{ layout? }` | `'auto'`: beside the target when the card fits, docked when it does not; `'float'` never docks, `'dock'` always does. See [Small screens](/guides/steps/#small-screens) |
 | `scroll` | `{ enabled?, behavior?, block? }` | `true`, `'auto'`, `'center'` |
 | `labels` | `Labels` | English defaults; `progress` supports `{current}`, `{total}`, `{current2}`, `{total2}` |
 | `theme` | `ThemeSpec` | a preset name, tokens, or `{ preset, ...tokens }` |

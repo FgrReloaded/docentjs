@@ -172,6 +172,55 @@ export function clipToViewport(rect: Rect, viewport: Viewport): Rect {
 }
 
 /**
+ * On a small screen, the side of the target a full-width card fits on, or
+ * `undefined` when it fits on neither and should dock. The step's own
+ * vertical side is tried first; otherwise the roomier one.
+ */
+export function floatSide(
+  anchor: Rect,
+  floating: Size,
+  viewport: Viewport,
+  placement: Placement,
+  gap: number,
+  edge: number,
+  /** Return the preferred side even when the card fits on neither. */
+  force = false,
+): 'top' | 'bottom' | undefined {
+  const space = availableSpace(anchor, viewport)
+  const { side } = parsePlacement(placement)
+  const first =
+    side === 'top' || side === 'bottom' ? side : space.bottom >= space.top ? 'bottom' : 'top'
+  const second = first === 'top' ? 'bottom' : 'top'
+  const fits = (s: Side) => space[s] >= floating.height + gap + edge
+  return fits(first) ? first : fits(second) ? second : force ? first : undefined
+}
+
+/**
+ * Where the caret of a card docked on a small screen points: the target's
+ * centre, as an offset from the card's left edge, kept clear of its corners.
+ */
+export function dockedArrow(anchor: Rect, cardX: number, cardWidth: number, arrowSize = 8): number {
+  const margin = arrowSize * 2
+  return Math.round(clamp(anchor.x + anchor.width / 2 - cardX, margin, cardWidth - margin))
+}
+
+/**
+ * For a target taller than `area`, the band its cutout is clipped to, inset
+ * from the area's edges so the ring stays visible. Targets that fit get none,
+ * so their padding runs off the screen edge as it always has.
+ */
+export function oversizedClip(rect: Rect, area: Rect): Band | undefined {
+  if (rect.height <= area.height) return undefined
+  return { top: area.y + 8, bottom: area.y + area.height - 8 }
+}
+
+/** A vertical range, in viewport coordinates. */
+export interface Band {
+  top: number
+  bottom: number
+}
+
+/**
  * The point on the target a beacon is centred on. A number offset moves it
  * away from the target's centre; `{ x, y }` shifts it exactly.
  */

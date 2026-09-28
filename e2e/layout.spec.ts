@@ -25,15 +25,36 @@ test.describe('sticky headers', () => {
 })
 
 test.describe('small screens', () => {
-  test('the popover docks near the bottom as a card with room around it', async ({
+  test('the card floats beside its target when it fits, as wide as the screen', async ({
     page,
     isMobile,
   }) => {
     test.skip(!isMobile, 'desktop floats the popover')
     await open(page, 'basic', '=save')
     const p = popover(page)
-    await expect(p).toHaveAttribute('data-side', 'sheet')
+    await expect(p).toHaveAttribute('data-side', 'bottom')
     await settled(page) // the entrance scales in from 97%
+    const vp = viewport(page)
+    const b = await box(p)
+    expect(Math.round(b.x)).toBe(12)
+    expect(Math.round(vp.width - (b.x + b.width))).toBe(12)
+    // Right under the target, pointing at it.
+    const target = await box(page.locator('#save'))
+    expect(b.y).toBeGreaterThan(target.y + target.height)
+    expect(b.y - (target.y + target.height)).toBeLessThan(40)
+    await expect(p.locator('.arrow')).toBeVisible()
+  })
+
+  test('docked, the card keeps room around it and points at its target', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, 'desktop floats the popover')
+    await open(page, 'basic', '=save&layout=dock')
+    const p = popover(page)
+    await expect(p).toHaveAttribute('data-side', 'sheet')
+    await expect(p).toHaveAttribute('data-dock', 'bottom')
+    await settled(page)
     const vp = viewport(page)
     const b = await box(p)
     // Centred, with an even margin on both sides and below.
@@ -42,18 +63,74 @@ test.describe('small screens', () => {
     expect(Math.round(vp.height - (b.y + b.height))).toBe(12)
     // It never takes the whole screen, so the page stays in view behind it.
     expect(b.height).toBeLessThanOrEqual(vp.height * 0.72 + 1)
-    await expect(p.locator('.arrow')).toBeHidden()
-    // The target stays visible above the card.
+    // The target stays visible above the card, and the caret lines up with it.
     const target = await box(page.locator('#save'))
     expect(target.y + target.height).toBeLessThanOrEqual(b.y)
+    const arrow = await box(p.locator('.arrow'))
+    expect(Math.abs(arrow.x + arrow.width / 2 - (target.x + target.width / 2))).toBeLessThan(3)
   })
 
-  test('a target that would sit behind the sheet is scrolled clear', async ({ page, isMobile }) => {
+  test('a docked card goes to the top for a target pinned to the bottom', async ({
+    page,
+    isMobile,
+  }) => {
     test.skip(!isMobile, 'desktop floats the popover')
-    await open(page, 'basic', '=corner')
+    await open(page, 'basic', '=corner&layout=dock')
     const p = popover(page)
-    await expect(p).toHaveAttribute('data-side', 'sheet')
-    await expect(page.locator('#corner')).toBeVisible()
+    await expect(p).toHaveAttribute('data-dock', 'top')
+    await settled(page)
+    const b = await box(p)
+    const corner = await box(page.locator('#corner'))
+    expect(b.y + b.height).toBeLessThan(corner.y)
+    await expect(page.locator('#corner')).toBeInViewport({ ratio: 1 })
+  })
+
+  test('a docked card goes to the top when the page cannot scroll the target clear', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, 'desktop floats the popover')
+    // The search field is at the very end of the page.
+    await open(page, 'basic', '=search&layout=dock')
+    const p = popover(page)
+    await expect(p).toHaveAttribute('data-dock', 'top')
+    await settled(page)
+    const b = await box(p)
+    const target = await box(page.locator('#search'))
+    expect(target.y).toBeGreaterThanOrEqual(b.y + b.height)
+    await expect(page.locator('#search')).toBeInViewport({ ratio: 1 })
+  })
+
+  test('with room around it, a card at the end of the page floats above its target', async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(!isMobile, 'desktop floats the popover')
+    await open(page, 'basic', '=search')
+    await expect(popover(page)).toHaveAttribute('data-side', 'top')
+  })
+
+  test.describe('a narrow phone', () => {
+    test.use({ viewport: { width: 340, height: 700 } })
+
+    test('the step counter never runs under the buttons', async ({ page }) => {
+      // Step 2 of 5 shows all three buttons: Not now, Back and Continue.
+      await open(page, 'basic', '=save&long')
+      await settled(page)
+      const p = popover(page)
+      const card = await box(p)
+      const buttons = await box(p.locator('.buttons'))
+      for (const part of ['.count', '.marks']) {
+        const b = await box(p.locator(part))
+        const overlaps =
+          b.x < buttons.x + buttons.width &&
+          buttons.x < b.x + b.width &&
+          b.y < buttons.y + buttons.height &&
+          buttons.y < b.y + b.height
+        expect(overlaps, `${part} overlaps the buttons`).toBe(false)
+        expect(b.x + b.width).toBeLessThanOrEqual(card.x + card.width)
+      }
+    })
   })
 
   test.describe('a short screen', () => {

@@ -155,6 +155,38 @@ describe('DomRenderer', () => {
     r.hide()
   })
 
+  it('focuses the dialog, not Next, on touch-only screens', async () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => ({
+        matches: query.includes('coarse'),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    )
+    document.body.innerHTML = '<button id="target">go</button>'
+    const r = new DomRenderer()
+    r.show(ctx())
+    await new Promise((resolve) => requestAnimationFrame(resolve))
+    expect(shadow().activeElement?.classList.contains('popover')).toBe(true)
+    r.hide()
+    vi.unstubAllGlobals()
+  })
+
+  it('centres the card when its target is hidden mid-step', () => {
+    document.body.innerHTML = '<button id="target">go</button>'
+    const target = document.getElementById('target') as HTMLElement
+    stubLayout(target)
+    const r = new DomRenderer({ sheetBreakpoint: 0 })
+    r.show(ctx())
+    const popover = shadow().querySelector('.popover') as HTMLElement
+    expect(popover.getAttribute('data-side')).not.toBe('center')
+    target.style.display = 'none'
+    r.update()
+    expect(popover.getAttribute('data-side')).toBe('center')
+    r.hide()
+  })
+
   it('follows a target that scrolls inside a shadow root', () => {
     const outer = document.createElement('div')
     document.body.appendChild(outer)

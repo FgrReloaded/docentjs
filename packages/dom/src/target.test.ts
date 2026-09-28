@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from 'vitest'
-import { candidateSelectors, queryAllDeep, resolveTarget, waitForTarget } from './target'
+import { candidateSelectors, isVisible, queryAllDeep, resolveTarget, waitForTarget } from './target'
 
 beforeEach(() => {
   document.body.innerHTML = `
@@ -53,6 +53,41 @@ describe('resolveTarget', () => {
   it('pierces open shadow roots when nothing matches in the light DOM', () => {
     expect(resolveTarget('.inside')?.textContent).toBe('hidden')
     expect(queryAllDeep(document, '.inside')).toHaveLength(1)
+  })
+})
+
+describe('visibility', () => {
+  it('sees display: none on the element or an ancestor, and visibility: hidden', () => {
+    document.body.innerHTML = `
+      <aside style="display: none"><a id="inner">x</a></aside>
+      <b id="invisible" style="visibility: hidden">x</b>
+      <b id="shown">x</b>`
+    expect(isVisible(document.getElementById('inner') as Element)).toBe(false)
+    expect(isVisible(document.getElementById('invisible') as Element)).toBe(false)
+    expect(isVisible(document.getElementById('shown') as Element)).toBe(true)
+  })
+
+  it('still returns a hidden target: it may be shown a moment later', () => {
+    document.body.innerHTML = '<aside data-docent="nav" style="display: none">nav</aside>'
+    expect(resolveTarget({ name: 'nav' })?.tagName).toBe('ASIDE')
+  })
+
+  it('prefers the rendered match, so one name can mark desktop and mobile variants', () => {
+    document.body.innerHTML = `
+      <aside data-docent="nav" style="display: none">sidebar</aside>
+      <button data-docent="nav">menu</button>`
+    expect(resolveTarget({ name: 'nav' })?.tagName).toBe('BUTTON')
+  })
+
+  it('looks past a selector whose matches are all hidden for a rendered one', () => {
+    document.body.innerHTML = '<aside id="side" style="display: none"></aside><nav id="bar"></nav>'
+    expect(resolveTarget({ selectors: ['#side', '#bar'] })?.id).toBe('bar')
+    expect(resolveTarget({ selectors: ['#side', '#nope'] })?.id).toBe('side')
+  })
+
+  it('keeps nth exact, hidden or not', () => {
+    document.body.innerHTML = '<i class="x"></i><i id="second" class="x" style="display: none"></i>'
+    expect(resolveTarget({ selectors: ['.x'], nth: 1 })?.id).toBe('second')
   })
 })
 

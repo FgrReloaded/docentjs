@@ -231,6 +231,20 @@
           },
           "description": "How the beacon looks, for tours with a `beacon` trigger."
         },
+        "mobile": {
+          "type": "object",
+          "properties": {
+            "layout": {
+              "enum": [
+                "auto",
+                "float",
+                "dock"
+              ],
+              "description": "`auto` puts the card beside the target when it fits and docks it near the bottom when it does not; `float` never docks; `dock` always does."
+            }
+          },
+          "description": "Settings for small screens (phones)."
+        },
         "scroll": {
           "type": "object",
           "properties": {

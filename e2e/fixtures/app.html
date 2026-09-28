@@ -254,7 +254,16 @@
       window.docent = docent
       docent.identify(params.get('user') ?? 'u1')
     } else {
-      const tour = tours[params.get('tour') ?? 'basic']
+      const base = tours[params.get('tour') ?? 'basic']
+      // `layout` sets the small-screen layout: auto, float or dock.
+      const layout = params.get('layout')
+      const tour = { ...base, options: { ...base.options } }
+      if (layout) tour.options.mobile = { layout }
+      // `long` labels, as a real app writes them, to test that the footer still fits.
+      if (params.has('long')) {
+        tour.options.labels = { next: 'Continue', back: 'Back', skip: 'Not now' }
+        tour.options.progress = 'ticks'
+      }
       const controller = createTour(tour, { sink })
       window.docent = controller
       document.getElementById('start').addEventListener('click', () => controller.start())

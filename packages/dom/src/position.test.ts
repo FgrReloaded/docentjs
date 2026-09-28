@@ -4,7 +4,10 @@ import {
   centerPosition,
   clipToViewport,
   computePosition,
+  dockedArrow,
+  floatSide,
   inflate,
+  oversizedClip,
   parsePlacement,
 } from './position'
 
@@ -148,5 +151,52 @@ describe('helpers', () => {
       width: 30,
       height: 30,
     })
+  })
+})
+
+describe('oversizedClip', () => {
+  const area = { x: 0, y: 0, width: 390, height: 600 }
+
+  it('leaves targets that fit alone, including full-width ones', () => {
+    expect(oversizedClip({ x: 0, y: 100, width: 390, height: 200 }, area)).toBeUndefined()
+  })
+
+  it('clips a target taller than the area to a band inset from its edges', () => {
+    expect(oversizedClip({ x: 20, y: -100, width: 350, height: 900 }, area)).toEqual({
+      top: 8,
+      bottom: 592,
+    })
+  })
+})
+
+describe('floatSide', () => {
+  const phone = { x: 0, y: 0, width: 390, height: 660 }
+  const card = { width: 366, height: 180 }
+  const at = (y: number, height = 44) => ({ x: 20, y, width: 120, height })
+
+  it('floats below a target near the top, above one near the bottom', () => {
+    expect(floatSide(at(100), card, phone, 'auto', 12, 12)).toBe('bottom')
+    expect(floatSide(at(560), card, phone, 'auto', 12, 12)).toBe('top')
+  })
+
+  it("tries the step's own vertical side first", () => {
+    expect(floatSide(at(300), card, phone, 'top', 12, 12)).toBe('top')
+    expect(floatSide(at(300), card, phone, 'bottom-start', 12, 12)).toBe('bottom')
+    // Left and right have no room on a phone: the roomier vertical side wins.
+    expect(floatSide(at(400), card, phone, 'right', 12, 12)).toBe('top')
+  })
+
+  it('docks when the card fits on neither side, unless forced', () => {
+    const tall = { width: 366, height: 300 }
+    expect(floatSide(at(250, 140), tall, phone, 'auto', 12, 12)).toBeUndefined()
+    expect(floatSide(at(250, 140), tall, phone, 'top', 12, 12, true)).toBe('top')
+  })
+})
+
+describe('dockedArrow', () => {
+  it("points at the target's centre, clear of the card's corners", () => {
+    expect(dockedArrow({ x: 100, y: 0, width: 80, height: 40 }, 12, 366)).toBe(128)
+    expect(dockedArrow({ x: 0, y: 0, width: 10, height: 40 }, 12, 366)).toBe(16)
+    expect(dockedArrow({ x: 380, y: 0, width: 10, height: 40 }, 12, 366)).toBe(350)
   })
 })

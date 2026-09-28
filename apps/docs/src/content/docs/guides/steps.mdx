@@ -45,7 +45,15 @@ If the preferred side has no room, the popover flips to the opposite side, then 
 
 ### Small screens
 
-Below 480 px wide there is no room beside an element, so the popover docks near the bottom as a card with a margin around it, and the page scrolls so the element stays visible above it. Change that width with the renderer's `sheetBreakpoint`, or set it to `0` to keep the popover floating at every size.
+Below 480 px wide there is no room beside an element, so the popover becomes a card as wide as the screen, with a margin around it. When the card fits above or below the element, it sits there and points at it; the step's `placement` picks which side it tries first. When it fits on neither side, it docks near the bottom edge, still pointing at the element, and the page scrolls so the element stays visible above it. An element pinned to the bottom of the screen, such as a tab bar, or at the very end of the page gets the card docked at the top instead.
+
+Set `options.mobile.layout` to choose: `'auto'` (the default, as above), `'float'` to always sit beside the element, or `'dock'` to always dock:
+
+```json
+"options": { "mobile": { "layout": "dock" } }
+```
+
+Change the width with the renderer's `sheetBreakpoint`, or set it to `0` to lay the popover out as on a large screen at every size.
 
 The popover never grows taller than the screen. When a step has more text than fits, the text scrolls inside the card, the last line fades while more remains, and the buttons stay put at the bottom. On short screens, such as a phone held sideways, spacing and type tighten a little. If no side has room, the popover sits over part of the element rather than off the edge of the screen.
 

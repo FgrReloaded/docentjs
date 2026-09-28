@@ -47,6 +47,29 @@ export function queryAllDeep(root: QueryRoot, selector: string): Element[] {
   return out
 }
 
+/**
+ * Whether an element is rendered: not `display: none` (itself or an ancestor)
+ * and not `visibility: hidden`. Opacity is ignored, since content often fades in.
+ */
+export function isVisible(el: Element): boolean {
+  if (el.checkVisibility) return el.checkVisibility({ visibilityProperty: true })
+  // No checkVisibility (older browsers, jsdom): read computed styles, crossing shadow roots.
+  const style = (node: Element) => el.ownerDocument.defaultView?.getComputedStyle(node)
+  if (style(el)?.visibility === 'hidden') return false
+  for (let node: Element | null = el; node; ) {
+    if (style(node)?.display === 'none') return false
+    node = node.parentElement ?? (node.getRootNode() as Partial<ShadowRoot>).host ?? null
+  }
+  return true
+}
+
+/**
+ * Find the element a target points at. Without `nth`, a rendered match wins
+ * over a hidden one, so the same name can mark a desktop sidebar and a mobile
+ * menu button and the one on screen is used. A hidden element still counts as
+ * present: tabs and pages kept in the DOM are often shown a moment after a step
+ * starts, and the renderer spotlights them once they are.
+ */
 export function resolveTarget(target: Target, root: QueryRoot = document): Element | null {
   const spec = toSpec(target)
   let scope: QueryRoot = root
@@ -55,11 +78,16 @@ export function resolveTarget(target: Target, root: QueryRoot = document): Eleme
     if (!container) return null
     scope = container
   }
+  let hidden: Element | undefined
   for (const selector of candidateSelectors(spec)) {
     const matches = queryAllDeep(scope, selector)
-    if (matches.length > 0) return matches[spec.nth ?? 0] ?? null
+    if (matches.length === 0) continue
+    if (spec.nth !== undefined) return matches[spec.nth] ?? null
+    const shown = matches.find(isVisible)
+    if (shown) return shown
+    hidden ??= matches[0]
   }
-  return null
+  return hidden ?? null
 }
 
 /**

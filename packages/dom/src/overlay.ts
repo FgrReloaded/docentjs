@@ -5,7 +5,7 @@
  */
 
 import type { SpotlightShape } from '@docentjs/core'
-import { inflate, type Rect, type Size } from './position'
+import { type Band, inflate, type Rect, type Size } from './position'
 
 export function holePath(viewport: Size, hole: Rect, radius: number): string {
   const r = Math.max(0, Math.min(radius, hole.width / 2, hole.height / 2))
@@ -24,6 +24,11 @@ export interface OverlayUpdate {
   padding: number
   radius: number
   shape?: SpotlightShape
+  /**
+   * Keep the cutout inside this band. Set for targets taller than the screen,
+   * so the ring frames the part that is visible instead of running off it.
+   */
+  clip?: Band | undefined
 }
 
 /** The padded cutout and its corner radius for a shape. */
@@ -43,6 +48,19 @@ export function holeFor(
   if (shape === 'rect') return { hole, radius: 0 }
   if (shape === 'pill') return { hole, radius: Math.min(hole.width, hole.height) / 2 }
   return { hole, radius: Math.max(0, Math.min(radius, hole.width / 2, hole.height / 2)) }
+}
+
+/** Cut a hole down to a vertical band, keeping its corners round where they still fit. */
+export function clipHole(
+  { hole, radius }: { hole: Rect; radius: number },
+  clip: Band | undefined,
+): { hole: Rect; radius: number } {
+  if (!clip) return { hole, radius }
+  const y = Math.max(hole.y, clip.top)
+  const height = Math.min(hole.y + hole.height, clip.bottom) - y
+  // No overlap: keep the hole as it was rather than collapse it.
+  if (height <= 0) return { hole, radius }
+  return { hole: { ...hole, y, height }, radius: Math.min(radius, hole.width / 2, height / 2) }
 }
 
 export class Overlay {
@@ -81,7 +99,11 @@ export class Overlay {
     return this.lastHole
   }
 
-  update(viewport: Size, { target, padding, radius, shape }: OverlayUpdate, block: boolean): void {
+  update(
+    viewport: Size,
+    { target, padding, radius, shape, clip }: OverlayUpdate,
+    block: boolean,
+  ): void {
     if (!target) {
       // Collapse to a point so the path keeps the same structure and can animate.
       const c = this.lastHole
@@ -94,7 +116,7 @@ export class Overlay {
       this.blocker.hidden = true
       return
     }
-    const { hole, radius: r } = holeFor(target, padding, radius, shape)
+    const { hole, radius: r } = clipHole(holeFor(target, padding, radius, shape), clip)
     this.lastHole = hole
     this.setCentre(hole.x + hole.width / 2, hole.y + hole.height / 2)
     this.el.style.clipPath = holePath(viewport, hole, r)
