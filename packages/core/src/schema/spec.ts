@@ -374,11 +374,11 @@ const mobile: Spec = {
   fields: {
     layout: field(
       enums('auto', 'float', 'dock'),
-      '`auto` puts the card beside the target when it fits and docks it near the bottom when it does not; `float` never docks; `dock` always does.',
+      '`auto`: beside the target when the card fits, else docked at the bottom. `float` never docks; `dock` always does.',
     ),
     card: field(
       enums('stories', 'classic'),
-      '`stories` (default): segmented progress on top, a full-width main button, and steps with no target centred as a hero. `classic`: the large-screen card.',
+      '`stories` (default): segmented progress, a full-width main button, steps with no target centred. `classic`: the large-screen card.',
     ),
   },
 }
@@ -508,7 +508,7 @@ const tour: Spec = {
  */
 const themeFile: Spec = {
   kind: 'object',
-  doc: 'How tours look: tokens, the step counter, the arrow, the spotlight, the scrim and the phone layout.',
+  doc: 'How tours look: tokens, the step counter, the arrow, the spotlight and the scrim.',
   fields: {
     $schema: field(str, 'Optional link to a schema, for editors.'),
     name: field(str, 'Shown in a gallery or a picker.'),
@@ -523,7 +523,7 @@ const themeFile: Spec = {
     spotlight: field(spotlight),
     overlay: field(overlay),
     beacon: field(beacon),
-    mobile: field(mobile, 'How tours look on small screens (phones): layout and card.'),
+    mobile: field(mobile),
     css: field(str, 'Extra CSS, scoped to the popover.'),
   },
 }
