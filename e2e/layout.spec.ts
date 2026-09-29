@@ -115,7 +115,8 @@ test.describe('small screens', () => {
 
     test('the step counter never runs under the buttons', async ({ page }) => {
       // Step 2 of 5 shows all three buttons: Not now, Back and Continue.
-      await open(page, 'basic', '=save&long')
+      // The classic card keeps the counter in the footer row; the phone card moves it to the top.
+      await open(page, 'basic', '=save&long&card=classic')
       await settled(page)
       const p = popover(page)
       const card = await box(p)

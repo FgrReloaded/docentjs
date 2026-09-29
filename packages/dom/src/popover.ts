@@ -240,16 +240,17 @@ export function buildPopover(
       count.textContent = label
       progress.appendChild(count)
     }
-    if (style === 'ticks' || style === 'dots') {
-      const marks = h(doc, 'span', 'marks', 'marks')
-      marks.setAttribute('aria-hidden', 'true')
-      for (let i = 1; i <= total; i++) {
-        const mark = doc.createElement('i')
-        if (i <= current) mark.dataset.done = ''
-        marks.appendChild(mark)
-      }
-      progress.appendChild(marks)
+    // One mark per step. Ticks and dots show them; on a phone every style
+    // becomes a row of segments across the top of the card.
+    const marks = h(doc, 'span', 'marks', 'marks')
+    marks.setAttribute('aria-hidden', 'true')
+    for (let i = 1; i <= total; i++) {
+      const mark = doc.createElement('i')
+      if (i <= current) mark.dataset.done = ''
+      if (i === current) mark.dataset.now = ''
+      marks.appendChild(mark)
     }
+    progress.appendChild(marks)
   }
   footer.appendChild(slot(doc, 'progress', progress))
 

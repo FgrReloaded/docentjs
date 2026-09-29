@@ -404,16 +404,24 @@ export class DomRenderer implements Renderer {
     popover.style.width = small ? `${Math.min(room.width - EDGE * 2, DOCKED_MAX_WIDTH)}px` : ''
     popover.style.maxWidth = small ? 'none' : ''
     popover.classList.toggle('small', small)
+    // The phone card; a step with no target shows it centred, as a hero.
+    // Both change the card's height, so they are set before it is measured.
+    const stories =
+      small && (ctx.tour.options?.mobile?.card ?? this.options.mobile?.card) !== 'classic'
+    const hero = stories && !target
+    popover.classList.toggle('stories', stories)
+    popover.classList.toggle('hero', hero)
     const floating = { width: popover.offsetWidth, height: this.heightTo ?? popover.offsetHeight }
     this.markScrollable(popover)
 
     const rect = target ? toRect(target.getBoundingClientRect()) : null
     const layout = small ? this.smallLayout(ctx, target, rect, floating, room, padding) : undefined
-    popover.classList.toggle('sheet', !!layout && !layout.side)
+    const docked = !!layout && !layout.side && !hero
+    popover.classList.toggle('sheet', docked)
     popover.toggleAttribute('data-dock', false)
     external?.toggleAttribute('data-dock', false)
 
-    if (layout && !layout.side) {
+    if (layout && docked) {
       const left = room.x + Math.max(EDGE, (room.width - floating.width) / 2)
       const top = layout.dockTop
         ? room.y + EDGE

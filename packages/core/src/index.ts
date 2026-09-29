@@ -33,6 +33,7 @@ export {
   type SchemaVersion,
   type ScrollOptions,
   type Side,
+  type SmallScreenCard,
   type SmallScreenLayout,
   type SpotlightOptions,
   type SpotlightRing,

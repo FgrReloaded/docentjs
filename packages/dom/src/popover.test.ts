@@ -163,9 +163,10 @@ describe('eyebrow and progress styles', () => {
     expect(removed.el.querySelector('.eyebrow')).toBeNull()
   })
 
+  // Meter and count draw marks too (hidden): the phone card shows them as segments.
   it.each([
-    ['meter', 1, 0, true],
-    ['count', 0, 0, true],
+    ['meter', 1, 3, true],
+    ['count', 0, 3, true],
     ['ticks', 0, 3, true],
     ['dots', 0, 3, false],
     ['none', 0, 0, false],
@@ -184,6 +185,9 @@ describe('eyebrow and progress styles', () => {
     const { el } = buildPopover(document, ctx, {}, {}, { progress: 'ticks' })
     const marks = [...el.querySelectorAll('.marks i')].map((m) => m.hasAttribute('data-done'))
     expect(marks).toEqual([true, true, false, false])
+    // The current one is marked too, so its segment can fill as the step opens.
+    const now = [...el.querySelectorAll('.marks i')].map((m) => m.hasAttribute('data-now'))
+    expect(now).toEqual([false, true, false, false])
   })
 
   it('pads the count to two digits on request', () => {

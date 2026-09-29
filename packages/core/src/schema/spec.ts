@@ -376,6 +376,10 @@ const mobile: Spec = {
       enums('auto', 'float', 'dock'),
       '`auto` puts the card beside the target when it fits and docks it near the bottom when it does not; `float` never docks; `dock` always does.',
     ),
+    card: field(
+      enums('stories', 'classic'),
+      '`stories` (default): segmented progress on top, a full-width main button, and steps with no target centred as a hero. `classic`: the large-screen card.',
+    ),
   },
 }
 

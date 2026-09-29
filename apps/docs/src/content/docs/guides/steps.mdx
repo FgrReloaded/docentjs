@@ -53,6 +53,8 @@ Set `options.mobile.layout` to choose: `'auto'` (the default, as above), `'float
 "options": { "mobile": { "layout": "dock" } }
 ```
 
+The card itself is laid out for thumbs on a small screen: progress becomes one segment per step across the top, filling as each step opens; the main button (Next or Done) is full width; Back and Skip sit beneath it as quiet text. A step with no target, such as a welcome or a finish, is centred on the screen with a larger title and its image at the top. Set `"mobile": { "card": "classic" }` to keep the large-screen card on phones.
+
 Change the width with the renderer's `sheetBreakpoint`, or set it to `0` to lay the popover out as on a large screen at every size.
 
 The popover never grows taller than the screen. When a step has more text than fits, the text scrolls inside the card, the last line fades while more remains, and the buttons stay put at the bottom. On short screens, such as a phone held sideways, spacing and type tighten a little. If no side has room, the popover sits over part of the element rather than off the edge of the screen.

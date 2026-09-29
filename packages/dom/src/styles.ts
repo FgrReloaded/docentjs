@@ -395,6 +395,9 @@ export const STYLES = `
 .marks i[data-done] { background: var(--docent-fg); }
 .progress[data-progress="dots"] .marks { gap: 5px; }
 .progress[data-progress="dots"] .marks i { width: 5px; height: 5px; border-radius: 50%; }
+/* The meter and the bare count draw no marks; the phone card turns them into segments. */
+.progress[data-progress="meter"] .marks,
+.progress[data-progress="count"] .marks { display: none; }
 .buttons {
   display: flex;
   flex-wrap: wrap;
@@ -462,6 +465,77 @@ export const STYLES = `
     0 2px 6px -2px oklch(23% 0.02 285 / 0.12),
     0 -14px 44px -16px oklch(23% 0.02 285 / 0.34);
 }
+
+/* ------------------------------------------- small screens: the phone card */
+
+/*
+ * Laid out for thumbs: progress as one segment per step across the top, a
+ * full-width main button, and Back and Skip as quiet text beneath it. The
+ * footer's parts become rows of the card itself to allow that.
+ */
+.popover.stories .footer { display: contents; }
+.popover.stories .progress { order: -2; flex: none; margin: -2px 0 12px; }
+.popover.stories .progress .marks { display: flex; flex: 1; gap: 4px; }
+.popover.stories .progress .marks i {
+  position: relative;
+  flex: 1;
+  width: auto;
+  max-width: none;
+  height: 3px;
+  margin: 0;
+  border-radius: 999px;
+  background: var(--_line);
+  overflow: hidden;
+}
+.popover.stories .progress .marks i[data-done] { background: var(--docent-fg); }
+/* The current step's segment fills as the step opens (not when going back to it). */
+.popover.stories .progress .marks i[data-now] { background: var(--_line); }
+.popover.stories .progress .marks i[data-now]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--docent-fg);
+  transform-origin: 0 50%;
+  animation: docent-fill calc(var(--docent-duration) * 2.4) var(--docent-easing) both;
+}
+.popover.stories[data-moving="back"] .progress .marks i[data-now]::after { animation: none; }
+@keyframes docent-fill { from { transform: scaleX(0); } }
+/* The segments say it at a glance; the count stays for screen readers. */
+.popover.stories .progress .meter { display: none; }
+.popover.stories .progress .count {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.popover.stories .buttons {
+  order: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 0;
+  width: 100%;
+  margin: 16px 0 -6px;
+}
+.popover.stories [part~="button-next"] {
+  grid-row: 1;
+  grid-column: 1 / -1;
+  min-height: 48px;
+  border-radius: 12px;
+  font-size: 15px;
+}
+.popover.stories [part~="button-back"],
+.popover.stories [part~="button-skip"] { grid-row: 2; color: var(--docent-muted); padding: 0 8px; }
+.popover.stories [part~="button-back"] { grid-column: 1; justify-self: start; margin-inline-start: -8px; }
+.popover.stories [part~="button-skip"] { grid-column: 2; justify-self: end; margin-inline-end: -8px; }
+
+/* A step with no target: centred on the screen, larger, its image as a hero. */
+.popover.stories.hero .title { font-size: 21px; letter-spacing: -0.02em; }
+.popover.stories.hero .media { order: -1; margin: 0 0 16px; }
+.popover.stories.hero .media img,
+.popover.stories.hero .media video { max-height: min(32vh, 220px); }
 
 /* Tighter type and spacing where the screen is short or narrow. */
 @media (max-height: 600px), (max-width: 420px) {

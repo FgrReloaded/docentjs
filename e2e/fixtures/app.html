@@ -259,6 +259,8 @@
       const layout = params.get('layout')
       const tour = { ...base, options: { ...base.options } }
       if (layout) tour.options.mobile = { layout }
+      // `card` picks the small-screen card: stories (default) or classic.
+      if (params.get('card')) tour.options.mobile = { ...tour.options.mobile, card: params.get('card') }
       // `long` labels, as a real app writes them, to test that the footer still fits.
       if (params.has('long')) {
         tour.options.labels = { next: 'Continue', back: 'Back', skip: 'Not now' }

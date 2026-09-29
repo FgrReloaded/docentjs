@@ -137,9 +137,19 @@ export interface OverlayOptions {
  */
 export type SmallScreenLayout = 'auto' | 'float' | 'dock'
 
+/**
+ * The card on a small screen.
+ * - `stories` (default): progress as one segment per step across the top, a
+ *   full-width main button with Back and Skip as quiet text beneath it, and
+ *   steps with no target centred with their image as a hero.
+ * - `classic`: the same card as on a large screen.
+ */
+export type SmallScreenCard = 'stories' | 'classic'
+
 /** Settings for small screens (phones). */
 export interface MobileOptions {
   layout?: SmallScreenLayout
+  card?: SmallScreenCard
 }
 
 export interface ScrollOptions {
