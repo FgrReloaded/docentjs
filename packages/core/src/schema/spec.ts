@@ -508,7 +508,7 @@ const tour: Spec = {
  */
 const themeFile: Spec = {
   kind: 'object',
-  doc: 'How tours look: tokens, the step counter, the arrow, the spotlight and the scrim.',
+  doc: 'How tours look: tokens, the step counter, the arrow, the spotlight, the scrim and the phone layout.',
   fields: {
     $schema: field(str, 'Optional link to a schema, for editors.'),
     name: field(str, 'Shown in a gallery or a picker.'),
@@ -523,6 +523,7 @@ const themeFile: Spec = {
     spotlight: field(spotlight),
     overlay: field(overlay),
     beacon: field(beacon),
+    mobile: field(mobile, 'How tours look on small screens (phones): layout and card.'),
     css: field(str, 'Extra CSS, scoped to the popover.'),
   },
 }

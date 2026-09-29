@@ -161,9 +161,16 @@ describe('validateTheme', () => {
       arrow: 'curve',
       spotlight: { ring: 'glow', padding: 6 },
       overlay: { style: 'none' },
+      mobile: { layout: 'dock', card: 'classic' },
       css: '.title { font-size: 20px }',
     }
     expect(validateTheme(theme)).toEqual([])
+  })
+
+  it('checks the phone settings a theme carries', () => {
+    expect(validateTheme({ mobile: { card: 'classik' } })).toEqual([
+      expect.objectContaining({ path: 'mobile.card', suggestion: 'classic' }),
+    ])
   })
 
   it('says what was probably meant', () => {

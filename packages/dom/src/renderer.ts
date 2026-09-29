@@ -115,6 +115,7 @@ interface Look extends PopoverLook {
   progress: ProgressStyle
   spotlight: SpotlightOptions
   overlay: OverlayOptions
+  mobile: MobileOptions
 }
 
 /** How the card sits on a small screen this step. */
@@ -127,7 +128,13 @@ interface SmallLayout {
   dockTop: boolean
 }
 
-const DEFAULT_LOOK: Look = { arrow: 'caret', progress: 'meter', spotlight: {}, overlay: {} }
+const DEFAULT_LOOK: Look = {
+  arrow: 'caret',
+  progress: 'meter',
+  spotlight: {},
+  overlay: {},
+  mobile: {},
+}
 
 /** Breathing room kept between the popover and the edges of the screen. */
 const EDGE = 12
@@ -406,8 +413,7 @@ export class DomRenderer implements Renderer {
     popover.classList.toggle('small', small)
     // The phone card; a step with no target shows it centred, as a hero.
     // Both change the card's height, so they are set before it is measured.
-    const stories =
-      small && (ctx.tour.options?.mobile?.card ?? this.options.mobile?.card) !== 'classic'
+    const stories = small && this.look.mobile.card !== 'classic'
     const hero = stories && !target
     popover.classList.toggle('stories', stories)
     popover.classList.toggle('hero', hero)
@@ -616,6 +622,8 @@ export class DomRenderer implements Renderer {
         ...tour.overlay,
         ...step.overlay,
       },
+      // A theme can say how it looks on a phone; the tour's own settings win.
+      mobile: { ...this.options.mobile, ...template?.mobile, ...tour.mobile },
     }
   }
 
@@ -730,7 +738,7 @@ export class DomRenderer implements Renderer {
   ): SmallLayout {
     if (!target || !rect) return { side: undefined, dockTop: false }
     if (this.layout?.width === room.width) return this.layout
-    const mode = ctx.tour.options?.mobile?.layout ?? this.options.mobile?.layout ?? 'auto'
+    const mode = this.look.mobile.layout ?? 'auto'
     const anchor = clipToViewport(inflate(rect, padding), room)
     const placement = ctx.step.placement ?? 'auto'
     const side =

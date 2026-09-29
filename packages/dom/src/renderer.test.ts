@@ -249,6 +249,28 @@ describe('DomRenderer', () => {
     r.hide()
   })
 
+  it("takes the phone card from the theme, and lets a tour's own setting win", () => {
+    document.body.innerHTML = '<button id="target">go</button>'
+    const width = Object.getOwnPropertyDescriptor(document.documentElement, 'clientWidth')
+    Object.defineProperty(document.documentElement, 'clientWidth', {
+      value: 390,
+      configurable: true,
+    })
+    restores.push(() => {
+      if (width) Object.defineProperty(document.documentElement, 'clientWidth', width)
+      else delete (document.documentElement as unknown as Record<string, unknown>).clientWidth
+    })
+    const card = () => shadow().querySelector('.popover') as HTMLElement
+    const r = new DomRenderer({ template: { mobile: { card: 'classic' } } })
+    const base = ctx()
+    r.show(base)
+    expect(card().classList.contains('small')).toBe(true)
+    expect(card().classList.contains('stories')).toBe(false)
+    r.show({ ...base, tour: { ...base.tour, options: { mobile: { card: 'stories' } } } })
+    expect(card().classList.contains('stories')).toBe(true)
+    r.hide()
+  })
+
   it('follows a target that scrolls inside a shadow root', () => {
     const outer = document.createElement('div')
     document.body.appendChild(outer)

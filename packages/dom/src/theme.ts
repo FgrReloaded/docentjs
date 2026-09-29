@@ -8,6 +8,7 @@ import type {
   Appearance,
   ArrowStyle,
   BeaconOptions,
+  MobileOptions,
   OverlayOptions,
   ProgressStyle,
   RenderContext,
@@ -262,6 +263,8 @@ export interface PopoverTemplate {
   overlay?: OverlayOptions
   /** How beacons look for tours using this template. */
   beacon?: BeaconOptions
+  /** Small-screen layout and card for tours using this template. */
+  mobile?: MobileOptions
   /** Extra CSS injected into the shadow root while this template is active. */
   css?: string
 }
