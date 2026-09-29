@@ -867,7 +867,7 @@ function ThemeForm({ store, tour }: { store: Store; tour: Tour }) {
   const live = (key: keyof Theme, value: string) => {
     // Instant feedback while dragging; the debounced edit re-renders shortly after.
     if (store.state.value.active !== tour.id) return
-    const host = document.querySelector<HTMLElement>('[data-docent-host]')
+    const host = document.querySelector<HTMLElement>('[data-docent-host]:not([data-leaving])')
     host?.style.setProperty(`--docent-${THEME_VARS[key]}`, value)
   }
   const setToken = (key: keyof Theme, value: string | undefined, immediate = false) => {

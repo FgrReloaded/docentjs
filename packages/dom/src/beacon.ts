@@ -408,7 +408,7 @@ class Beacon {
   /** Move focus into the open tip: its main button, or the card itself. */
   private focusTip(): void {
     const headless = this.doc.querySelector<HTMLElement>('[data-docent-popover]')
-    const shadow = this.doc.querySelector('[data-docent-host]')?.shadowRoot
+    const shadow = this.doc.querySelector('[data-docent-host]:not([data-leaving])')?.shadowRoot
     const tip =
       headless ??
       shadow?.querySelector<HTMLElement>('.button.primary') ??

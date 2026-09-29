@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from '@playwright/test'
 
-export const host = (page: Page) => page.locator('[data-docent-host]')
+export const host = (page: Page) => page.locator('[data-docent-host]:not([data-leaving])')
 export const popover = (page: Page) => host(page).locator('.popover')
 export const overlay = (page: Page) => host(page).locator('.overlay')
 export const button = (page: Page, label: string) =>

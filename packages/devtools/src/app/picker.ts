@@ -27,7 +27,7 @@ export function pickElement({ doc, ignore, highlight }: PickerOptions): Promise<
       'position:fixed;left:50%;top:12px;translate:-50% 0;z-index:2147483646;pointer-events:none;padding:6px 12px;border-radius:999px;font:12px/1.4 system-ui,sans-serif;background:oklch(20% 0.02 255);color:oklch(96% 0.005 255)'
 
     // Hide the running tour so its overlay does not cover what you want to pick.
-    const tourHost = doc.querySelector<HTMLElement>('[data-docent-host]')
+    const tourHost = doc.querySelector<HTMLElement>('[data-docent-host]:not([data-leaving])')
     const previousVisibility = tourHost?.style.visibility ?? ''
     if (tourHost) tourHost.style.visibility = 'hidden'
 

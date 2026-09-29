@@ -187,6 +187,68 @@ describe('DomRenderer', () => {
     r.hide()
   })
 
+  it('plays an exit: the host is marked leaving, then removed', () => {
+    vi.useFakeTimers()
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
+    )
+    document.body.innerHTML = '<button id="target">go</button>'
+    const r = new DomRenderer()
+    r.show(ctx())
+    const leaving = host() as HTMLElement
+    r.hide()
+    expect(leaving.isConnected).toBe(true)
+    expect(leaving.hasAttribute('data-leaving')).toBe(true)
+    // The card stays for its exit, with its content.
+    expect(leaving.shadowRoot?.querySelector('.popover .title')?.textContent).toBe('Title')
+    vi.advanceTimersByTime(1000)
+    expect(leaving.isConnected).toBe(false)
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  it('leaves at once under reduced motion, and when the card holds app nodes', () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((q: string) => ({
+        matches: q.includes('reduced-motion'),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    )
+    document.body.innerHTML = '<button id="target">go</button>'
+    const r = new DomRenderer()
+    r.show(ctx())
+    r.hide()
+    expect(document.querySelector('[data-docent-host]')).toBeNull()
+    vi.unstubAllGlobals()
+
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() })),
+    )
+    const slotted = new DomRenderer({ slots: { title: () => 'Custom' } })
+    slotted.show(ctx())
+    slotted.hide()
+    expect(document.querySelector('[data-docent-host]')).toBeNull()
+    vi.unstubAllGlobals()
+  })
+
+  it('tells Next from Back for the step-change motion', () => {
+    document.body.innerHTML = '<button id="target">go</button>'
+    const r = new DomRenderer()
+    const c = ctx()
+    const moving = () => shadow().querySelector('.popover')?.getAttribute('data-moving')
+    r.show({ ...c, index: 0 })
+    expect(moving()).toBeNull()
+    r.show({ ...c, index: 1 })
+    expect(moving()).toBe('forward')
+    r.show({ ...c, index: 0 })
+    expect(moving()).toBe('back')
+    r.hide()
+  })
+
   it('follows a target that scrolls inside a shadow root', () => {
     const outer = document.createElement('div')
     document.body.appendChild(outer)

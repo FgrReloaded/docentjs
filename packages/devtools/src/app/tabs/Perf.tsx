@@ -8,7 +8,7 @@ function tone(ms: number, good: number, bad: number): string {
 
 export function PerfTab({ store }: { store: Store }) {
   const { steps, missingTargets } = store.perf.value
-  const host = document.querySelector('[data-docent-host]')?.shadowRoot
+  const host = document.querySelector('[data-docent-host]:not([data-leaving])')?.shadowRoot
   const nodes = host ? host.querySelectorAll('*').length : 0
   const avg = steps.length ? Math.round(steps.reduce((s, x) => s + x.latency, 0) / steps.length) : 0
   const worst = steps.reduce((m, x) => Math.max(m, x.worstFrame), 0)

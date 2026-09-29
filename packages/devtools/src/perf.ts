@@ -48,7 +48,7 @@ export function recordPerf(docent: Docent, doc: Document = document): PerfRecord
 
   const watchPopover = () => {
     observer?.disconnect()
-    const root = doc.querySelector('[data-docent-host]')?.shadowRoot
+    const root = doc.querySelector('[data-docent-host]:not([data-leaving])')?.shadowRoot
     if (!root) return
     observer = new MutationObserver((records) => {
       if (!current) return

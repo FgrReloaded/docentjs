@@ -69,7 +69,9 @@ export const STYLES = `
   inset: 0;
   background: var(--_scrim);
   pointer-events: auto;
-  transition: clip-path var(--docent-duration) var(--docent-easing);
+  transition:
+    clip-path var(--docent-duration) var(--docent-easing),
+    opacity var(--docent-duration) ease-out;
 }
 /* Overlay styles. The scrim is a translucent color (not element opacity), so blur stays crisp. */
 :host([data-overlay="blur"]) .overlay {
@@ -165,16 +167,52 @@ export const STYLES = `
   transition:
     transform var(--docent-duration) var(--docent-easing),
     opacity var(--docent-duration) var(--docent-easing),
-    scale var(--docent-duration) var(--docent-easing);
+    scale var(--docent-duration) var(--docent-easing),
+    height var(--docent-duration) var(--docent-easing),
+    /* A docked card's slide in and out: longer, and settling like a native sheet. */
+    translate calc(var(--docent-duration) * 1.5) cubic-bezier(0.32, 0.72, 0, 1);
 }
 .popover[data-side="bottom"] { transform-origin: 50% 0; }
 .popover[data-side="top"] { transform-origin: 50% 100%; }
 .popover[data-side="right"] { transform-origin: 0 50%; }
 .popover[data-side="left"] { transform-origin: 100% 50%; }
 .popover[data-entering] { opacity: 0; scale: 0.97; transition: none; }
-/* Between steps the popover slides; only its content cross-fades, briefly. */
-.popover[data-moving] > * { animation: docent-swap 160ms ease-out; }
+/*
+ * Between steps the popover slides; its content cross-fades. Slots are
+ * display: contents and draw nothing, so it is the content in them that moves.
+ */
+.popover[data-moving] > .arrow,
+.popover[data-moving] > slot > *,
+.popover[data-moving] > slot::slotted(*) { animation: docent-swap 160ms ease-out; }
 @keyframes docent-swap { from { opacity: 0; } to { opacity: 1; } }
+/* On a small screen the content comes in from the way the tour is going: Next from the end, Back from the start. */
+.popover.small[data-moving="forward"] > slot > *,
+.popover.small[data-moving="forward"] > slot::slotted(*) {
+  animation: docent-from-end calc(var(--docent-duration) * 1.3) var(--docent-easing) both;
+}
+.popover.small[data-moving="back"] > slot > *,
+.popover.small[data-moving="back"] > slot::slotted(*) {
+  animation: docent-from-start calc(var(--docent-duration) * 1.3) var(--docent-easing) both;
+}
+@keyframes docent-from-end { from { opacity: 0; translate: 16px 0; } }
+@keyframes docent-from-start { from { opacity: 0; translate: -16px 0; } }
+/* While the card grows or shrinks to a new step, the text makes the room, without a scrollbar. */
+.popover[data-resizing] .body { flex-grow: 1; overflow: hidden; }
+
+/* ---------------------------------------------------------- enter and leave */
+
+/* The scrim and ring fade in with the first step, and everything fades out at the end. */
+:host([data-entering]) .overlay,
+:host([data-leaving]) .overlay { opacity: 0; }
+:host([data-entering]) .ring,
+:host([data-leaving]) .ring { opacity: 0 !important; }
+:host([data-leaving]) * { pointer-events: none !important; }
+:host([data-leaving]) .popover { opacity: 0; scale: 0.97; }
+/* A docked card slides in from the edge it sits on, and back out. */
+.popover.sheet[data-entering],
+:host([data-leaving]) .popover.sheet { opacity: 1; scale: 1; translate: 0 calc(100% + 24px); }
+.popover.sheet[data-dock="top"][data-entering],
+:host([data-leaving]) .popover.sheet[data-dock="top"] { translate: 0 calc(-100% - 24px); }
 .popover.headless {
   width: auto;
   max-width: none;
@@ -442,6 +480,8 @@ export const STYLES = `
 @media (prefers-reduced-motion: reduce) {
   .overlay, .popover, .ring { transition: none; }
   .ring::after { animation: none !important; }
-  .popover[data-moving] > * { animation: none; }
+  .popover[data-moving] > .arrow,
+  .popover[data-moving] > slot > *,
+  .popover[data-moving] > slot::slotted(*) { animation: none !important; }
 }
 `

@@ -164,6 +164,10 @@ export class DomRenderer implements Renderer {
   private layout: SmallLayout | undefined
   /** Whether the target has been on screen this step (it may be shown late). */
   private shown = false
+  /** The step shown last, to tell Next from Back for the step-change motion. */
+  private lastIndex: number | undefined
+  /** While the card animates between two steps' heights: the height it is heading for. */
+  private heightTo: number | undefined
   private connector: Connector | undefined
   /** Loaded on first use: connector styles cost nothing for tours that never use them. */
   private connectorModule: typeof import('./connector') | undefined
@@ -222,6 +226,8 @@ export class DomRenderer implements Renderer {
     // Where the previous step's popover sat, so the new one glides from there
     // alongside the spotlight instead of vanishing and fading back in.
     const from = this.popover?.style.transform || null
+    // Its height too, so the card grows or shrinks to the new step instead of jumping.
+    const fromHeight = this.options.headless ? 0 : (this.popover?.offsetHeight ?? 0)
     this.teardownStep()
     this.ctx = ctx
     this.target = ctx.step.target === undefined ? null : resolveTarget(ctx.step.target, this.doc)
@@ -237,9 +243,12 @@ export class DomRenderer implements Renderer {
     const initialFocus = this.options.headless
       ? this.buildHeadless(ctx, host, this.options.headless)
       : this.buildDefault(ctx, host, template)
+    const back = this.lastIndex !== undefined && ctx.index < this.lastIndex
+    this.lastIndex = ctx.index
     if (this.popover && from) {
       this.popover.style.transform = from
-      this.popover.setAttribute('data-moving', '')
+      // Which way the content moves in: from the end for Next, from the start for Back.
+      this.popover.setAttribute('data-moving', back ? 'back' : 'forward')
     } else {
       this.popover?.setAttribute('data-entering', '')
     }
@@ -259,6 +268,7 @@ export class DomRenderer implements Renderer {
       })
     }
     this.update()
+    if (fromHeight) this.animateHeight(fromHeight)
     this.listen()
     this.wireAdvance(ctx.step)
 
@@ -270,19 +280,51 @@ export class DomRenderer implements Renderer {
       this.popover && !this.headlessContainer && touchOnly(this.doc) ? this.popover : initialFocus
     requestAnimationFrame(() => {
       this.popover?.removeAttribute('data-entering')
+      if (firstStep) host.removeAttribute('data-entering')
       if (focus) into.focus({ preventScroll: true })
     })
   }
 
+  /**
+   * Grow or shrink the card from the previous step's height instead of
+   * jumping. Layout uses the final height throughout, so a docked card keeps
+   * its bottom edge still while its top follows the height.
+   */
+  private animateHeight(from: number): void {
+    const popover = this.popover
+    if (!popover) return
+    const to = popover.offsetHeight
+    if (Math.abs(to - from) < 2) return
+    this.heightTo = to
+    popover.setAttribute('data-resizing', '')
+    popover.style.height = `${from}px`
+    // Commit the start height, so the change below transitions.
+    void popover.offsetHeight
+    popover.style.height = `${to}px`
+    const done = () => {
+      clearTimeout(timer)
+      if (this.popover === popover) this.heightTo = undefined
+      popover.style.height = ''
+      popover.removeAttribute('data-resizing')
+    }
+    const timer = setTimeout(done, (this.host ? this.duration(this.host) : 220) + 50)
+    this.cleanups.push(done)
+  }
+
   hide(): void {
     const lastTarget = this.target
+    // The card stays for its exit, unless it holds the app's own nodes (slots,
+    // headless), which leave with the step.
+    const leaving = this.host && this.host.childElementCount === 0 ? this.popover : undefined
+    if (leaving) this.popover = undefined
     this.teardownStep()
+    this.lastIndex = undefined
     this.scrollingBody?.removeEventListener('scroll', this.onBodyScroll)
     this.scrollingBody = undefined
     this.schemeQuery?.removeEventListener('change', this.onSchemeChange)
     this.schemeQuery = undefined
     if (this.host) {
-      this.host.remove()
+      this.leave(this.host, !!leaving)
       this.host = undefined
       this.shadow = undefined
       this.overlay = undefined
@@ -301,6 +343,22 @@ export class DomRenderer implements Renderer {
       (back === prev || back.matches(FOCUSABLE))
     )
       back.focus({ preventScroll: true })
+  }
+
+  /**
+   * Let the tour fade away, and a docked card slide off, instead of vanishing.
+   * The host is marked `data-leaving` (inert, ignored by lookups of the live
+   * tour) and removed once its exit has played.
+   */
+  private leave(host: HTMLElement, animate: boolean): void {
+    const win = this.doc.defaultView
+    const still = !win?.matchMedia || win.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (!animate || still) {
+      host.remove()
+      return
+    }
+    host.setAttribute('data-leaving', '')
+    setTimeout(() => host.remove(), this.duration(host) * 1.5 + 50)
   }
 
   // -------------------------------------------------------------------------
@@ -345,7 +403,8 @@ export class DomRenderer implements Renderer {
     // On a small screen the card is as wide as the screen allows, with air around it.
     popover.style.width = small ? `${Math.min(room.width - EDGE * 2, DOCKED_MAX_WIDTH)}px` : ''
     popover.style.maxWidth = small ? 'none' : ''
-    const floating = { width: popover.offsetWidth, height: popover.offsetHeight }
+    popover.classList.toggle('small', small)
+    const floating = { width: popover.offsetWidth, height: this.heightTo ?? popover.offsetHeight }
     this.markScrollable(popover)
 
     const rect = target ? toRect(target.getBoundingClientRect()) : null
@@ -820,6 +879,8 @@ export class DomRenderer implements Renderer {
     if (this.host) return this.host
     const host = this.doc.createElement('div')
     host.setAttribute('data-docent-host', '')
+    // The scrim fades in with the first step.
+    host.setAttribute('data-entering', '')
     const shadow = host.attachShadow({ mode: 'open' })
     const style = this.doc.createElement('style')
     style.textContent = this.options.css ? `${STYLES}\n${this.options.css}` : STYLES
@@ -854,6 +915,7 @@ export class DomRenderer implements Renderer {
     this.sheetAdjusted = false
     this.layout = undefined
     this.shown = false
+    this.heightTo = undefined
   }
 
   private blocksInteraction(ctx: RenderContext): boolean {
