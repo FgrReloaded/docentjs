@@ -10,8 +10,11 @@ import type {
   BeaconOptions,
   BeaconPosition,
   BeaconStyle,
+  MobileOptions,
   OverlayStyle,
   Placement,
+  SmallScreenCard,
+  SmallScreenLayout,
   SpotlightRing,
   SpotlightShape,
   Step,
@@ -132,6 +135,15 @@ const OVERLAYS: ReadonlyArray<readonly [OverlayStyle, string]> = [
   ['blur', 'Blur'],
   ['vignette', 'Vignette'],
   ['none', 'None (page stays usable)'],
+]
+const PHONE_LAYOUTS: ReadonlyArray<readonly [SmallScreenLayout, string]> = [
+  ['auto', 'Auto (default)'],
+  ['float', 'Beside the target'],
+  ['dock', 'Docked'],
+]
+const PHONE_CARDS: ReadonlyArray<readonly [SmallScreenCard, string]> = [
+  ['stories', 'Stories (default)'],
+  ['classic', 'Classic'],
 ]
 /** Prepend a "use the tour's setting" choice for step-level overrides. */
 function inherit<T extends string>(
@@ -1094,8 +1106,16 @@ function LookForm({ store, tour }: { store: Store; tour: Tour }) {
   const options = tour.options ?? {}
   const spotlight = options.spotlight ?? {}
   const overlay = options.overlay ?? {}
+  const mobile = options.mobile ?? {}
   const edit = (change: (o: NonNullable<Tour['options']>) => NonNullable<Tour['options']>) =>
     store.editTour(tour.id, (t) => ({ ...t, options: change(t.options ?? {}) }), true)
+  // Back at both defaults, the block goes, so the tour JSON stays as written.
+  // Built from the tour's current options, not this render's, so quick changes all land.
+  const setMobile = <K extends keyof MobileOptions>(key: K, value: MobileOptions[K] | undefined) =>
+    edit((o) => {
+      const next = with_(o.mobile ?? {}, key, value)
+      return with_(o, 'mobile', Object.keys(next).length > 0 ? next : undefined)
+    })
   return (
     <Section title="Look" mark={MARK.look}>
       <div class="grid2">
@@ -1153,6 +1173,25 @@ function LookForm({ store, tour }: { store: Store; tour: Tour }) {
             />
           </Field>
         )}
+      </div>
+      <div class="grid2">
+        <Field label="Phone layout" hint="Auto: beside the target when it fits, else docked.">
+          <Select<SmallScreenLayout>
+            value={mobile.layout ?? 'auto'}
+            onChange={(v) => setMobile('layout', v === 'auto' ? undefined : v)}
+            options={PHONE_LAYOUTS}
+          />
+        </Field>
+        <Field
+          label="Phone card"
+          hint="Stories: progress on top, a wide Next. Classic: as on large screens."
+        >
+          <Select<SmallScreenCard>
+            value={mobile.card ?? 'stories'}
+            onChange={(v) => setMobile('card', v === 'stories' ? undefined : v)}
+            options={PHONE_CARDS}
+          />
+        </Field>
       </div>
     </Section>
   )

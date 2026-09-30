@@ -284,6 +284,34 @@ describe('devtools panel', () => {
     await docent.destroy()
   })
 
+  it('sets the phone layout and card, and drops the block at the defaults', async () => {
+    const { docent, unmount } = setup()
+    tab('Edit')
+    const look = () =>
+      Array.from(shadow().querySelectorAll('.section')).find(
+        (x) => x.querySelector('h4')?.textContent === 'Look',
+      ) as HTMLElement
+    await vi.waitFor(() => expect(look()).toBeTruthy())
+    const choose = (label: string, value: string) => {
+      const field = Array.from(look().querySelectorAll('.field')).find((f) =>
+        f.textContent?.startsWith(label),
+      )
+      const select = field?.querySelector('select') as HTMLSelectElement
+      select.value = value
+      select.dispatchEvent(new Event('change', { bubbles: true }))
+    }
+    choose('Phone layout', 'dock')
+    choose('Phone card', 'classic')
+    await vi.waitFor(() =>
+      expect(docent.getTours()[0]?.options?.mobile).toEqual({ layout: 'dock', card: 'classic' }),
+    )
+    choose('Phone layout', 'auto')
+    choose('Phone card', 'stories')
+    await vi.waitFor(() => expect(docent.getTours()[0]?.options).not.toHaveProperty('mobile'))
+    unmount()
+    await docent.destroy()
+  })
+
   it('adds, moves and deletes steps', async () => {
     const { docent, unmount } = setup()
     tab('Edit')
