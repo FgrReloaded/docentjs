@@ -46,6 +46,47 @@ export const STYLES = `
 .dot.on, .live { background: var(--ok); box-shadow: 0 0 0 3px oklch(76% 0.14 160 / .2); }
 .card .dot { background: var(--accent); }
 
+/* ------------------------------------------------------------------ pocket */
+
+/* Beside the panel, over the page (and over the page's own tour). */
+.pocket {
+  position: fixed; z-index: 2147483646; display: flex; flex-direction: column;
+  /* Solid: nothing composited around the frame, and the page under it stays out of sight. */
+  background: oklch(11% 0.01 255);
+}
+.pocket-bar {
+  flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 8px 12px; background: var(--bg); border-bottom: 1px solid var(--line-soft);
+}
+.pocket-name { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; margin-right: 4px; }
+.pocket-name .icon { color: var(--accent); }
+.seg-btn.wide { width: auto; padding: 0 9px; font: inherit; font-size: 11px; font-variant-numeric: tabular-nums; }
+.pocket-status {
+  display: inline-flex; align-items: center; gap: 8px; min-width: 0; max-width: 280px;
+  padding: 0 10px; height: 26px; border-radius: 999px; background: var(--panel);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pocket-status .grow { overflow: hidden; text-overflow: ellipsis; }
+/* Centred when the phone fits; scrolls, rather than shrinks, when it does not. */
+.pocket-stage { flex: 1; min-height: 0; display: flex; overflow: auto; padding: 24px; }
+.device { flex: none; margin: auto; }
+.device-body {
+  padding: 10px; border-radius: 46px; background: #09090c;
+  box-shadow: 0 0 0 1px var(--line), 0 40px 90px -30px #000;
+}
+/*
+ * Rounded screen corners are painted over the frame, not clipped: Chrome drops
+ * clip-paths on backdrop filters inside a frame under any rounded clipping
+ * (its own or an ancestor's), which blurred a tour's spotlight under the
+ * "blur" overlay. A square clip is fine.
+ */
+.screen { position: relative; overflow: hidden; }
+.screen::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  border-radius: 36px; box-shadow: 0 0 0 16px #09090c;
+}
+.device iframe { display: block; border: 0; background: #fff; }
+
 .panel {
   position: fixed; z-index: 2147483647; display: flex; flex-direction: column;
   background: var(--bg); color: var(--fg);

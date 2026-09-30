@@ -31,6 +31,7 @@
     main { padding: 24px; }
     button, input { font: inherit; padding: 8px 12px; }
     .far { margin-top: 120vh; }
+    .tall { height: 760px; margin-top: 40px; border: 1px solid #ccc; }
     .bottom-right { position: fixed; right: 12px; bottom: 12px; }
     .toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
     @media (max-width: 600px) {
@@ -65,6 +66,8 @@
           <button id="buried" data-docent="buried">Buried</button>
           <div class="cover" id="cover">Fixed panel</div>
         </div>
+        <!-- Taller than the room above a docked card on a phone. -->
+        <div id="tall" class="tall">A tall panel</div>
         <div class="far">
           <input id="search" placeholder="search" />
         </div>
@@ -81,6 +84,12 @@
     import { createDocent, createTour, defineTour } from '@docentjs/dom'
 
     const params = new URLSearchParams(location.search)
+    // `pinlater`: a bar above the sticky header, so the header only pins once the page
+    // scrolls, and a panel on screen from the start that overlaps a docked card.
+    if (params.has('pinlater')) {
+      document.body.insertAdjacentHTML('afterbegin', '<div id="banner" style="height: 90px; background: #fde68a">Banner</div>')
+      document.querySelector('main').insertAdjacentHTML('afterbegin', '<div id="mid" style="height: 600px; border: 1px solid #ccc">A panel on screen</div>')
+    }
     const events = []
     window.events = events
 
@@ -178,6 +187,14 @@
           { id: 'two', target: '#save', title: 'Two' },
           { id: 'three', title: 'Three' },
         ],
+      }),
+      mid: defineTour({
+        id: 'mid',
+        steps: [{ id: 'mid', target: '#mid', title: 'A panel on screen', body: 'It overlaps the card.' }],
+      }),
+      tall: defineTour({
+        id: 'tall',
+        steps: [{ id: 'tall', target: '#tall', title: 'A tall panel', body: 'Taller than the room.' }],
       }),
       sticky: defineTour({
         id: 'sticky',

@@ -110,6 +110,28 @@ test.describe('small screens', () => {
     await expect(popover(page)).toHaveAttribute('data-side', 'top')
   })
 
+  for (const [label, tour, extra] of [
+    ['a tall target', 'tall', ''],
+    // On screen from the start: the scroll that clears the card is what pins the header.
+    ['a target under a header that pins once the page scrolls', 'mid', '&pinlater'],
+  ] as const) {
+    test(`${label} comes to just below the sticky header, never under it`, async ({
+      page,
+      isMobile,
+    }) => {
+      test.skip(!isMobile, 'desktop floats the popover')
+      await open(page, tour, `=${tour}&layout=dock${extra}`)
+      await settled(page)
+      const header = await box(page.locator('header'))
+      const target = await box(page.locator(`#${tour}`))
+      const ring = await box(page.locator('[data-docent-host]:not([data-leaving]) .ring'))
+      // Its top is in view, below the header (a frosted header would blur what is under it).
+      expect(target.y).toBeGreaterThanOrEqual(header.y + header.height - 1)
+      // The spotlight is cropped to below the header too.
+      expect(ring.y).toBeGreaterThanOrEqual(header.y + header.height)
+    })
+  }
+
   test.describe('a narrow phone', () => {
     test.use({ viewport: { width: 340, height: 700 } })
 

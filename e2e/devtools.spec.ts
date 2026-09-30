@@ -99,4 +99,57 @@ test.describe('devtools', () => {
     await p.getByRole('tab', { name: /Audit/ }).click()
     await expect(p.getByText(/Target is covered by <div#cover>/)).toBeVisible()
   })
+
+  test('Pocket shows the page at phone size, with edits live in it', async ({ page }) => {
+    await page.goto('/app?manager&devtools&user=pk1')
+    await expect(panel(page).locator('.now')).toContainText('m-welcome')
+    await panel(page)
+      .getByRole('button', { name: /Pocket/ })
+      .click()
+    const pocket = page.locator('[data-docent-devtools] .pocket')
+    const frame = pocket.locator('iframe[name="docent-pocket"]')
+    await expect(frame).toHaveAttribute('width', '390')
+    const inside = page.frameLocator('iframe[name="docent-pocket"]')
+    // The page inside runs the tour, with no second panel of its own.
+    await expect(pocket.locator('.pocket-status')).toContainText('Welcome, trial user')
+    await expect(inside.locator('[data-docent-devtools]')).toHaveCount(0)
+    const title = inside.locator('[data-docent-host]:not([data-leaving]) .title')
+    await expect(title).toHaveText('Welcome, trial user')
+
+    // An edit in the panel shows up in the phone.
+    await panel(page).getByRole('tab', { name: 'Edit' }).click()
+    // Hovering a step outlines nothing: the page is behind the phone, and an
+    // outline there would haze the phone's spotlight.
+    await panel(page).locator('.step-item').first().hover()
+    await expect(page.locator('[data-docent-devtools-highlight]')).toBeHidden()
+    await panel(page)
+      .locator('.field', { hasText: /^Title/ })
+      .locator('input')
+      .fill('Hi from Pocket')
+    await expect(title).toHaveText('Hi from Pocket')
+    // The phone is at the size chosen, and the panel's bar follows it.
+    await pocket.locator('.seg-btn', { hasText: '480' }).click()
+    await expect(frame).toHaveAttribute('width', '480')
+    await expect(panel(page).locator('.now')).toContainText('in the Pocket')
+
+    // Nothing clips the frame with rounded corners: Chrome then drops clip-paths
+    // on backdrop filters inside it, blurring a "blur" overlay's spotlight.
+    const rounded = await frame.evaluate((el) => {
+      const out: string[] = []
+      for (
+        let n: Element | null = el;
+        n;
+        n = n.parentElement ?? (n.getRootNode() as ShadowRoot).host ?? null
+      ) {
+        const cs = getComputedStyle(n)
+        const clips = n === el || cs.overflow !== 'visible'
+        if (clips && cs.borderRadius !== '0px') out.push(`${n.tagName}.${n.className}`)
+      }
+      return out
+    })
+    expect(rounded).toEqual([])
+
+    await pocket.getByRole('button', { name: 'Close Pocket' }).click()
+    await expect(pocket).toHaveCount(0)
+  })
 })

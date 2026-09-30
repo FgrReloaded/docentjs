@@ -10,6 +10,14 @@ import type { Docent, DocentEvent, DocentState, Tour } from '@docentjs/core'
 import { computed, effect, signal } from '@preact/signals'
 import { loadDrafts, reconcile, type SavedDrafts, saveDrafts, stableJson } from '../drafts'
 import { type PerfSnapshot, recordPerf } from '../perf'
+import {
+  type FromGuest,
+  type GuestState,
+  POCKET_SIZES,
+  pocketMessage,
+  type ToGuest,
+  tag,
+} from '../pocket'
 import { startOnboarding } from './onboarding'
 
 export type Tab = 'tours' | 'edit' | 'simulate' | 'events' | 'audit' | 'perf'
@@ -102,6 +110,12 @@ export function createStore(docent: Docent, options: StoreOptions) {
   const query = signal('')
   const picking = signal(false)
   const perf = signal<PerfSnapshot>({ steps: [], missingTargets: 0 })
+  /** Pocket: which phone size (index into POCKET_SIZES) and whether it is turned sideways. */
+  const pocket = signal<{ size: number; landscape: boolean } | null>(null)
+  /** What the Pocket frame is showing, as it last reported. */
+  const guest = signal<GuestState | undefined>(undefined)
+  let frame: HTMLIFrameElement | undefined
+  let guestReady = false
   const mountedAt = Date.now()
   const originals = new Map<string, Tour>()
   /** Drafts from earlier sessions, until their tour shows up in the manager. */
@@ -194,7 +208,8 @@ export function createStore(docent: Docent, options: StoreOptions) {
   if (running) follow(running.tour.id, running.tour.steps[running.getState().index]?.id)
   cleanups.push(
     docent.onEvent((event) => {
-      if (event.type === 'step:shown') follow(event.tourId, event.stepId)
+      // With the Pocket open the panel follows the phone, not the page under it.
+      if (event.type === 'step:shown' && !pocket.peek()) follow(event.tourId, event.stepId)
       else if (event.type.startsWith('tour:')) shown = ''
       const next = [...events.value, { id: ++eventSeq, at: Date.now(), event }]
       events.value = next.length > MAX_EVENTS ? next.slice(-MAX_EVENTS) : next
@@ -219,6 +234,101 @@ export function createStore(docent: Docent, options: StoreOptions) {
   win?.addEventListener('popstate', onRoute)
   cleanups.push(() => win?.removeEventListener('popstate', onRoute))
   void docent.ready.then(refreshTours)
+
+  // ----------------------------------------------------------------- pocket
+
+  const origin = win?.location.origin ?? '*'
+  function toGuest(message: ToGuest): void {
+    if (guestReady) frame?.contentWindow?.postMessage(tag(message), origin)
+  }
+  /** Where the panel is pointing: the selected step, else the first tour's start. */
+  function selected(): { tourId: string; stepId?: string } | undefined {
+    const sel = selection.value
+    const tourId = sel.tourId ?? tours.value[0]?.id
+    if (!tourId) return undefined
+    return sel.stepId === undefined ? { tourId } : { tourId, stepId: sel.stepId }
+  }
+  /** A new frame is ready: give it the edits so far, and show the selected step. */
+  function syncGuest(): void {
+    const edits = Object.values(drafts.value)
+    if (edits.length > 0) toGuest({ kind: 'tours', tours: edits })
+    const at = selected()
+    if (at) toGuest({ kind: 'start', ...at })
+  }
+  const onGuestMessage = (e: MessageEvent) => {
+    if (!frame || e.source !== frame.contentWindow) return
+    const m = pocketMessage<FromGuest>(e.data)
+    if (!m) return
+    if (m.kind === 'ready') {
+      guestReady = true
+      syncGuest()
+      return
+    }
+    const { kind: _kind, ...state } = m
+    guest.value = state
+    if (state.tourId) follow(state.tourId, state.stepId)
+  }
+  win?.addEventListener('message', onGuestMessage)
+  cleanups.push(() => win?.removeEventListener('message', onGuestMessage))
+
+  /** Choosing a step or a tour in the panel moves the Pocket there. */
+  cleanups.push(
+    effect(() => {
+      const sel = selection.value
+      if (!pocket.value || !sel.tourId) return
+      const g = guest.peek()
+      if (g?.tourId === sel.tourId && (sel.stepId === undefined || g.stepId === sel.stepId)) return
+      toGuest({
+        kind: 'start',
+        tourId: sel.tourId,
+        ...(sel.stepId === undefined ? {} : { stepId: sel.stepId }),
+      })
+    }),
+  )
+  /** Closing the panel puts the Pocket away too. */
+  cleanups.push(
+    effect(() => {
+      if (!open.value && pocket.peek()) closePocket()
+    }),
+  )
+
+  /**
+   * Show the page at phone size beside the panel. A tour on the page is left
+   * as it is (stopping it would record it as skipped); the Pocket covers it.
+   */
+  function openPocket(): void {
+    if (pocket.value) return
+    options.highlight(null)
+    pocket.value = { size: 1, landscape: false }
+  }
+  function closePocket(): void {
+    pocket.value = null
+    guest.value = undefined
+    frame = undefined
+    guestReady = false
+  }
+  /** The Pocket's frame element, as it mounts and unmounts. */
+  function attachPocket(el: HTMLIFrameElement | undefined): void {
+    frame = el
+    guestReady = false
+  }
+  /**
+   * The frame finished loading: ask its guest to say it is ready. Covers a
+   * ready message sent before the panel was listening for this frame.
+   */
+  function pocketLoaded(): void {
+    frame?.contentWindow?.postMessage(tag({ kind: 'hello' } satisfies ToGuest), origin)
+  }
+  function pocketSize(size: number, landscape = pocket.value?.landscape ?? false): void {
+    if (!pocket.value || !POCKET_SIZES[size]) return
+    pocket.value = { size, landscape }
+  }
+  /** Start a tour at a step: in the Pocket when it is open, on the page otherwise. */
+  function preview(tourId: string, stepId?: string): void {
+    if (pocket.value)
+      toGuest({ kind: 'start', tourId, ...(stepId === undefined ? {} : { stepId }) })
+    else void docent.start(tourId, stepId === undefined ? {} : { at: stepId })
+  }
 
   /** Show the devtools tour, from the start. */
   function tour(): void {
@@ -248,7 +358,8 @@ export function createStore(docent: Docent, options: StoreOptions) {
         return
       }
 
-      if (options.onboarding === false || onboarded.value || state.value.active) return
+      if (options.onboarding === false || onboarded.value || state.value.active || pocket.value)
+        return
       setTimeout(() => {
         if (open.value && !onboarded.value && !state.value.active) tour()
       }, 300)
@@ -259,7 +370,10 @@ export function createStore(docent: Docent, options: StoreOptions) {
   let pending: Tour | undefined
   const flush = () => {
     clearTimeout(commitTimer)
-    if (pending) void docent.updateTour(pending)
+    if (pending) {
+      void docent.updateTour(pending)
+      toGuest({ kind: 'tours', tours: [pending] })
+    }
     pending = undefined
   }
 
@@ -294,6 +408,7 @@ export function createStore(docent: Docent, options: StoreOptions) {
     drafts.value = rest
     if (pending?.id === id) pending = undefined
     void docent.updateTour(original)
+    toGuest({ kind: 'tours', tours: [original] })
   }
 
   /** Resize the panel along its current axis. */
@@ -331,8 +446,23 @@ export function createStore(docent: Docent, options: StoreOptions) {
     picking,
     perf,
     recorder,
+    pocket,
+    guest,
+    openPocket,
+    closePocket,
+    attachPocket,
+    pocketLoaded,
+    pocketSize,
+    preview,
+    /** Send the Pocket a command: next, back, or stop. */
+    pocketCommand: (kind: 'next' | 'back' | 'stop') => toGuest({ kind }),
     mountedAt,
-    highlight: options.highlight,
+    /**
+     * Outline an element on the page. Not while the Pocket is open: the page
+     * is behind it, and the outline would sit over the phone at the page's
+     * coordinates, hazing whatever it covers.
+     */
+    highlight: (el: Element | null) => options.highlight(pocket.peek() ? null : el),
     pick: async () => {
       picking.value = true
       try {

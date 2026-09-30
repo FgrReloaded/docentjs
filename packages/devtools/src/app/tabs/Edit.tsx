@@ -243,8 +243,13 @@ export function EditTab({ store }: { store: Store }) {
   const step = tour.steps.find((s) => s.id === sel.stepId) ?? tour.steps[0]
   const edited = store.edited.value.has(tour.id)
   const controller = store.docent.activeController
-  const liveStep =
-    store.state.value.active === tour.id
+  // The step on screen: in the Pocket when it is open, else on the page.
+  const guest = store.pocket.value ? store.guest.value : undefined
+  const liveStep = store.pocket.value
+    ? guest?.tourId === tour.id
+      ? guest.stepId
+      : undefined
+    : store.state.value.active === tour.id
       ? controller?.tour.steps[controller.getState().index]?.id
       : undefined
 
@@ -280,8 +285,12 @@ export function EditTab({ store }: { store: Store }) {
         <span class="grow" />
         <Button
           icon="play"
-          title="Start this tour on the page, at the selected step"
-          onClick={() => void store.docent.start(tour.id, step ? { at: step.id } : {})}
+          title={
+            store.pocket.value
+              ? 'Start this tour in the Pocket, at the selected step'
+              : 'Start this tour on the page, at the selected step'
+          }
+          onClick={() => store.preview(tour.id, step?.id)}
         >
           Preview step
         </Button>
@@ -342,7 +351,14 @@ export function EditTab({ store }: { store: Store }) {
               <span class="index mono">{String(i + 1).padStart(2, '0')}</span>
               <span class="grow">{s.title || <span class="muted">{s.id}</span>}</span>
               {s.id === liveStep && (
-                <span class="live-tag" title="This step is showing on the page now">
+                <span
+                  class="live-tag"
+                  title={
+                    store.pocket.value
+                      ? 'This step is showing in the Pocket now'
+                      : 'This step is showing on the page now'
+                  }
+                >
                   showing
                 </span>
               )}

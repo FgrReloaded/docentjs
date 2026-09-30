@@ -27,7 +27,7 @@ import type {
 import { arrowGap, isConnector } from './arrows'
 import type { Connector } from './connector'
 import { templateFor } from './looks'
-import { pinnedAncestor, uncover } from './occlusion'
+import { coveredTop, pinnedAncestor, uncover } from './occlusion'
 import { Overlay } from './overlay'
 import { buildHeadlessShell, buildPopover, type PopoverLook } from './popover'
 import {
@@ -432,14 +432,17 @@ export class DomRenderer implements Renderer {
       const top = layout.dockTop
         ? room.y + EDGE
         : Math.max(room.y + EDGE, room.y + room.height - floating.height - EDGE)
-      // The cutout stays in the strip of page left beside the card.
+      // The cutout stays in the strip of page left beside the card, and below
+      // an app header for a target too tall for it.
+      const ceiling =
+        target && rect && rect.height > top - room.y ? this.ceiling(target, rect, room) : room.y
       const free = layout.dockTop
         ? {
             ...room,
             y: top + floating.height,
             height: room.y + room.height - top - floating.height,
           }
-        : { ...room, height: top - room.y }
+        : { ...room, y: ceiling, height: top - ceiling }
       overlay.update(
         overlaySize,
         {
@@ -485,9 +488,12 @@ export class DomRenderer implements Renderer {
       return
     }
 
+    // A target taller than the screen is framed below any app header over it.
+    const ceiling = target && rect.height > room.height ? this.ceiling(target, rect, room) : room.y
+    const area = { ...room, y: ceiling, height: room.y + room.height - ceiling }
     overlay.update(
       overlaySize,
-      { target: rect, padding, radius, shape, clip: oversizedClip(rect, room) },
+      { target: rect, padding, radius, shape, clip: oversizedClip(rect, area) },
       this.blocksInteraction(ctx),
     )
     const hole = overlay.hole ?? rect
@@ -772,11 +778,29 @@ export class DomRenderer implements Renderer {
     const overlap = rect.y + rect.height - sheetTop
     if (!win || overlap <= 0 || this.sheetAdjusted) return true
     this.sheetAdjusted = true
-    const headroom = rect.y - (room.y + EDGE)
+    // Its top comes to just below an app header, never under it.
+    const headroom = rect.y - (this.ceiling(target, rect, room) + EDGE)
     const by = Math.min(overlap + 16, headroom)
     // Instant, even under `scroll-behavior: smooth`, so the result can be read back now.
     if (by > 0) win.scrollBy({ top: by, behavior: 'instant' })
-    return rect.height > sheetTop - room.y || target.getBoundingClientRect().bottom <= sheetTop
+    // A sticky header only pins once the page has scrolled: look again, and
+    // bring the top back out from under one that pinned over it.
+    const after = toRect(target.getBoundingClientRect())
+    const ceiling = this.ceiling(target, after, room)
+    const under = ceiling + EDGE - after.y
+    if (by > 0 && under > 0) win.scrollBy({ top: -under, behavior: 'instant' })
+    return rect.height > sheetTop - ceiling || target.getBoundingClientRect().bottom <= sheetTop
+  }
+
+  /**
+   * Where the visible page starts above the target: below a sticky or fixed
+   * app header, which would otherwise sit over (and, frosted, blur) the part
+   * of a tall target scrolled under it.
+   */
+  private ceiling(target: Element, rect: Rect, room: Rect): number {
+    if (this.options.avoidOcclusion === false) return room.y
+    const x = Math.min(Math.max(rect.x + rect.width / 2, room.x + 1), room.x + room.width - 1)
+    return Math.max(room.y, coveredTop(target, x, this.host ?? null, this.viewport()))
   }
 
   /**

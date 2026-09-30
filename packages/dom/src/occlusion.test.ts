@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { findOccluder, uncover } from './occlusion'
+import { coveredTop, findOccluder, uncover } from './occlusion'
 
 const viewport = { x: 0, y: 0, width: 800, height: 600 }
 
@@ -85,5 +85,25 @@ describe('uncover', () => {
     // biome-ignore lint/suspicious/noExplicitAny: simulate an old engine
     ;(document as any).elementsFromPoint = undefined
     expect(uncover(target, host, viewport)).toBe(false)
+  })
+})
+
+describe('coveredTop', () => {
+  it('is the bottom of a pinned bar across the top, ignoring our host', () => {
+    const { header, target, host } = setup()
+    rect(header, { top: 0, height: 64 })
+    rect(target, { top: -200, height: 900 })
+    document.elementsFromPoint = vi.fn(() => [host, header, target])
+    expect(coveredTop(target, 50, host, viewport)).toBe(64)
+  })
+
+  it('is the top of the screen with no bar, or when the bar holds the target', () => {
+    const { header, target, host } = setup()
+    rect(header, { top: 0, height: 64 })
+    document.elementsFromPoint = vi.fn(() => [host, target])
+    expect(coveredTop(target, 50, host, viewport)).toBe(0)
+    header.appendChild(target)
+    document.elementsFromPoint = vi.fn(() => [host, header])
+    expect(coveredTop(target, 50, host, viewport)).toBe(0)
   })
 })

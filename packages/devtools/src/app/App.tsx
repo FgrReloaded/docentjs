@@ -1,6 +1,7 @@
 /** @jsxImportSource preact */
 import { useRef } from 'preact/hooks'
 import { MARK } from './onboarding'
+import { Pocket } from './Pocket'
 import type { Dock, Store, Tab } from './store'
 import { AuditTab, auditCount } from './tabs/Audit'
 import { EditTab } from './tabs/Edit'
@@ -45,53 +46,64 @@ export function App({ store }: { store: Store }) {
   const vertical = dock !== 'bottom'
   const style = vertical ? { width: `${store.size.value}px` } : { height: `${store.size.value}px` }
   return (
-    <div
-      class={`panel dock-${dock} ${store.narrow.value ? 'narrow' : ''} ${store.picking.value ? 'picking' : ''}`}
-      role="dialog"
-      aria-label="Docent devtools"
-      style={style}
-    >
-      <Resizer store={store} />
-      <header class="bar">
-        <span class="logo" aria-hidden="true" />
-        <span class="title">Docent</span>
-        <span class="muted small">{store.tours.value.length} tours</span>
-        <span class="grow" />
-        <IconButton
-          icon="help"
-          label="Take the devtools tour"
-          data-docent={MARK.help}
-          aria-pressed={store.onboarding.value}
-          onClick={() => (store.onboarding.value ? store.stopTour() : store.tour())}
-        />
-        <LayoutPicker store={store} />
-        <IconButton icon="close" label="Close" onClick={() => (store.open.value = false)} />
-      </header>
-      <NowBar store={store} />
-      <div class="tabs" role="tablist" data-docent={MARK.tabs}>
-        {TABS.map(([id, label]) => (
-          <button
-            type="button"
-            role="tab"
-            key={id}
-            aria-selected={store.tab.value === id}
-            data-docent={MARK.tab(id)}
-            onClick={() => (store.tab.value = id)}
-          >
-            {label}
-            {id === 'audit' && <AuditPill store={store} />}
-          </button>
-        ))}
+    <>
+      {store.pocket.value && <Pocket store={store} />}
+      <div
+        class={`panel dock-${dock} ${store.narrow.value ? 'narrow' : ''} ${store.picking.value ? 'picking' : ''}`}
+        role="dialog"
+        aria-label="Docent devtools"
+        style={style}
+      >
+        <Resizer store={store} />
+        <header class="bar">
+          <span class="logo" aria-hidden="true" />
+          <span class="title">Docent</span>
+          <span class="muted small">{store.tours.value.length} tours</span>
+          <span class="grow" />
+          <IconButton
+            icon="help"
+            label="Take the devtools tour"
+            data-docent={MARK.help}
+            aria-pressed={store.onboarding.value}
+            onClick={() => (store.onboarding.value ? store.stopTour() : store.tour())}
+          />
+          {!store.narrow.value && (
+            <IconButton
+              icon="phone"
+              label={store.pocket.value ? 'Close Pocket' : 'Pocket: see the page at phone size'}
+              aria-pressed={!!store.pocket.value}
+              onClick={() => (store.pocket.value ? store.closePocket() : store.openPocket())}
+            />
+          )}
+          <LayoutPicker store={store} />
+          <IconButton icon="close" label="Close" onClick={() => (store.open.value = false)} />
+        </header>
+        <NowBar store={store} />
+        <div class="tabs" role="tablist" data-docent={MARK.tabs}>
+          {TABS.map(([id, label]) => (
+            <button
+              type="button"
+              role="tab"
+              key={id}
+              aria-selected={store.tab.value === id}
+              data-docent={MARK.tab(id)}
+              onClick={() => (store.tab.value = id)}
+            >
+              {label}
+              {id === 'audit' && <AuditPill store={store} />}
+            </button>
+          ))}
+        </div>
+        <div class="body">
+          {store.tab.value === 'tours' && <ToursTab store={store} />}
+          {store.tab.value === 'edit' && <EditTab store={store} />}
+          {store.tab.value === 'simulate' && <SimulateTab store={store} />}
+          {store.tab.value === 'events' && <EventsTab store={store} />}
+          {store.tab.value === 'audit' && <AuditTab store={store} />}
+          {store.tab.value === 'perf' && <PerfTab store={store} />}
+        </div>
       </div>
-      <div class="body">
-        {store.tab.value === 'tours' && <ToursTab store={store} />}
-        {store.tab.value === 'edit' && <EditTab store={store} />}
-        {store.tab.value === 'simulate' && <SimulateTab store={store} />}
-        {store.tab.value === 'events' && <EventsTab store={store} />}
-        {store.tab.value === 'audit' && <AuditTab store={store} />}
-        {store.tab.value === 'perf' && <PerfTab store={store} />}
-      </div>
-    </div>
+    </>
   )
 }
 
@@ -131,6 +143,7 @@ function AuditPill({ store }: { store: Store }) {
 
 function NowBar({ store }: { store: Store }) {
   store.tick.value
+  if (store.pocket.value) return <PocketNowBar store={store} />
   const active = store.state.value.active
   const controller = store.docent.activeController
   if (!active || !controller) {
@@ -190,5 +203,38 @@ function Resizer({ store }: { store: Store }) {
       onPointerMove={onMove}
       onPointerUp={() => (start.current = null)}
     />
+  )
+}
+
+/** With the Pocket open, the bar shows and drives the phone, not the page under it. */
+function PocketNowBar({ store }: { store: Store }) {
+  const g = store.guest.value
+  if (!g || g.index < 0) {
+    return (
+      <div class="now" data-docent={MARK.now}>
+        <span class="label muted">No tour running in the Pocket</span>
+      </div>
+    )
+  }
+  const tour = store.tours.value.find((t) => t.id === g.tourId)
+  return (
+    <div class="now" data-docent={MARK.now}>
+      <span class="live" />
+      <span class="label">
+        <strong>{tour?.name ?? g.tourId}</strong> · step {g.index + 1}/{g.total}{' '}
+        <span class="mono muted">{g.stepId}</span>
+        <span class="muted"> · in the Pocket</span>
+      </span>
+      <IconButton icon="prev" label="Back" onClick={() => store.pocketCommand('back')} />
+      <IconButton icon="next" label="Next" onClick={() => store.pocketCommand('next')} />
+      <IconButton
+        icon="edit"
+        label="Edit this step"
+        onClick={() => store.select(g.tourId, g.stepId, 'edit')}
+      />
+      <button type="button" class="btn ghost" onClick={() => store.pocketCommand('stop')}>
+        Stop
+      </button>
+    </div>
   )
 }

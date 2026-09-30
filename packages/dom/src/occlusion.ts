@@ -61,6 +61,27 @@ export function findOccluder(
 }
 
 /**
+ * Where the page's visible area starts at `x`: below a fixed or sticky bar
+ * across the top of the screen (an app header), or at the top of the viewport
+ * when there is none. A bar that is, or holds, the target does not count.
+ */
+export function coveredTop(
+  target: Element,
+  x: number,
+  ignore: Element | null,
+  viewport: Viewport,
+): number {
+  const doc = target.ownerDocument
+  const vy = viewport.y ?? 0
+  if (typeof doc.elementsFromPoint !== 'function') return vy
+  const top = doc.elementsFromPoint(x, vy + 1).find((el) => el !== ignore)
+  const pinned = top ? pinnedAncestor(top) : null
+  if (!pinned || pinned === target || pinned.contains(target)) return vy
+  const r = pinned.getBoundingClientRect()
+  return r.top <= vy + 1 && r.bottom > vy ? r.bottom : vy
+}
+
+/**
  * Scroll so nothing pinned covers the target. Returns true if it scrolled.
  * Runs at most twice to handle a header and a footer together.
  */

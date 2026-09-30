@@ -29,6 +29,8 @@ const paths = {
   search: 'M7 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM10 10l3 3',
   edit: 'M3 13l1-3.5L10.5 3l2.5 2.5L6.5 12zM9.5 4l2.5 2.5',
   help: 'M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13zM6.2 6.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.4M8 11.2v.1',
+  phone: 'M5 1.5h6a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1zM7 12.5h2',
+  rotate: 'M12.5 8a4.5 4.5 0 1 1-1.4-3.3M12.5 2.5v3h-3',
 } as const
 
 export type IconName = keyof typeof paths

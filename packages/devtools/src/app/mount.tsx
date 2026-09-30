@@ -6,6 +6,7 @@
 
 import type { Docent } from '@docentjs/core'
 import { render } from 'preact'
+import { isPocketFrame, runGuest } from '../pocket'
 import { App } from './App'
 import { pickElement } from './picker'
 import { createStore } from './store'
@@ -43,6 +44,9 @@ export interface MountOptions {
  */
 export function mount(docent: Docent, options: MountOptions = {}): () => void {
   const doc = options.document ?? document
+  // Inside the panel's Pocket frame, follow the main panel instead of showing one.
+  const view = doc.defaultView
+  if (view && isPocketFrame(view)) return runGuest(docent, view)
   const host = doc.createElement('div')
   host.setAttribute('data-docent-devtools', '')
   host.setAttribute('data-docent-ignore-keys', '')

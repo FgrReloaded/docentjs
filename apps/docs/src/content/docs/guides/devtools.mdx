@@ -81,8 +81,18 @@ A live editor for any tour. Changes apply to the running tour as you type, so yo
 - **Step fields**: title, body, placement, target, how the step advances, what happens when the target is missing, and per-step arrow, spotlight shape and ring.
 - **Target picker**: click **Pick** and then any element on the page. The panel suggests selectors ranked by stability, preferring `data-docent` names and ids over generated class names and structural paths, and tells you when one looks fragile.
 - **Tour**: trigger, frequency, progress, close and keyboard options. With **From a beacon**, also how it opens, the beacon's style, position, size, offset, badge text and label, and its colour under **Theme**. The beacon on the page redraws as you edit.
-- **Look**: arrow style, overlay style and blur, spotlight shape, ring, padding and radius. See [Arrows, spotlight and overlay](/customize/arrows-and-spotlight/).
+- **Look**: arrow style, overlay style and blur, spotlight shape, ring, padding and radius, and the **Phone layout** and **Phone card** used below 480 px. See [Arrows, spotlight and overlay](/customize/arrows-and-spotlight/) and [Small screens](/guides/steps/#small-screens).
 - **Theme**: start from a preset and adjust colors, radius, width and font.
+
+### Pocket: the page at phone size
+
+The phone button in the panel's header opens **Pocket**: your page, loaded in a phone-sized frame beside the panel, with the selected tour running in it. The page inside lays out at the phone's own width, so its phone styles, hidden sidebars and menus are what you see, and the tour uses its phone layout.
+
+- **Sizes**: 360, 390 and 430 px (common phones) and 480 px, where tours switch to their phone layout. The rotate button turns the phone sideways. The phone is drawn at its true size, never scaled; in a short window it is shorter instead (marked *fitted*), like a phone with its browser bars showing.
+- **Edits show up in the phone** as you make them, like they do on the page.
+- **Choosing a step** in the Edit tab takes the phone there, and **Preview step** starts it in the phone. The bar at the top of the panel follows the phone while Pocket is open.
+
+A tour already running on the page is left as it is, under Pocket. The frame loads the same page, so it needs the page to allow being framed by itself (the default on development servers).
 
 ### Keeping your edits
 
