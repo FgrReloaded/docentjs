@@ -1,5 +1,16 @@
 # @docentjs/devtools
 
+## 0.16.0
+
+### Minor Changes
+
+- 9dd6926: The Edit tab's Look section sets how a tour looks on phones: Phone layout (auto, beside the target, docked) and Phone card (stories or classic). Back at both defaults, the `mobile` block is removed from the tour, so the JSON stays as written.
+
+### Patch Changes
+
+- @docentjs/core@0.16.0
+  - @docentjs/dom@0.16.0
+
 ## 0.15.0
 
 ### Patch Changes
