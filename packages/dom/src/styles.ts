@@ -502,7 +502,8 @@ export const STYLES = `
 @keyframes docent-fill { from { transform: scaleX(0); } }
 /* The segments say it at a glance; the count stays for screen readers. */
 .popover.stories .progress .meter { display: none; }
-.popover.stories .progress .count {
+.popover.stories .progress .count,
+.popover.compact .progress:not(:has(.marks i:nth-child(8))) .count {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -551,11 +552,117 @@ export const STYLES = `
   .close { width: 40px; height: 40px; margin: -9px -12px -9px 0; }
 }
 
+/* ------------------------------------------ small screens: the compact card */
+
+/*
+ * A coachmark: a small card, sized by its content, that springs out of its
+ * caret beside the target. The counter becomes a pager, Back an icon, and Skip
+ * steps aside for the close button, which does the same. Parts are styled
+ * through :where() so a theme's own rules for them still win.
+ */
+.popover.compact {
+  width: max-content;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  transition:
+    transform var(--docent-duration) var(--docent-easing),
+    opacity var(--docent-duration) var(--docent-easing),
+    scale calc(var(--docent-duration) * 1.8) cubic-bezier(0.34, 1.45, 0.64, 1),
+    height var(--docent-duration) var(--docent-easing);
+}
+.popover.compact[data-side="bottom"] { transform-origin: var(--_at, 50%) 0; }
+.popover.compact[data-side="top"] { transform-origin: var(--_at, 50%) 100%; }
+.popover.compact[data-side="right"] { transform-origin: 0 var(--_at, 50%); }
+.popover.compact[data-side="left"] { transform-origin: 100% var(--_at, 50%); }
+.popover[data-over] .arrow { display: none; }
+.popover.compact[data-entering],
+:host([data-leaving]) .popover.compact { scale: 0.8; }
+/* Each new step lands with a small spring as the card glides over. */
+.popover.compact[data-moving] { animation: docent-land calc(var(--docent-duration) * 1.8) cubic-bezier(0.34, 1.45, 0.64, 1); }
+@keyframes docent-land { from { scale: 0.94; } }
+
+:where(.popover.compact) .header { gap: 8px; }
+:where(.popover.compact) .title { font-size: 14.5px; line-height: 1.3; letter-spacing: -0.01em; }
+:where(.popover.compact) .eyebrow { font-size: 10px; }
+:where(.popover.compact) .body { margin-top: 3px; }
+:where(.popover.compact) .media { margin-top: 10px; }
+:where(.popover.compact) .media :is(img, video) { max-height: min(20vh, 140px); border-radius: 6px; }
+:where(.popover.compact) .footer { flex-wrap: nowrap; gap: 10px; margin-top: 10px; }
+:where(.popover.compact) .buttons { flex-wrap: nowrap; gap: 6px; }
+:where(.popover.compact) .button {
+  position: relative;
+  height: 30px;
+  min-height: 0;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+}
+:where(.popover.compact) .close {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  margin: -3px -6px 0 0;
+  border-radius: 999px;
+}
+:where(.popover.compact) .close svg { width: 12px; height: 12px; }
+.popover.compact:has(.close) [part~="button-skip"] { display: none; }
+/* Back is a round chevron; its label stays for screen readers. */
+:where(.popover.compact) [part~="button-back"] {
+  width: 30px;
+  padding: 0;
+  font-size: 0;
+  box-shadow: inset 0 0 0 1px var(--_line);
+}
+:where(.popover.compact) [part~="button-back"]::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  margin-left: 3px;
+  border: solid currentColor;
+  border-width: 0 0 1.5px 1.5px;
+  rotate: 45deg;
+}
+/* Drawn small, tapped large: each hit area reaches about 44px. */
+:where(.popover.compact) :is(.button, .close)::after {
+  content: "";
+  position: absolute;
+  inset: -7px -3px;
+}
+:where(.popover.compact) .close::after { inset: -10px; }
+
+/* The counter as a pager: one dot per step, the current one a pill. */
+:where(.popover.compact) .meter { display: none; }
+.popover.compact .progress .marks { display: flex; gap: 4px; }
+.popover.compact .marks i {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--_line);
+}
+.popover.compact .marks i[data-done] { background: color-mix(in oklch, var(--docent-fg) 32%, transparent); }
+.popover.compact .marks i[data-now] {
+  width: 16px;
+  background: var(--docent-fg);
+  animation: docent-grow calc(var(--docent-duration) * 1.6) var(--docent-easing) both;
+}
+@keyframes docent-grow { from { width: 5px; } }
+/* Past seven steps dots stop reading at a glance: the count shows instead. Below that it is hidden with the stories card's count. */
+.popover.compact .progress:has(.marks i:nth-child(8)) .marks { display: none; }
+:where(.popover.compact) .count { font-size: 11.5px; }
+
+/* A step with no target: centred, with a larger title and its image on top. */
+:where(.popover.compact.hero) .title { font-size: 17px; }
+:where(.popover.compact.hero) .media { order: -1; margin: 0 0 12px; }
+
 @media (prefers-reduced-motion: reduce) {
   .overlay, .popover, .ring { transition: none; }
   .ring::after { animation: none !important; }
   .popover[data-moving] > .arrow,
   .popover[data-moving] > slot > *,
   .popover[data-moving] > slot::slotted(*) { animation: none !important; }
+  .popover.compact { transition: none; }
+  .popover.compact[data-moving],
+  .popover.compact .marks i { animation: none; }
 }
 `

@@ -271,6 +271,28 @@ describe('DomRenderer', () => {
     r.hide()
   })
 
+  it('keeps the compact phone card small and beside its target', () => {
+    document.body.innerHTML = '<button id="target">go</button>'
+    stubLayout(document.getElementById('target') as HTMLElement)
+    // A phone; the stub's own restore puts the width back.
+    Object.defineProperty(document.documentElement, 'clientWidth', {
+      value: 390,
+      configurable: true,
+    })
+    const card = () => shadow().querySelector('.popover') as HTMLElement
+    const r = new DomRenderer({ mobile: { card: 'compact' } })
+    r.show(ctx())
+    expect(card().classList.contains('compact')).toBe(true)
+    expect(card().classList.contains('stories')).toBe(false)
+    // Sized by its content, up to 70% of the screen.
+    expect(card().style.width).toBe('')
+    expect(card().style.maxWidth).toBe('273px')
+    // Never docked unless the tour asks for it.
+    expect(card().classList.contains('sheet')).toBe(false)
+    expect(card().getAttribute('data-side')).not.toBe('sheet')
+    r.hide()
+  })
+
   it('follows a target that scrolls inside a shadow root', () => {
     const outer = document.createElement('div')
     document.body.appendChild(outer)

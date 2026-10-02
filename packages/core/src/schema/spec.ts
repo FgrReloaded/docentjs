@@ -377,8 +377,8 @@ const mobile: Spec = {
       '`auto`: beside the target when the card fits, else docked at the bottom. `float` never docks; `dock` always does.',
     ),
     card: field(
-      enums('stories', 'classic'),
-      '`stories` (default): segmented progress, a full-width main button, steps with no target centred. `classic`: the large-screen card.',
+      enums('stories', 'compact', 'classic'),
+      '`stories` (default): segmented progress, a full-width main button, steps with no target centred. `compact`: a small card beside the target. `classic`: the large-screen card.',
     ),
   },
 }

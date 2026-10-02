@@ -64,4 +64,6 @@ export const rendererDefaults: DomRendererOptions = {
   gap: 12,
   templates: { cinder, signal },
   labels: { skip: 'Dismiss', close: 'Dismiss' },
+  // On phones, a small card beside each target instead of a screen-wide one.
+  mobile: { card: 'compact' },
 }

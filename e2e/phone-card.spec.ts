@@ -45,6 +45,40 @@ test.describe('the phone card', () => {
     expect(Math.abs(b.y - (vp.height - (b.y + b.height)))).toBeLessThan(40)
   })
 
+  test('the compact card is small, sits right by its target and points at it', async ({ page }) => {
+    await open(page, 'basic', '=save&card=compact')
+    const p = popover(page)
+    await expect(p).toHaveClass(/compact/)
+    await expect(p).not.toHaveClass(/stories/)
+    await expect(p).toHaveAttribute('data-side', /^(top|bottom)$/)
+    await settled(page)
+    const card = await box(p)
+    const target = await box(page.locator('#save'))
+    const vp = page.viewportSize() as { width: number; height: number }
+    // About 70% of the screen at most, leaving the page visible around it.
+    expect(card.width).toBeLessThanOrEqual(Math.round(vp.width * 0.7) + 1)
+    // Close to the target, with the caret pointing at it.
+    const distance = Math.min(
+      Math.abs(card.y - (target.y + target.height)),
+      Math.abs(target.y - (card.y + card.height)),
+    )
+    expect(distance).toBeLessThan(40)
+    await expect(p.locator('.arrow')).toBeVisible()
+    // A pager instead of the count, a small Next, and Skip left to the close button.
+    await expect(p.locator('.marks')).toBeVisible()
+    await expect(p.locator('.marks i')).toHaveCount(5)
+    await expect(button(page, 'Skip')).toBeHidden()
+    await expect(p.locator('.close')).toBeVisible()
+    const next = await box(button(page, 'Next'))
+    expect(next.width).toBeLessThan(card.width / 2)
+    // Back is a round icon that still carries its label.
+    await button(page, 'Next').click()
+    const back = p.locator('[part~="button-back"]')
+    await expect(back).toHaveText('Back')
+    const b = await box(back)
+    expect(Math.abs(b.width - b.height)).toBeLessThan(2)
+  })
+
   test('the classic card is one option away', async ({ page }) => {
     await open(page, 'basic', '=save&card=classic')
     const p = popover(page)

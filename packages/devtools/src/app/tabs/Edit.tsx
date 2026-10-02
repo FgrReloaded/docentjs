@@ -143,6 +143,7 @@ const PHONE_LAYOUTS: ReadonlyArray<readonly [SmallScreenLayout, string]> = [
 ]
 const PHONE_CARDS: ReadonlyArray<readonly [SmallScreenCard, string]> = [
   ['stories', 'Stories (default)'],
+  ['compact', 'Compact'],
   ['classic', 'Classic'],
 ]
 /** Prepend a "use the tour's setting" choice for step-level overrides. */

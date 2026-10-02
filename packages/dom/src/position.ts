@@ -39,6 +39,8 @@ export interface PositionInput {
   edgePadding?: number
   /** Arrow size; keeps the arrow clear of the popover corners. */
   arrowSize?: number
+  /** The side to use when no side has room. Default: the preferred side. */
+  fallback?: Side
 }
 
 export interface PositionResult {
@@ -98,7 +100,7 @@ export function computePosition(input: PositionInput): PositionResult {
   const space = availableSpace(anchor, viewport)
   const order = candidates(preferred, space)
   const needed = (s: Side) => (isVertical(s) ? floating.height : floating.width) + gap + edge
-  const side = order.find((s) => space[s] >= needed(s)) ?? (order[0] as Side)
+  const side = order.find((s) => space[s] >= needed(s)) ?? input.fallback ?? (order[0] as Side)
 
   // Main axis
   let x = 0
@@ -193,6 +195,16 @@ export function floatSide(
   const second = first === 'top' ? 'bottom' : 'top'
   const fits = (s: Side) => space[s] >= floating.height + gap + edge
   return fits(first) ? first : fits(second) ? second : force ? first : undefined
+}
+
+/**
+ * Above or below the target, whichever has more room. On a small screen a card
+ * that fits nowhere overlaps the edge of its target from there, rather than
+ * covering it sideways.
+ */
+export function roomierSide(anchor: Rect, viewport: Viewport): 'top' | 'bottom' {
+  const space = availableSpace(anchor, viewport)
+  return space.bottom >= space.top ? 'bottom' : 'top'
 }
 
 /**

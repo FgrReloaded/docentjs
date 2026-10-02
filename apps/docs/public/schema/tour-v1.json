@@ -245,9 +245,10 @@
             "card": {
               "enum": [
                 "stories",
+                "compact",
                 "classic"
               ],
-              "description": "`stories` (default): segmented progress, a full-width main button, steps with no target centred. `classic`: the large-screen card."
+              "description": "`stories` (default): segmented progress, a full-width main button, steps with no target centred. `compact`: a small card beside the target. `classic`: the large-screen card."
             }
           },
           "description": "Settings for small screens (phones)."

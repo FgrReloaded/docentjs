@@ -142,9 +142,12 @@ export type SmallScreenLayout = 'auto' | 'float' | 'dock'
  * - `stories` (default): progress as one segment per step across the top, a
  *   full-width main button with Back and Skip as quiet text beneath it, and
  *   steps with no target centred with their image as a hero.
+ * - `compact`: a small card beside its target, pointing at it as on a large
+ *   screen. When neither side has room it overlaps the edge of the target
+ *   rather than docking.
  * - `classic`: the same card as on a large screen.
  */
-export type SmallScreenCard = 'stories' | 'classic'
+export type SmallScreenCard = 'stories' | 'compact' | 'classic'
 
 /** Settings for small screens (phones). */
 export interface MobileOptions {

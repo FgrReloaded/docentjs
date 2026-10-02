@@ -40,6 +40,7 @@ import {
   oversizedClip,
   type PositionResult,
   type Rect,
+  roomierSide,
   type Size,
   type Viewport,
 } from './position'
@@ -140,6 +141,9 @@ const DEFAULT_LOOK: Look = {
 const EDGE = 12
 /** How wide the docked card grows on a small screen. */
 const DOCKED_MAX_WIDTH = 460
+/** How wide the compact card grows on a small screen, and how narrow its limit gets. */
+const COMPACT_WIDTH = 280
+const COMPACT_MIN = 236
 
 const FOCUSABLE =
   'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -403,25 +407,38 @@ export class DomRenderer implements Renderer {
       this.scrollIntoView(target, ctx.step)
     }
     const small = this.isSmall(viewport)
+    const card = small ? (this.look.mobile.card ?? 'stories') : undefined
+    // The compact card is a coachmark: it sits beside its target like a
+    // tooltip and docks only when the tour asks it to.
+    const compact = card === 'compact'
     // Never taller than the screen: the body scrolls instead of being cut off.
     // On a small screen it also leaves some of the page visible.
-    const limit = small ? room.height * 0.72 : room.height - EDGE * 2
+    const limit = small ? room.height * (compact ? 0.6 : 0.72) : room.height - EDGE * 2
     this.host?.style.setProperty('--docent-max-h', `${Math.max(160, Math.round(limit))}px`)
-    // On a small screen the card is as wide as the screen allows, with air around it.
-    popover.style.width = small ? `${Math.min(room.width - EDGE * 2, DOCKED_MAX_WIDTH)}px` : ''
-    popover.style.maxWidth = small ? 'none' : ''
+    // On a small screen the card is as wide as the screen allows, with air
+    // around it. The compact one is sized by its content, up to about 70% of
+    // the screen, so most of the page stays in view.
+    const fit = room.width - EDGE * 2
+    popover.style.width = small && !compact ? `${Math.min(fit, DOCKED_MAX_WIDTH)}px` : ''
+    // A step with no target (a welcome) is centred and may be a little wider.
+    const compactWidth = target
+      ? Math.min(COMPACT_WIDTH, Math.max(COMPACT_MIN, Math.round(room.width * 0.7)))
+      : COMPACT_WIDTH + 24
+    popover.style.maxWidth = compact ? `${Math.min(fit, compactWidth)}px` : small ? 'none' : ''
     popover.classList.toggle('small', small)
     // The phone card; a step with no target shows it centred, as a hero.
     // Both change the card's height, so they are set before it is measured.
-    const stories = small && this.look.mobile.card !== 'classic'
-    const hero = stories && !target
+    const stories = card === 'stories'
+    const hero = (stories || compact) && !target
     popover.classList.toggle('stories', stories)
+    popover.classList.toggle('compact', compact)
     popover.classList.toggle('hero', hero)
     const floating = { width: popover.offsetWidth, height: this.heightTo ?? popover.offsetHeight }
     this.markScrollable(popover)
 
     const rect = target ? toRect(target.getBoundingClientRect()) : null
-    const layout = small ? this.smallLayout(ctx, target, rect, floating, room, padding) : undefined
+    const docks = small && (!compact || this.look.mobile.layout === 'dock')
+    const layout = docks ? this.smallLayout(ctx, target, rect, floating, room, padding) : undefined
     const docked = !!layout && !layout.side && !hero
     popover.classList.toggle('sheet', docked)
     popover.toggleAttribute('data-dock', false)
@@ -497,8 +514,9 @@ export class DomRenderer implements Renderer {
       this.blocksInteraction(ctx),
     )
     const hole = overlay.hole ?? rect
+    const anchor = clipToViewport(hole, room)
     const pos = computePosition({
-      anchor: clipToViewport(hole, room),
+      anchor,
       floating,
       viewport: room,
       // On a small screen, the side the card was found to fit on.
@@ -506,12 +524,26 @@ export class DomRenderer implements Renderer {
       gap: this.gap(),
       // A full-width card is centred, with the same margin as a docked one.
       ...(small ? { edgePadding: EDGE } : {}),
+      // With no room anywhere, the compact card overlaps the target's edge
+      // from above or below: covering a little of it beats covering it sideways.
+      ...(compact ? { fallback: roomierSide(anchor, room) } : {}),
     })
     popover.style.transform = `translate(${pos.x}px, ${pos.y}px)`
     popover.setAttribute('data-side', pos.side)
     external?.setAttribute('data-side', pos.side)
     this.placeArrow(pos.side, pos.arrow)
-    this.renderConnector(pos, floating, clipToViewport(hole, room))
+    // Over its target, with no room beside it, the card has nothing to point at.
+    const over =
+      compact &&
+      pos.x < anchor.x + anchor.width &&
+      anchor.x < pos.x + floating.width &&
+      pos.y < anchor.y + anchor.height &&
+      anchor.y < pos.y + floating.height
+    popover.toggleAttribute('data-over', over)
+    if (over) {
+      this.connector?.clear()
+      this.host?.removeAttribute('data-caret')
+    } else this.renderConnector(pos, floating, anchor)
   }
 
   /**
@@ -759,6 +791,8 @@ export class DomRenderer implements Renderer {
 
   /** Point the caret (and a headless popover's `--docent-arrow`) at the target. */
   private placeArrow(side: Side, offset: number): void {
+    // Where the card grows from as it opens: the caret's tip.
+    this.popover?.style.setProperty('--_at', `${offset}px`)
     if (this.arrow) {
       const vertical = side === 'top' || side === 'bottom'
       this.arrow.style.left = vertical ? `${offset - 6}px` : ''

@@ -9,6 +9,7 @@ import {
   inflate,
   oversizedClip,
   parsePlacement,
+  roomierSide,
 } from './position'
 
 const viewport = { width: 1000, height: 800 }
@@ -98,6 +99,18 @@ describe('computePosition', () => {
     const r = computePosition({ anchor, floating: huge, viewport, placement: 'top' })
     expect(r.side).toBe('top')
     expect(r.x).toBe(8)
+  })
+
+  it('uses the fallback side when nothing fits', () => {
+    const huge = { width: 2000, height: 2000 }
+    const r = computePosition({
+      anchor,
+      floating: huge,
+      viewport,
+      placement: 'right',
+      fallback: 'bottom',
+    })
+    expect(r.side).toBe('bottom')
   })
 })
 
@@ -190,6 +203,14 @@ describe('floatSide', () => {
     const tall = { width: 366, height: 300 }
     expect(floatSide(at(250, 140), tall, phone, 'auto', 12, 12)).toBeUndefined()
     expect(floatSide(at(250, 140), tall, phone, 'top', 12, 12, true)).toBe('top')
+  })
+})
+
+describe('roomierSide', () => {
+  const phone = { x: 0, y: 0, width: 390, height: 660 }
+  it('picks above or below, whichever has more room', () => {
+    expect(roomierSide({ x: 0, y: 40, width: 390, height: 500 }, phone)).toBe('bottom')
+    expect(roomierSide({ x: 0, y: 140, width: 390, height: 500 }, phone)).toBe('top')
   })
 })
 
