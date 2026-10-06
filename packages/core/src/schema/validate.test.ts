@@ -145,7 +145,7 @@ describe('validateTour', () => {
   it('formats issues for a console warning', () => {
     const issues = validateTour({ id: 'x', steps: [{ id: 'a', arrow: 'curvy' }] })
     expect(formatIssues(issues)).toBe(
-      '✗ steps[0].arrow: "curvy" is not one of: caret, none, line, dashed, dotted, curve, curve-dashed, squiggle, loop, elbow, sketch, pin. Did you mean "curve"?',
+      '✗ steps[0].arrow: "curvy" is not one of: caret, none, line, dashed, dotted, curve, curve-dashed, squiggle, loop, elbow, sketch, pin, s-curve, arc, zigzag, coil, block, swoosh, glow, marker, double. Did you mean "curve"?',
     )
   })
 })

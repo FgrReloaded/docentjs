@@ -105,7 +105,16 @@
             "loop",
             "elbow",
             "sketch",
-            "pin"
+            "pin",
+            "s-curve",
+            "arc",
+            "zigzag",
+            "coil",
+            "block",
+            "swoosh",
+            "glow",
+            "marker",
+            "double"
           ]
         },
         "spotlight": {
@@ -542,7 +551,16 @@
             "loop",
             "elbow",
             "sketch",
-            "pin"
+            "pin",
+            "s-curve",
+            "arc",
+            "zigzag",
+            "coil",
+            "block",
+            "swoosh",
+            "glow",
+            "marker",
+            "double"
           ]
         },
         "spotlight": {

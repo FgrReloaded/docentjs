@@ -68,6 +68,15 @@ export const ARROW_STYLES = [
   'elbow',
   'sketch',
   'pin',
+  's-curve',
+  'arc',
+  'zigzag',
+  'coil',
+  'block',
+  'swoosh',
+  'glow',
+  'marker',
+  'double',
 ] as const
 export const SPOTLIGHT_SHAPES = ['rounded', 'rect', 'pill', 'circle'] as const
 export const SPOTLIGHT_RINGS = ['hairline', 'none', 'glow', 'pulse', 'dashed', 'solid'] as const

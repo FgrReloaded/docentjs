@@ -102,7 +102,7 @@ the ones a theme uses most:
 | `theme` | colors, radius, width, padding, font, shadow, scrim |
 | `eyebrow` | a small line above every title. `{tour}` becomes the tour's name |
 | `progress` | `meter`, `count`, `ticks`, `dots` or `none` |
-| `arrow` | `caret`, `none`, or one of the ten drawn connectors |
+| `arrow` | `caret`, `none`, or one of the nineteen [drawn connectors](/customize/arrows-and-spotlight/#arrows) |
 | `spotlight` | padding, radius, shape and ring around the target |
 | `overlay` | `dim`, `blur`, `vignette` or `none` |
 | `mobile` | on phones: `layout` (`auto`, `float`, `dock`) and `card` (`stories`, `compact`, `classic`); a tour's own `mobile` wins |
@@ -119,6 +119,24 @@ theme:
 
 Press **Preview** to run a real tour with that theme. These are live — the card
 is the library rendering, not a picture of it.
+
+| Style | Themes |
+| --- | --- |
+| Quiet and modern | `quiet`, `slate`, `ledger` |
+| Classy | `atelier` (ivory, Didone serif, a framed card), `velvet` (plum and gold), `broadsheet` |
+| Glassmorphism | `frost` (light frosted glass), `aurora` (dark glass with a violet-to-ice sheen) |
+| Neumorphism | `pebble` (soft light clay), `graphite` (dark clay with a mint accent) |
+| Brutalism | `poster` (thick ink borders, hard shadows, loud yellow), `concrete` (raw, monospace, all square) |
+| Dark and vivid | `nocturne`, `console`, `neon`, `carbon` (high contrast) |
+| Playful | `bloom` |
+
+<Aside type="note" title="How glass and clay themes work">
+Glass themes use a translucent `background` token and a `backdrop-filter` in
+`css`, so they need a browser that supports it (every current one does) and
+look best over a busy page. Neumorphic themes tint the scrim the same color as
+the card, so the page fades into one soft surface and the card and the
+spotlighted element rise out of it. Both are plain JSON, like every theme here.
+</Aside>
 
 <ThemeGallery />
 

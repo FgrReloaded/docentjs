@@ -80,7 +80,9 @@ defineTour({
   id: 'welcome',
   options: {
     arrow: 'curve',                                  // caret, none, line, dashed, dotted, curve,
-                                                     // curve-dashed, squiggle, loop, elbow, sketch, pin
+                                                     // curve-dashed, squiggle, loop, elbow, sketch, pin,
+                                                     // s-curve, arc, zigzag, coil, block, swoosh,
+                                                     // glow, marker, double
     spotlight: { shape: 'pill', ring: 'pulse' },     // rounded, rect, pill, circle / hairline, none, glow, pulse, dashed, solid
     overlay: { style: 'blur', blur: 6 },             // dim, blur, vignette, none
   },
@@ -88,7 +90,7 @@ defineTour({
 })
 ```
 
-The default is a small caret, a rounded spotlight with a hairline ring, and a dimmed page. Drawn arrows load on first use as a separate 2 kB chunk, so tours that keep the caret never download them.
+The default is a small caret, a rounded spotlight with a hairline ring, and a dimmed page. Drawn arrows load on first use as a separate 3 kB chunk, so tours that keep the caret never download them.
 
 ## Also
 

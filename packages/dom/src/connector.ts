@@ -15,12 +15,22 @@ export interface ConnectorPath {
   dash?: string
   width?: number
   opacity?: number
+  /** A closed outline painted solid (`swoosh`) instead of stroked. Fades in. */
+  fill?: boolean
 }
 
 export interface ConnectorShape {
   paths: ConnectorPath[]
-  /** Arrowhead (open chevron) at the target end. */
+  /** Arrowhead at the target end: an open chevron, or a closed triangle when `solid`. */
   head?: string
+  /** Stroke width of the head, when it differs from the line's. */
+  headWidth?: number
+  /** Fill the head (`block`). */
+  solid?: boolean
+  /** Square ends and sharp corners instead of round ones (`block`). */
+  square?: boolean
+  /** A soft halo of the line's own colour around everything drawn (`glow`). */
+  glow?: boolean
   /** Filled dot at the target end (`pin`). */
   dot?: Point
 }
@@ -49,6 +59,11 @@ function frame(a: Point, b: Point) {
 
 function polyline(points: Point[]): string {
   return points.map((p, i) => `${i ? 'L' : 'M'}${pt(p)}`).join('')
+}
+
+/** `count + 1` evenly spaced samples of `at` over 0–1. */
+function sample(count: number, at: (t: number) => Point): Point[] {
+  return Array.from({ length: count + 1 }, (_, i) => at(i / count))
 }
 
 /** Open chevron at `tip`, pointing along `dir` (unit vector). */
@@ -294,6 +309,115 @@ export function connectorShape(
       const end = f.at(Math.max(0, L - 4), 0)
       return { paths: [{ d: `M${pt(from)}L${pt(end)}`, dash: '0 5', width: 2.2 }], dot: to }
     }
+    case 's-curve': {
+      // Leaves toward one side and arrives from the other, like a flowchart link.
+      const c1 = f.at(L * 0.42, bend * L * 0.34)
+      const c2 = f.at(L * 0.58, -bend * L * 0.34)
+      return {
+        paths: [{ d: `M${pt(from)}C${pt(c1)} ${pt(c2)} ${pt(to)}` }],
+        head: head(unit(c2, to)),
+      }
+    }
+    case 'arc': {
+      // A wide swing out to the side that lands on the target at an angle.
+      const c1 = f.at(-L * 0.08, bend * L * 0.56)
+      const c2 = f.at(L * 0.78, bend * L * 0.46)
+      return {
+        paths: [{ d: `M${pt(from)}C${pt(c1)} ${pt(c2)} ${pt(to)}` }],
+        head: head(unit(c2, to)),
+      }
+    }
+    case 'zigzag': {
+      // Sharp teeth between a straight lead-in and a straight run to the head.
+      const lead = Math.min(10, L * 0.15)
+      const span = L - lead - Math.min(14, L * 0.22)
+      const teeth = Math.max(3, Math.round(span / 7))
+      const points = [from]
+      for (let i = 1; i < teeth; i++) {
+        points.push(f.at(lead + (span * i) / teeth, bend * (i % 2 ? 5 : -5)))
+      }
+      points.push(f.at(lead + span, 0), to)
+      return { paths: [{ d: polyline(points) }], head: head(f.u) }
+    }
+    case 'coil': {
+      // A run of small loops, like a spring or a cursive "e" written over and over.
+      const a = 0.14
+      const b = 0.8
+      const loops = Math.max(2, Math.round((L * (b - a)) / 15))
+      const R = 5.5
+      const at = (t: number) => {
+        const turn = 2 * Math.PI * loops * clamp((t - a) / (b - a), 0, 1)
+        return f.at(
+          L * t + 1.4 * R * Math.sin(turn),
+          bend * (0.3 * L * t * (1 - t) + R * (1 - Math.cos(turn))),
+        )
+      }
+      return {
+        paths: [{ d: polyline(sample(24 * loops + 24, at)) }],
+        head: head(unit(at(0.97), to)),
+      }
+    }
+    case 'block': {
+      // A heavy straight bar under a solid head; the bar stops inside the head.
+      const size = 11
+      return {
+        paths: [{ d: `M${pt(from)}L${pt(f.at(Math.max(0, L - size * 0.6), 0))}`, width: 3.2 }],
+        head: `${arrowHead(to, f.u, size)}Z`,
+        headWidth: 1.6,
+        solid: true,
+        square: true,
+      }
+    }
+    case 'swoosh': {
+      // A brush stroke: a curve that swells in the middle and tapers to a point at each end.
+      const c = f.at(L * 0.5, bend * L * 0.24)
+      const along = (t: number): Point => ({
+        x: (1 - t) ** 2 * from.x + 2 * t * (1 - t) * c.x + t * t * to.x,
+        y: (1 - t) ** 2 * from.y + 2 * t * (1 - t) * c.y + t * t * to.y,
+      })
+      const edge = (side: 1 | -1) => (t: number) => {
+        const p = along(t)
+        const tangent = unit(along(Math.max(0, t - 0.01)), along(Math.min(1, t + 0.01)))
+        const half = side * 2.6 * Math.sin(Math.PI * t ** 0.8) * (1 - 0.3 * t)
+        return { x: p.x - tangent.y * half, y: p.y + tangent.x * half }
+      }
+      const outline = [...sample(32, edge(1)), ...sample(32, edge(-1)).reverse()]
+      return {
+        paths: [{ d: `${polyline(outline)}Z`, fill: true }],
+        head: arrowHead(to, unit(c, to), 8),
+      }
+    }
+    case 'glow':
+      return {
+        paths: [{ d: `M${pt(from)}Q${pt(f.at(L / 2, bend * L * 0.18))} ${pt(to)}`, width: 1.8 }],
+        head: head(unit(f.at(L / 2, bend * L * 0.18), to)),
+        glow: true,
+      }
+    case 'marker': {
+      // A felt-tip stroke: thick, a touch uneven, with a chunky head.
+      const c = f.at(L * 0.55, bend * L * 0.1)
+      return {
+        paths: [{ d: `M${pt(from)}Q${pt(c)} ${pt(f.at(L - 2, 0))}`, width: 4.2 }],
+        head: arrowHead(to, unit(c, to), 10),
+        headWidth: 4.2,
+      }
+    }
+    case 'double': {
+      // Two fine rails that split from one point and meet again under the head.
+      const rail = (side: 1 | -1) =>
+        rounded(
+          [from, f.at(Math.min(8, L * 0.15), side * 2.2), f.at(L - 9, side * 2.2), f.at(L - 3, 0)],
+          6,
+        )
+      return {
+        paths: [
+          { d: rail(1), width: 1.1 },
+          { d: rail(-1), width: 1.1 },
+        ],
+        head: arrowHead(to, f.u, 8),
+        headWidth: 1.3,
+      }
+    }
   }
 }
 
@@ -316,6 +440,13 @@ export const CONNECTOR_STYLES_CSS = `
   stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+.connector .solid,
+.connector .fill { fill: currentColor; }
+.connector .fill { stroke: none; }
+.connector .square { stroke-linecap: square; stroke-linejoin: miter; }
+.connector.glow {
+  filter: drop-shadow(0 0 2px currentColor) drop-shadow(0 0 7px color-mix(in oklch, currentColor 70%, transparent));
 }
 .connector .dot { fill: currentColor; }
 .connector .dot-halo { fill: currentColor; opacity: 0.2; }
@@ -364,16 +495,22 @@ export class Connector {
       path.setAttribute('class', cls)
       return path
     }
+    const square = shape.square ? ' square' : ''
     const nodes: SVGElement[] = shape.paths.map((p) => {
-      const path = make(p.d, p.dash ? 'stroke fade' : 'stroke draw')
+      const path = make(p.d, p.fill ? 'fill fade' : `stroke${square} ${p.dash ? 'fade' : 'draw'}`)
       if (p.dash) path.setAttribute('stroke-dasharray', p.dash)
       // Solid strokes draw on by animating a normalised dash.
-      else path.setAttribute('pathLength', '1')
-      if (p.width) path.setAttribute('stroke-width', String(p.width))
+      else if (!p.fill) path.setAttribute('pathLength', '1')
+      // Inline, so the width wins over the stylesheet's default.
+      if (p.width) path.style.strokeWidth = String(p.width)
       if (p.opacity) path.setAttribute('opacity', String(p.opacity))
       return path
     })
-    if (shape.head) nodes.push(make(shape.head, 'stroke head'))
+    if (shape.head) {
+      const head = make(shape.head, `stroke head${shape.solid ? ' solid' : ''}${square}`)
+      if (shape.headWidth) head.style.strokeWidth = String(shape.headWidth)
+      nodes.push(head)
+    }
     if (shape.dot) {
       for (const [radius, cls] of [
         [8, 'dot-halo'],
@@ -388,6 +525,7 @@ export class Connector {
       }
     }
     this.el.classList.toggle('animate', animate)
+    this.el.classList.toggle('glow', !!shape.glow)
     this.el.replaceChildren(...nodes)
   }
 }

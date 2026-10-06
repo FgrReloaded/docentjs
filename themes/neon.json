@@ -1,0 +1,31 @@
+{
+  "name": "Neon",
+  "theme": {
+    "background": "oklch(17% 0.025 285)",
+    "foreground": "oklch(97% 0.01 285)",
+    "muted": "oklch(75% 0.03 285)",
+    "accent": "oklch(87% 0.15 190)",
+    "accentForeground": "oklch(18% 0.03 220)",
+    "connector": "oklch(72% 0.25 340)",
+    "ring": "oklch(87% 0.15 190)",
+    "radius": 14,
+    "width": 340,
+    "padding": "18px 18px 14px",
+    "shadow": "0 0 0 1px oklch(87% 0.15 190 / 0.35), 0 0 32px -6px oklch(87% 0.15 190 / 0.35), 0 28px 60px -24px oklch(5% 0.02 285 / 0.95)",
+    "duration": 220
+  },
+  "eyebrow": "{tour}",
+  "progress": "ticks",
+  "arrow": "glow",
+  "spotlight": {
+    "padding": 8,
+    "radius": 10,
+    "ring": "pulse",
+    "animate": true
+  },
+  "overlay": {
+    "color": "oklch(8% 0.03 285)",
+    "opacity": 0.72
+  },
+  "css": ".popover, .popover.sheet { box-shadow: var(--docent-shadow); } .popover .arrow { border-color: oklch(87% 0.15 190 / 0.35) !important; } .eyebrow { color: oklch(76% 0.22 340); letter-spacing: 0.16em; } .title { text-shadow: 0 0 18px oklch(87% 0.15 190 / 0.35); } .button.primary { box-shadow: 0 0 0 1px oklch(87% 0.15 190 / 0.6), 0 0 18px -2px oklch(87% 0.15 190 / 0.7); } .marks i[data-done] { background: var(--docent-accent); box-shadow: 0 0 6px oklch(87% 0.15 190 / 0.8); }"
+}

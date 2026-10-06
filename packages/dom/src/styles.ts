@@ -222,7 +222,10 @@ export const STYLES = `
   border-radius: 0;
 }
 
-/* The arrow carries the same hairline on its two outward edges. */
+/*
+ * The arrow carries the same hairline on its two outward edges, and only its
+ * outward half is painted, so a translucent (glass) card shows no seam.
+ */
 .arrow {
   position: absolute;
   width: 12px;
@@ -237,6 +240,7 @@ export const STYLES = `
   border-top: 1px solid var(--_line);
   border-left: 1px solid var(--_line);
   border-top-left-radius: 2px;
+  clip-path: polygon(0 0, 100% 0, 0 100%);
 }
 .popover[data-side="top"] .arrow,
 .popover[data-dock="top"] .arrow {
@@ -244,18 +248,21 @@ export const STYLES = `
   border-bottom: 1px solid var(--_line);
   border-right: 1px solid var(--_line);
   border-bottom-right-radius: 2px;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
 }
 .popover[data-side="right"] .arrow {
   left: -6px;
   border-bottom: 1px solid var(--_line);
   border-left: 1px solid var(--_line);
   border-bottom-left-radius: 2px;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
 }
 .popover[data-side="left"] .arrow {
   right: -6px;
   border-top: 1px solid var(--_line);
   border-right: 1px solid var(--_line);
   border-top-right-radius: 2px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%);
 }
 .popover[data-side="center"] .arrow,
 .popover[data-side="sheet"]:not([data-dock]) .arrow { display: none; }

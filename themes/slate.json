@@ -1,0 +1,30 @@
+{
+  "name": "Slate",
+  "theme": {
+    "background": "oklch(100% 0 0)",
+    "foreground": "oklch(21% 0.02 265)",
+    "muted": "oklch(52% 0.02 265)",
+    "accent": "oklch(54% 0.22 268)",
+    "accentForeground": "oklch(99% 0.005 268)",
+    "connector": "oklch(82% 0.1 268)",
+    "ring": "oklch(82% 0.1 268)",
+    "radius": 16,
+    "width": 344,
+    "padding": "18px 18px 14px",
+    "shadow": "0 0 0 1px oklch(21% 0.02 265 / 0.07), 0 2px 4px -1px oklch(21% 0.02 265 / 0.06), 0 12px 24px -6px oklch(21% 0.02 265 / 0.12), 0 40px 80px -24px oklch(30% 0.12 268 / 0.35)",
+    "duration": 220
+  },
+  "progress": "meter",
+  "arrow": "curve",
+  "spotlight": {
+    "padding": 8,
+    "radius": 12,
+    "ring": "pulse",
+    "animate": true
+  },
+  "overlay": {
+    "color": "oklch(21% 0.03 265)",
+    "opacity": 0.5
+  },
+  "css": ".popover, .popover.sheet { box-shadow: var(--docent-shadow); } .title { letter-spacing: -0.02em; } .button { border-radius: 10px; } .button.primary { background: linear-gradient(180deg, oklch(62% 0.2 268), var(--docent-accent)); box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.25), 0 1px 2px oklch(30% 0.15 268 / 0.4), 0 4px 12px -2px oklch(54% 0.22 268 / 0.45); } .button.primary:hover { background: linear-gradient(180deg, oklch(66% 0.2 268), oklch(57% 0.22 268)); } .meter { width: 44px; height: 4px; background: linear-gradient(var(--docent-accent), var(--docent-accent)) 0 0 / calc(var(--docent-step) / var(--docent-steps) * 100%) 100% no-repeat, oklch(21% 0.02 265 / 0.08); }"
+}

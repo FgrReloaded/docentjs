@@ -13,13 +13,14 @@ const to = { x: 100, y: 140 }
 
 describe('connectors', () => {
   it('knows which styles are drawn and how much room they need', () => {
-    expect(CONNECTOR_STYLES).toHaveLength(10)
+    expect(CONNECTOR_STYLES).toHaveLength(19)
     expect(isConnector('caret')).toBe(false)
     expect(isConnector('none')).toBe(false)
     expect(isConnector('squiggle')).toBe(true)
     expect(arrowGap('caret')).toBe(12)
     expect(arrowGap('line')).toBe(60)
     expect(arrowGap('loop')).toBe(72)
+    expect(arrowGap('coil')).toBe(72)
   })
 
   it.each(CONNECTOR_STYLES)(
@@ -74,6 +75,54 @@ describe('connectors', () => {
       expect(head[2]).toBeLessThan(length)
     },
   )
+
+  it.each([60, 120, 300])('a %ipx coil runs backwards more than once', (length) => {
+    const shape = connectorShape('coil', { x: 0, y: 0 }, { x: length, y: 0 })
+    const xs = [...(shape.paths[0]?.d ?? '').matchAll(/[ML](-?[\d.]+) (-?[\d.]+)/g)].map((m) =>
+      Number(m[1]),
+    )
+    // Count the stretches where the line doubles back: one per loop.
+    let loops = 0
+    for (let i = 1; i < xs.length; i++) {
+      const back = (xs[i] as number) < (xs[i - 1] as number)
+      const wasBack = i > 1 && (xs[i - 1] as number) < (xs[i - 2] as number)
+      if (back && !wasBack) loops++
+    }
+    expect(loops).toBeGreaterThanOrEqual(2)
+  })
+
+  it('zigzags turn sharply to both sides of the line', () => {
+    const d = connectorShape('zigzag', { x: 0, y: 0 }, { x: 120, y: 0 }).paths[0]?.d ?? ''
+    const ys = [...d.matchAll(/[ML](-?[\d.]+) (-?[\d.]+)/g)].map((m) => Number(m[2]))
+    expect(Math.max(...ys)).toBeGreaterThan(3)
+    expect(Math.min(...ys)).toBeLessThan(-3)
+    // Straight into the head.
+    expect(ys.at(-1)).toBe(0)
+    expect(ys.at(-2)).toBe(0)
+  })
+
+  it('draws heavier styles with their own strokes, fills and heads', () => {
+    const block = connectorShape('block', from, to)
+    expect(block.solid).toBe(true)
+    expect(block.square).toBe(true)
+    expect(block.head?.endsWith('Z')).toBe(true)
+    const swoosh = connectorShape('swoosh', from, to)
+    expect(swoosh.paths[0]?.fill).toBe(true)
+    expect(swoosh.paths[0]?.d.endsWith('Z')).toBe(true)
+    expect(connectorShape('glow', from, to).glow).toBe(true)
+    expect(connectorShape('double', from, to).paths).toHaveLength(2)
+    expect(connectorShape('marker', from, to).headWidth).toBeGreaterThan(3)
+  })
+
+  it('s-curves cross the straight line; arcs stay on one side of it', () => {
+    const cross = (style: 'arc' | 's-curve') => {
+      const d = connectorShape(style, { x: 0, y: 0 }, { x: 100, y: 0 }).paths[0]?.d ?? ''
+      const ys = [...d.matchAll(/(-?[\d.]+) (-?[\d.]+)/g)].map((m) => Number(m[2]))
+      return Math.max(...ys) > 0 && Math.min(...ys) < 0
+    }
+    expect(cross('s-curve')).toBe(true)
+    expect(cross('arc')).toBe(false)
+  })
 
   it('points the arrowhead along the direction of travel', () => {
     // Travelling up: both chevron arms sit below the tip.

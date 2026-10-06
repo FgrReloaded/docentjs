@@ -1,0 +1,32 @@
+{
+  "name": "Aurora",
+  "theme": {
+    "background": "oklch(24% 0.035 285 / 0.58)",
+    "foreground": "oklch(97% 0.008 285)",
+    "muted": "oklch(80% 0.03 285)",
+    "accent": "oklch(80% 0.12 300)",
+    "accentForeground": "oklch(20% 0.04 285)",
+    "connector": "oklch(87% 0.09 225)",
+    "ring": "oklch(87% 0.09 225)",
+    "radius": 18,
+    "width": 344,
+    "padding": "20px 20px 16px",
+    "shadow": "0 30px 70px -28px oklch(8% 0.05 285 / 0.9)",
+    "duration": 260
+  },
+  "progress": "meter",
+  "arrow": "s-curve",
+  "spotlight": {
+    "padding": 8,
+    "radius": 12,
+    "ring": "glow",
+    "animate": true
+  },
+  "overlay": {
+    "style": "blur",
+    "blur": 6,
+    "color": "oklch(16% 0.06 280)",
+    "opacity": 0.5
+  },
+  "css": ".popover { background-image: linear-gradient(140deg, oklch(70% 0.14 300 / 0.18), transparent 45%, oklch(72% 0.12 220 / 0.14)); -webkit-backdrop-filter: blur(26px) saturate(1.7); backdrop-filter: blur(26px) saturate(1.7); } .popover, .popover.sheet { box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.16), 0 0 0 1px oklch(100% 0 0 / 0.12), var(--docent-shadow); } .popover .arrow { border-color: oklch(100% 0 0 / 0.12) !important; -webkit-backdrop-filter: blur(26px); backdrop-filter: blur(26px); } .button { border-radius: 999px; } .button.primary, .button.primary:hover { padding-inline: 16px; background: linear-gradient(120deg, oklch(80% 0.12 300), oklch(85% 0.1 220)); } .button.primary:hover { filter: brightness(1.07); } .meter { width: 40px; background: linear-gradient(90deg, oklch(80% 0.12 300), oklch(85% 0.1 220)) 0 0 / calc(var(--docent-step) / var(--docent-steps) * 100%) 100% no-repeat, oklch(100% 0 0 / 0.14); }"
+}

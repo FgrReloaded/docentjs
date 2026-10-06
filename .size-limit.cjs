@@ -38,7 +38,7 @@ module.exports = [
   {
     name: 'schema checker (development only)',
     path: 'packages/core/dist/validate.js',
-    limit: '5.25 kB',
+    limit: '5.5 kB',
   },
   {
     name: 'theme presets (loaded when a tour names one)',
@@ -48,7 +48,7 @@ module.exports = [
   {
     name: 'connector arrows (loaded on first use)',
     path: 'packages/dom/dist/connector-*.js',
-    limit: '2.5 kB',
+    limit: '3.25 kB',
   },
   {
     name: 'beacons (loaded when a tour has a beacon trigger)',

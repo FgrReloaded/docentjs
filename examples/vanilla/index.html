@@ -696,12 +696,12 @@
       `,
     }
 
-    /** A cue light: the page stays live, a pulsing ring marks the spot. */
+    /** A cue light: the page stays live, a pulsing ring marks the spot, a lit line leads to it. */
     const cueLight = {
       theme: { ...nocturne.theme, width: 296, padding: '14px' },
       overlay: { style: 'none' },
       spotlight: { ring: 'pulse', padding: 7, radius: 8 },
-      arrow: 'curve',
+      arrow: 'glow',
       eyebrow: '{tour}',
       progress: 'none',
       css: `${nocturne.css} .footer { margin-top: 12px; }`,

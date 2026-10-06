@@ -1,0 +1,32 @@
+{
+  "name": "Poster",
+  "theme": {
+    "background": "oklch(98.5% 0.012 95)",
+    "foreground": "oklch(16% 0 0)",
+    "muted": "oklch(36% 0 0)",
+    "accent": "oklch(89% 0.18 102)",
+    "accentForeground": "oklch(16% 0 0)",
+    "connector": "oklch(89% 0.18 102)",
+    "ring": "oklch(89% 0.18 102)",
+    "radius": 2,
+    "width": 344,
+    "padding": "20px 20px 18px",
+    "shadow": "0 0 0 2.5px oklch(16% 0 0), 7px 7px 0 2.5px oklch(16% 0 0)",
+    "duration": 140
+  },
+  "eyebrow": "{tour}",
+  "progress": "count",
+  "count": "{current2} / {total2}",
+  "arrow": "block",
+  "spotlight": {
+    "padding": 6,
+    "radius": 2,
+    "shape": "rect",
+    "ring": "solid"
+  },
+  "overlay": {
+    "color": "oklch(16% 0 0)",
+    "opacity": 0.42
+  },
+  "css": ".popover, .popover.sheet { box-shadow: var(--docent-shadow); } .popover .arrow { border-color: var(--docent-fg) !important; border-width: 2.5px !important; border-radius: 0 !important; } :host([data-ring='solid']) .ring { box-shadow: 0 0 0 3px currentColor; } .title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; } .eyebrow { align-self: flex-start; padding: 3px 6px; background: oklch(72% 0.2 350); color: var(--docent-fg); font-weight: 700; box-shadow: 0 0 0 2px var(--docent-fg); margin-bottom: 4px; } .body { color: var(--docent-fg); } .count { color: var(--docent-fg); font-weight: 700; } .button, .popover.stories [part~='button-next'] { border-radius: 0; font-weight: 700; } .button.primary, .button.primary:hover { background: var(--docent-accent); box-shadow: 0 0 0 2px var(--docent-fg), 3px 3px 0 2px var(--docent-fg); transition: translate 80ms ease-out, box-shadow 80ms ease-out; } .button.primary:hover { translate: -1px -1px; box-shadow: 0 0 0 2px var(--docent-fg), 4px 4px 0 2px var(--docent-fg); } .button.primary:active { scale: 1; translate: 3px 3px; box-shadow: 0 0 0 2px var(--docent-fg); } .close { border-radius: 0; color: var(--docent-fg); } .close:hover { background: var(--docent-accent); }"
+}

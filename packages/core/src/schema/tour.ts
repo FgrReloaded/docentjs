@@ -65,7 +65,10 @@ export type Placement = 'auto' | Side | `${Side}-${Exclude<Alignment, 'center'>}
  * - `none`: nothing.
  * - Connectors, drawn from the popover to the target: `line`, `dashed`,
  *   `dotted`, `curve`, `curve-dashed`, `squiggle`, `loop`, `elbow`, `sketch`
- *   (hand-drawn double stroke) and `pin` (dotted line ending in a dot).
+ *   (hand-drawn double stroke), `pin` (dotted line ending in a dot),
+ *   `s-curve`, `arc` (a wide swing), `zigzag`, `coil` (a run of loops),
+ *   `block` (heavy bar, solid head), `swoosh` (tapered brush stroke), `glow`
+ *   (a line with a halo), `marker` (thick felt-tip) and `double` (two rails).
  */
 export type ArrowStyle =
   | 'caret'
@@ -80,6 +83,15 @@ export type ArrowStyle =
   | 'elbow'
   | 'sketch'
   | 'pin'
+  | 's-curve'
+  | 'arc'
+  | 'zigzag'
+  | 'coil'
+  | 'block'
+  | 'swoosh'
+  | 'glow'
+  | 'marker'
+  | 'double'
 
 /**
  * How the step counter is drawn.

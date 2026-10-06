@@ -1,0 +1,30 @@
+{
+  "name": "Graphite",
+  "theme": {
+    "background": "oklch(27% 0.008 260)",
+    "foreground": "oklch(93% 0.006 260)",
+    "muted": "oklch(71% 0.01 260)",
+    "accent": "oklch(82% 0.13 165)",
+    "accentForeground": "oklch(22% 0.03 165)",
+    "connector": "oklch(82% 0.13 165)",
+    "ring": "oklch(82% 0.13 165)",
+    "radius": 22,
+    "width": 340,
+    "padding": "22px 22px 18px",
+    "shadow": "9px 9px 22px oklch(13% 0.008 260 / 0.85), -9px -9px 22px oklch(39% 0.01 260 / 0.5)",
+    "duration": 240
+  },
+  "eyebrow": "{tour}",
+  "progress": "ticks",
+  "arrow": "marker",
+  "spotlight": {
+    "padding": 10,
+    "radius": 14,
+    "animate": true
+  },
+  "overlay": {
+    "color": "oklch(27% 0.008 260)",
+    "opacity": 0.84
+  },
+  "css": ".popover, .popover.sheet { box-shadow: var(--docent-shadow); } .popover .arrow { border-color: transparent !important; } .ring { box-shadow: 6px 6px 16px oklch(13% 0.008 260 / 0.8), -6px -6px 16px oklch(39% 0.01 260 / 0.5); } .eyebrow { color: var(--docent-accent); } .button { border-radius: 12px; } .button:hover { background: transparent; color: var(--docent-accent); } .button.primary { padding-inline: 16px; box-shadow: 4px 4px 10px oklch(13% 0.008 260 / 0.8), -4px -4px 10px oklch(39% 0.01 260 / 0.45); } .button.primary:hover { background: var(--docent-accent); color: var(--docent-accent-fg); } .button.primary:active { scale: 1; box-shadow: inset 3px 3px 7px oklch(50% 0.1 165 / 0.6), inset -3px -3px 7px oklch(92% 0.1 165 / 0.6); } .close { border-radius: 10px; box-shadow: 3px 3px 7px oklch(13% 0.008 260 / 0.7), -3px -3px 7px oklch(39% 0.01 260 / 0.45); } .close:hover { background: transparent; } .marks i { height: 4px; border-radius: 999px; background: oklch(20% 0.008 260); box-shadow: inset 1px 1px 1px oklch(13% 0.008 260); } .marks i[data-done] { background: var(--docent-accent); box-shadow: none; }"
+}

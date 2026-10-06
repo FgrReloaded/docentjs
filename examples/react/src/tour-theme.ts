@@ -43,12 +43,12 @@ const ledgerline: DocentTheme = {
   `,
 }
 
-/** A note in the margin: no scrim, a glowing ring, a drawn curve. */
+/** A note in the margin: no scrim, a glowing ring, a brush stroke pointing at it. */
 const marginNote: DocentTheme = {
   theme: { width: 296, radius: 10 },
   overlay: { style: 'none' },
   spotlight: { ring: 'glow', padding: 6, radius: 8 },
-  arrow: 'curve',
+  arrow: 'swoosh',
   eyebrow: 'Just now',
   progress: 'none',
   css: `

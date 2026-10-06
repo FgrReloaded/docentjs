@@ -25,7 +25,7 @@ survives a reload; steps that hand control back to the user (`advance` on
 `click` and `input`); a step that waits for a drawer to mount (`onMissing:
 'wait'`); step hooks that open and close that drawer; `identify()` traits
 gating a release note; `track()` raising an event tour; three templates
-(a house style, a `hint`-style margin note, an announcement with a drawn
+(a house style, a `hint`-style margin note with a `swoosh` brush-stroke arrow, an announcement with a drawn
 figure in the `media` slot); a custom React popover in headless mode; and four
 beacons: a "New" badge on the period switch (click, read once), a red help dot
 on Overdue (hover, always there), a tooltip on the plan box (`style: 'none'`),
@@ -49,6 +49,7 @@ galley look, and a small help dot beside the checks that opens on hover.
 **Nocturne (vanilla)** — no framework at all: templates, slots and a headless
 popover built with `document.createElement`, plus a `custom` condition
 predicate (`onAir`) that keeps a tour from running when the studio is not live;
+a cue-light template with no scrim and a `glow` connector;
 a red hover beacon on the waveform, coloured with the `beacon` theme token, and
 a "New" badge on the cart wall.
 Open it with `?start=<tour-id>` to jump straight into one.

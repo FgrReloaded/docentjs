@@ -16,6 +16,15 @@ export const CONNECTOR_STYLES = [
   'elbow',
   'sketch',
   'pin',
+  's-curve',
+  'arc',
+  'zigzag',
+  'coil',
+  'block',
+  'swoosh',
+  'glow',
+  'marker',
+  'double',
 ] as const satisfies readonly ArrowStyle[]
 
 export type ConnectorStyle = (typeof CONNECTOR_STYLES)[number]
@@ -27,5 +36,5 @@ export function isConnector(style: ArrowStyle): style is ConnectorStyle {
 /** Space between target and popover for a style: connectors need room to be seen. */
 export function arrowGap(style: ArrowStyle): number {
   if (!isConnector(style)) return 12
-  return style === 'loop' || style === 'squiggle' ? 72 : 60
+  return style === 'loop' || style === 'squiggle' || style === 'coil' ? 72 : 60
 }

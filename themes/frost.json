@@ -1,0 +1,32 @@
+{
+  "name": "Frost",
+  "theme": {
+    "background": "oklch(99% 0.004 250 / 0.62)",
+    "foreground": "oklch(22% 0.02 255)",
+    "muted": "oklch(45% 0.02 255)",
+    "accent": "oklch(22% 0.02 255)",
+    "accentForeground": "oklch(99% 0.004 250)",
+    "connector": "oklch(22% 0.02 255)",
+    "ring": "oklch(99% 0.004 250)",
+    "radius": 20,
+    "width": 340,
+    "padding": "20px 20px 16px",
+    "shadow": "0 1px 1px oklch(30% 0.03 255 / 0.06), 0 24px 56px -20px oklch(30% 0.05 255 / 0.42)",
+    "duration": 240
+  },
+  "progress": "dots",
+  "arrow": "arc",
+  "spotlight": {
+    "padding": 8,
+    "radius": 14,
+    "ring": "glow",
+    "animate": true
+  },
+  "overlay": {
+    "style": "blur",
+    "blur": 3,
+    "color": "oklch(42% 0.05 255)",
+    "opacity": 0.3
+  },
+  "css": ".popover { -webkit-backdrop-filter: blur(22px) saturate(1.8); backdrop-filter: blur(22px) saturate(1.8); } .popover, .popover.sheet { box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.75), 0 0 0 1px oklch(100% 0 0 / 0.6), var(--docent-shadow); } .popover .arrow { border-color: oklch(100% 0 0 / 0.6) !important; -webkit-backdrop-filter: blur(22px); backdrop-filter: blur(22px); } .button { border-radius: 999px; } .button:hover { background: oklch(100% 0 0 / 0.5); } .button.primary { padding-inline: 16px; } .marks i { background: oklch(22% 0.02 255 / 0.16); }"
+}

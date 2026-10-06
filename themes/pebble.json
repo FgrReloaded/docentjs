@@ -1,0 +1,29 @@
+{
+  "name": "Pebble",
+  "theme": {
+    "background": "oklch(93.5% 0.008 250)",
+    "foreground": "oklch(30% 0.02 255)",
+    "muted": "oklch(50% 0.018 255)",
+    "accent": "oklch(56% 0.13 255)",
+    "accentForeground": "oklch(98% 0.005 250)",
+    "connector": "oklch(56% 0.13 255)",
+    "ring": "oklch(56% 0.13 255)",
+    "radius": 24,
+    "width": 336,
+    "padding": "22px 22px 18px",
+    "shadow": "10px 10px 24px oklch(72% 0.02 255 / 0.7), -10px -10px 24px oklch(100% 0 0 / 0.9)",
+    "duration": 260
+  },
+  "progress": "dots",
+  "arrow": "coil",
+  "spotlight": {
+    "padding": 10,
+    "radius": 16,
+    "animate": true
+  },
+  "overlay": {
+    "color": "oklch(93.5% 0.008 250)",
+    "opacity": 0.76
+  },
+  "css": ".popover, .popover.sheet { box-shadow: var(--docent-shadow); } .popover .arrow { border-color: transparent !important; } .ring { box-shadow: 7px 7px 16px oklch(72% 0.02 255 / 0.7), -7px -7px 16px oklch(100% 0 0 / 0.95); } .button { border-radius: 999px; } .button:hover { background: transparent; color: var(--docent-accent); } .button.primary { padding-inline: 18px; box-shadow: 5px 5px 12px oklch(72% 0.02 255 / 0.75), -5px -5px 12px oklch(100% 0 0 / 0.9); } .button.primary:hover { background: var(--docent-accent); color: var(--docent-accent-fg); } .button.primary:active { scale: 1; box-shadow: inset 3px 3px 7px oklch(40% 0.12 255 / 0.55), inset -3px -3px 7px oklch(72% 0.12 255 / 0.5); } .close { border-radius: 999px; box-shadow: 3px 3px 7px oklch(72% 0.02 255 / 0.6), -3px -3px 7px oklch(100% 0 0 / 0.9); } .close:hover { background: transparent; } .marks i { background: transparent; box-shadow: inset 1px 1px 2px oklch(68% 0.02 255 / 0.8), inset -1px -1px 2px oklch(100% 0 0 / 0.9); } .marks i[data-done] { background: var(--docent-accent); box-shadow: none; }"
+}

@@ -97,6 +97,15 @@ const ARROWS: ReadonlyArray<readonly [ArrowStyle, string]> = [
   ['elbow', 'Elbow'],
   ['sketch', 'Sketch'],
   ['pin', 'Pin'],
+  ['s-curve', 'S-curve'],
+  ['arc', 'Arc'],
+  ['zigzag', 'Zigzag'],
+  ['coil', 'Coil'],
+  ['block', 'Block'],
+  ['swoosh', 'Swoosh'],
+  ['glow', 'Glow'],
+  ['marker', 'Marker'],
+  ['double', 'Double line'],
 ]
 const SHAPES: ReadonlyArray<readonly [SpotlightShape, string]> = [
   ['rounded', 'Rounded (default)'],

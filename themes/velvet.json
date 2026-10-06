@@ -1,0 +1,31 @@
+{
+  "name": "Velvet",
+  "theme": {
+    "background": "oklch(21% 0.035 345)",
+    "foreground": "oklch(95% 0.012 80)",
+    "muted": "oklch(76% 0.03 60)",
+    "accent": "oklch(83% 0.1 82)",
+    "accentForeground": "oklch(22% 0.035 345)",
+    "connector": "oklch(83% 0.1 82)",
+    "ring": "oklch(83% 0.1 82)",
+    "radius": 6,
+    "width": 352,
+    "padding": "22px 24px 18px",
+    "shadow": "0 30px 64px -28px oklch(8% 0.04 345 / 0.95)",
+    "duration": 280
+  },
+  "eyebrow": "{tour}",
+  "progress": "ticks",
+  "arrow": "swoosh",
+  "spotlight": {
+    "padding": 10,
+    "radius": 8,
+    "ring": "glow",
+    "animate": true
+  },
+  "overlay": {
+    "color": "oklch(12% 0.03 345)",
+    "opacity": 0.66
+  },
+  "css": ".popover, .popover.sheet { box-shadow: 0 0 0 1px oklch(83% 0.1 82 / 0.32), inset 0 0 0 5px var(--docent-bg), inset 0 0 0 6px oklch(83% 0.1 82 / 0.2), var(--docent-shadow); } .popover .arrow { border-color: oklch(83% 0.1 82 / 0.32) !important; } .title { font-family: 'Iowan Old Style', 'Palatino Linotype', Palatino, ui-serif, Georgia, serif; font-size: 22px; font-weight: 500; letter-spacing: -0.005em; } .eyebrow { color: var(--docent-accent); font-size: 10px; letter-spacing: 0.24em; } .body { color: oklch(87% 0.016 70); } .button { border-radius: 999px; letter-spacing: 0.02em; } .button.primary { padding-inline: 18px; } .marks i[data-done] { background: var(--docent-accent); }"
+}
